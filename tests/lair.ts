@@ -333,6 +333,27 @@ describe('Lair', () => {
 
       });
 
+      describe('allow function for `createRelated` value', () => {
+        it('record id is passed to the function', () => {
+          class A extends Factory {
+            attrs = {
+              b: Factory.hasOne('b', null)
+            };
+            createRelated = {
+              b(id) {
+                expect(id).to.be.equal('1');
+                return 1;
+              }
+            }
+          }
+          class B extends Factory {}
+          this.lair.registerFactory(new A(), 'a');
+          this.lair.registerFactory(new B(), 'b');
+          this.lair.createRecords('a', 1);
+          expect(this.lair.getAll('b').map(c=>c.id)).to.be.eql(['1']);
+        });
+      });
+
     });
 
   });

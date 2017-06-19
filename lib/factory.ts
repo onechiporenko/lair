@@ -36,7 +36,7 @@ export interface RelationshipMetaAttr extends MetaAttr {
  */
 export default class Factory {
   public attrs = {};
-  public createRelated: { [attrName: string]: number } = {};
+  public createRelated: { [attrName: string]: number | ((id: string) => number) } = {};
   private _meta: Meta = null;
 
   get meta() {

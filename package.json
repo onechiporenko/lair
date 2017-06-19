@@ -11,6 +11,7 @@
     "db",
     "database"
   ],
+  "repository": "https://github.com/onechiporenko/lair",
   "author": "onechiporenko",
   "license": "MIT",
   "devDependencies": {

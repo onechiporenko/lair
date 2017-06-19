@@ -61,24 +61,34 @@ export default class Relationships {
     const val = record[attrName];
     if (attrMeta.type === MetaAttrType.HAS_ONE) {
       const distRecordId = isId(val) || !val ? val : val.id;
-      if (distMeta.type === MetaAttrType.HAS_ONE) {
-        // ONE TO ONE
-        this.updateOneToOne(factoryName, record.id, attrName, attrMeta.factoryName, distRecordId, attrMeta.invertedAttrName);
+      if (distMeta) {
+        if (distMeta.type === MetaAttrType.HAS_ONE) {
+          // ONE TO ONE
+          this.updateOneToOne(factoryName, record.id, attrName, attrMeta.factoryName, distRecordId, attrMeta.invertedAttrName);
+        }
+        if (distMeta.type === MetaAttrType.HAS_MANY) {
+          // ONE TO MANY
+          this.updateOneToMany(factoryName, record.id, attrName, attrMeta.factoryName, distRecordId, attrMeta.invertedAttrName);
+        }
       }
-      if (distMeta.type === MetaAttrType.HAS_MANY) {
-        // ONE TO MANY
-        this.updateOneToMany(factoryName, record.id, attrName, attrMeta.factoryName, distRecordId, attrMeta.invertedAttrName);
+      else {
+        this.setOne(factoryName, record.id, attrName, distRecordId);
       }
     }
     if (attrMeta.type === MetaAttrType.HAS_MANY) {
-      const distRecordIds = isArray(val) ? mapIds(val) : null;
-      if (distMeta.type === MetaAttrType.HAS_ONE) {
-        // MANY TO ONE
-        this.updateManyToOne(factoryName, record.id, attrName, attrMeta.factoryName, distRecordIds, attrMeta.invertedAttrName);
+      const distRecordIds = isArray(val) ? mapIds(val) : [];
+      if (distMeta) {
+        if (distMeta.type === MetaAttrType.HAS_ONE) {
+          // MANY TO ONE
+          this.updateManyToOne(factoryName, record.id, attrName, attrMeta.factoryName, distRecordIds, attrMeta.invertedAttrName);
+        }
+        if (distMeta.type === MetaAttrType.HAS_MANY) {
+          // MANY TO MANY
+          this.updateManyToMany(factoryName, record.id, attrName, attrMeta.factoryName, distRecordIds, attrMeta.invertedAttrName);
+        }
       }
-      if (distMeta.type === MetaAttrType.HAS_MANY) {
-        // MANY TO MANY
-        this.updateManyToMany(factoryName, record.id, attrName, attrMeta.factoryName, distRecordIds, attrMeta.invertedAttrName);
+      else {
+        this.setMany(factoryName, record.id, attrName, distRecordIds);
       }
     }
   }

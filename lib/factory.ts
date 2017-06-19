@@ -81,7 +81,7 @@ export default class Factory {
     keys(attrs).forEach(attrName => {
       const val = attrs[attrName];
       // dummy way to check that val is relation declaration
-      if (val.type && val.factoryName && val.invertedAttrName) {
+      if (val.type && val.factoryName) {
         this._meta[attrName] = val;
       }
       else {

@@ -190,7 +190,7 @@ describe('Relationships', () => {
         }
       };
     });
-    it('should remove from  value', () => {
+    it('should remove from value', () => {
       this.relationships.removeFromMany('f', '1', 'a', '2');
       expect(this.relationships.getMany('f', '1', 'a')).to.be.eql(['1', '3']);
     });

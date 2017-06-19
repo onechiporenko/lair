@@ -158,19 +158,29 @@ export default class Lair {
     const {factoryName: distFactoryName, invertedAttrName: distAttrName} = attrMeta;
     const distMeta = this.getMetaFor(distFactoryName);
     if (attrMeta.type === MetaAttrType.HAS_MANY) {
-      if (distMeta[distAttrName].type === MetaAttrType.HAS_ONE) {
-        return this.createManyToOneAttrValue(factoryName, id, attrName, val, distFactoryName, distAttrName);
+      if (distMeta[distAttrName]) {
+        if (distMeta[distAttrName].type === MetaAttrType.HAS_ONE) {
+          return this.createManyToOneAttrValue(factoryName, id, attrName, val, distFactoryName, distAttrName);
+        }
+        if (distMeta[distAttrName].type === MetaAttrType.HAS_MANY) {
+          return this.createManyToManyAttrValue(factoryName, id, attrName, val, distFactoryName, distAttrName);
+        }
       }
-      if (distMeta[distAttrName].type === MetaAttrType.HAS_MANY) {
-        return this.createManyToManyAttrValue(factoryName, id, attrName, val, distFactoryName, distAttrName);
+      else {
+        this.relationships.setMany(factoryName, id, attrName, val);
       }
     }
     if (attrMeta.type === MetaAttrType.HAS_ONE) {
-      if (distMeta[distAttrName].type === MetaAttrType.HAS_ONE) {
-        return this.createOneToOneAttrValue(factoryName, id, attrName, val, distFactoryName, distAttrName);
+      if (distMeta[distAttrName]) {
+        if (distMeta[distAttrName].type === MetaAttrType.HAS_ONE) {
+          return this.createOneToOneAttrValue(factoryName, id, attrName, val, distFactoryName, distAttrName);
+        }
+        if (distMeta[distAttrName].type === MetaAttrType.HAS_MANY) {
+          return this.createOneToManyAttrValue(factoryName, id, attrName, val, distFactoryName, distAttrName);
+        }
       }
-      if (distMeta[distAttrName].type === MetaAttrType.HAS_MANY) {
-        return this.createOneToManyAttrValue(factoryName, id, attrName, val, distFactoryName, distAttrName);
+      else {
+        this.relationships.setOne(factoryName, id, attrName, val);
       }
     }
     return val;

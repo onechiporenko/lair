@@ -144,6 +144,87 @@ describe('Lair', () => {
         });
       });
 
+      describe('should create related without relation', () => {
+        class A extends Factory {
+          attrs = {
+            b: Factory.hasMany('b', null)
+          };
+          createRelated = {
+            b: 2
+          }
+        }
+        class B extends Factory {}
+        class C extends Factory {
+          attrs = {
+            b: Factory.hasOne('b', null)
+          };
+          createRelated = {
+            b: 1
+          }
+        }
+        beforeEach(() => {
+          this.lair.registerFactory(new A(), 'a');
+          this.lair.registerFactory(new B(), 'b');
+          this.lair.registerFactory(new C(), 'c');
+          this.lair.createRecords('a', 1);
+          this.lair.createRecords('c', 1);
+        });
+
+        describe('A created', () => {
+          it('1 record', () => {
+            expect(this.lair.getAll('a')).to.have.property('length', 1);
+          });
+          it('has 2 related B', () => {
+            expect(this.lair.getOne('a', '1').b.map(c=>c.id)).to.be.eql(['1', '2']);
+          });
+        });
+
+        describe('B created', () => {
+          it('4 records', () => {
+            expect(this.lair.getAll('b')).to.have.property('length', 3);
+          });
+        });
+
+        describe('C created', () => {
+          it('1 record', () => {
+            expect(this.lair.getAll('c')).to.have.property('length', 1);
+          });
+          it('has 1 related B', () => {
+            expect(this.lair.getOne('c', '1').b.id).to.be.equal('3');
+          });
+        });
+      });
+
+      describe('should not create related', () => {
+        class A extends Factory {
+          attrs = {
+            b: Factory.hasMany('b', null)
+          }
+        }
+        class B extends Factory {}
+        class C extends Factory {
+          attrs = {
+            b: Factory.hasOne('b', null)
+          }
+        }
+        beforeEach(() => {
+          this.lair.registerFactory(new A(), 'a');
+          this.lair.registerFactory(new B(), 'b');
+          this.lair.registerFactory(new C(), 'c');
+          this.lair.createRecords('a', 1);
+          this.lair.createRecords('c', 1);
+        });
+        it('one A created', () => {
+          expect(this.lair.getOne('a', '1')).to.be.eql({id: '1', b: []});
+        });
+        it('one C created', () => {
+          expect(this.lair.getOne('c', '1')).to.be.eql({id: '1', b: null});
+        });
+        it('B not created', () => {
+          expect(this.lair.getAll('b')).to.have.property('length', 0);
+        });
+      });
+
       describe('related factories chains', () => {
 
         describe('a-b-a', () => {
@@ -1629,6 +1710,88 @@ describe('Lair', () => {
               });
             });
           });
+        });
+
+        describe('not-cross relationships', () => {
+
+          class A extends Factory {
+            attrs = {
+              propB: Factory.hasOne('b', null)
+            };
+          }
+          class B extends Factory {
+            attrs = {}
+          }
+          class C extends Factory {
+            attrs = {
+              propB: Factory.hasMany('b', null)
+            };
+          }
+
+          beforeEach(() => {
+            this.lair.registerFactory(new A(), 'a');
+            this.lair.registerFactory(new B(), 'b');
+            this.lair.registerFactory(new C(), 'c');
+          });
+
+          describe('#createOne', () => {
+            describe('has one', () => {
+              it('one A created', () => {
+                this.lair.createRecords('b', 1);
+                this.lair.createOne('a', {propB: '1'});
+                expect(this.lair.getOne('a', '1')).to.be.eql({id: '1', propB: {id: '1'}});
+              });
+              it('one A created without relations', () => {
+                this.lair.createOne('a', {});
+                expect(this.lair.getOne('a', '1')).to.be.eql({id: '1', propB: null});
+              });
+            });
+            describe('has many', () => {
+              it('one C created', () => {
+                this.lair.createRecords('b', 2);
+                this.lair.createOne('c', {propB: ['1', '2']});
+                expect(this.lair.getOne('c', '1')).to.be.eql({id: '1', propB: [{id: '1'}, {id: '2'}]});
+              });
+              it('one C created without relations', () => {
+                this.lair.createOne('c', {});
+                expect(this.lair.getOne('c', '1')).to.be.eql({id: '1', propB: []});
+              });
+            });
+          });
+
+          describe('#updateOne', () => {
+            describe('has one', () => {
+              beforeEach(() => {
+                this.lair.createRecords('b', 1);
+              });
+              it('one A updated', () => {
+                this.lair.createOne('a', {});
+                this.lair.updateOne('a', '1', {propB: '1'});
+                expect(this.lair.getOne('a', '1')).to.be.eql({id: '1', propB: {id: '1'}});
+              });
+              it('one A updated to drop relation', () => {
+                this.lair.createOne('a', {propB: '1'});
+                this.lair.updateOne('a', '1', {propB: null});
+                expect(this.lair.getOne('a', '1')).to.be.eql({id: '1', propB: null});
+              });
+            });
+            describe('has many', () => {
+              beforeEach(() => {
+                this.lair.createRecords('b', 2);
+              });
+              it('one C updated', () => {
+                this.lair.createOne('c', {});
+                this.lair.updateOne('c', '1', {propB: ['1', '2']});
+                expect(this.lair.getOne('c', '1')).to.be.eql({id: '1', propB: [{id: '1'}, {id: '2'}]});
+              });
+              it('one C updated to drop relation', () => {
+                this.lair.createOne('c', {propB: ['1', '2']});
+                this.lair.updateOne('c', '1', {propB: []});
+                expect(this.lair.getOne('c', '1')).to.be.eql({id: '1', propB: []});
+              });
+            });
+          });
+
         });
 
       });

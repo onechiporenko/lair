@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "target": "ES5",
-    "rootDir": "lib",
     "outDir": "dist",
     "experimentalDecorators": true
   },

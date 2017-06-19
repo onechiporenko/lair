@@ -19,7 +19,7 @@ export interface MetaAttr {
   type: MetaAttrType,
   [prop: string]: any
 }
-interface RelationshipMetaAttr extends MetaAttr {
+export interface RelationshipMetaAttr extends MetaAttr {
   factoryName: string,
   invertedAttrName: string,
   type: MetaAttrType

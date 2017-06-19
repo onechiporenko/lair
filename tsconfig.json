@@ -2,6 +2,7 @@
   "compilerOptions": {
     "target": "ES5",
     "outDir": "dist",
+    "declaration": true,
     "experimentalDecorators": true
   },
   "exclude": [

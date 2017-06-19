@@ -95,11 +95,12 @@ export default class Lair {
    * @param {number} count
    */
   public createRecords(factoryName: string, count: number): void {
-    this.internalCreateRecords(factoryName, count);
+    this.internalCreateRecords(factoryName, count, {}, []);
   }
 
-  private internalCreateRecords(factoryName: string, count: number, extraData: any = {}): Record[] {
+  private internalCreateRecords(factoryName: string, count: number, extraData: any = {}, relatedChain: string[] = []): Record[] {
     assert(`Factory with name "${factoryName}" is not registered`, !!this.factories[factoryName]);
+    assert(`Loop is detected in the "createRelated". Chain is ${JSON.stringify(relatedChain)}. You try to create records for "${factoryName}" again.`, relatedChain.indexOf(factoryName) === -1);
     const factoryData = this.factories[factoryName];
     const related = factoryData.factory.createRelated;
     const meta = factoryData.factory.meta;
@@ -117,7 +118,7 @@ export default class Lair {
           const fName = meta[attrName].factoryName;
           const isHasMany = meta[attrName].type === MetaAttrType.HAS_MANY;
           const relatedCount = isHasMany ? related[attrName] : 1;
-          const relatedRecords = this.internalCreateRecords(fName, relatedCount, {[meta[attrName].invertedAttrName]: record.id});
+          const relatedRecords = this.internalCreateRecords(fName, relatedCount, {[meta[attrName].invertedAttrName]: record.id}, [...relatedChain, factoryName]);
           this.db[factoryName][record.id][attrName] = isHasMany ? relatedRecords : relatedRecords[0];
         });
       }

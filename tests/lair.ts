@@ -144,6 +144,114 @@ describe('Lair', () => {
         });
       });
 
+      describe('related factories chains', () => {
+
+        describe('a-b-a', () => {
+          class A extends Factory {
+            attrs = {
+              b: Factory.hasMany('b', 'a')
+            };
+            createRelated = {
+              b: 2
+            }
+          }
+          class B extends Factory {
+            attrs = {
+              a: Factory.hasMany('a', 'b')
+            };
+            createRelated = {
+              a: 2
+            }
+          }
+          beforeEach(() => {
+            this.lair.registerFactory(new A(), 'a');
+            this.lair.registerFactory(new B(), 'b');
+          });
+
+          it('should throw an error', () => {
+            expect(() => this.lair.createRecords('a', 2)).to.throw(`Loop is detected in the "createRelated". Chain is ["a","b"]. You try to create records for "a" again.`);
+          });
+        });
+
+        describe('a-b-c-a', () => {
+          class A extends Factory {
+            attrs = {
+              b: Factory.hasMany('b', 'a'),
+              c: Factory.hasMany('c', 'a')
+            };
+            createRelated = {
+              b: 2
+            }
+          }
+          class B extends Factory {
+            attrs = {
+              a: Factory.hasMany('a', 'b'),
+              c: Factory.hasMany('c', 'b')
+            };
+            createRelated = {
+              c: 2
+            }
+          }
+          class C extends Factory {
+            attrs = {
+              a: Factory.hasMany('a', 'c'),
+              b: Factory.hasMany('b', 'c')
+            };
+            createRelated = {
+              a: 2
+            }
+          }
+          beforeEach(() => {
+            this.lair.registerFactory(new A(), 'a');
+            this.lair.registerFactory(new B(), 'b');
+            this.lair.registerFactory(new C(), 'c');
+          });
+
+          it('should throw an error', () => {
+            expect(() => this.lair.createRecords('a', 2)).to.throw(`Loop is detected in the "createRelated". Chain is ["a","b","c"]. You try to create records for "a" again.`);
+          });
+        });
+
+        describe('a-b-c-b', () => {
+          class A extends Factory {
+            attrs = {
+              b: Factory.hasMany('b', 'a'),
+              c: Factory.hasMany('c', 'a')
+            };
+            createRelated = {
+              b: 2
+            }
+          }
+          class B extends Factory {
+            attrs = {
+              a: Factory.hasMany('a', 'b'),
+              c: Factory.hasMany('c', 'b')
+            };
+            createRelated = {
+              c: 2
+            }
+          }
+          class C extends Factory {
+            attrs = {
+              b: Factory.hasMany('b', 'c')
+            };
+            createRelated = {
+              b: 2
+            }
+          }
+          beforeEach(() => {
+            this.lair.registerFactory(new A(), 'a');
+            this.lair.registerFactory(new B(), 'b');
+            this.lair.registerFactory(new C(), 'c');
+          });
+
+          it('should throw an error', () => {
+            expect(() => this.lair.createRecords('a', 2)).to.throw(`Loop is detected in the "createRelated". Chain is ["a","b","c"]. You try to create records for "b" again.`);
+          });
+        });
+
+      });
+
     });
 
   });

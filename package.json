@@ -2,7 +2,7 @@
   "name": "lair",
   "version": "1.0.0",
   "description": "JS database",
-  "main": "./index.js",
+  "main": "./dist/lib/index.js",
   "scripts": {
     "test": "mocha -r ts-node/register tests/**/*.ts"
   },

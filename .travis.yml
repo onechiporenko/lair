@@ -1,0 +1,19 @@
+---
+language: node_js
+node_js:
+  - "6"
+
+sudo: false
+
+matrix:
+  fast_finish: true
+
+before_install:
+  - npm config set spin false
+  - npm i -g typescript
+
+install:
+  - npm install
+
+script:
+  - npm test

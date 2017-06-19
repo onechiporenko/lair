@@ -1,5 +1,5 @@
 {
-  "name": "lair",
+  "name": "lairdb",
   "version": "1.0.0",
   "description": "JS database",
   "main": "./dist/index.js",

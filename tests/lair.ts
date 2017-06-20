@@ -476,6 +476,49 @@ describe('Lair', () => {
           expect(this.lair.getAll('foo')).to.have.property('length', 5);
         });
       });
+
+      describe('RU methods should return copies of records from the db', () => {
+        class A extends Factory {
+          attrs = {
+            propB: 'some'
+          }
+        }
+        beforeEach(() => {
+          this.lair.registerFactory(new A(), 'a');
+          this.lair.createRecords('a', 1);
+          this.r = this.lair.getOne('a', '1');
+        });
+        it('#getOne', () => {
+          expect(this.r).to.be.eql({id: '1', propB: 'some'});
+          delete this.r.id;
+          expect(this.lair.getOne('a', '1')).to.be.eql({id: '1', propB: 'some'});
+        });
+
+        it('#queryOne', () => {
+          expect(this.r).to.be.eql({id: '1', propB: 'some'});
+          delete this.r.id;
+          expect(this.lair.queryOne('a', r => r.id === '1')).to.be.eql({id: '1', propB: 'some'});
+        });
+
+        it('#getAll', () => {
+          expect(this.r).to.be.eql({id: '1', propB: 'some'});
+          delete this.r.id;
+          expect(this.lair.getAll('a')).to.be.eql([{id: '1', propB: 'some'}]);
+        });
+
+        it('#queryMany', () => {
+          expect(this.r).to.be.eql({id: '1', propB: 'some'});
+          delete this.r.id;
+          expect(this.lair.queryMany('a', r => r.id === '1')).to.be.eql([{id: '1', propB: 'some'}]);
+        });
+
+        it('#updateOne', () => {
+          expect(this.r).to.be.eql({id: '1', propB: 'some'});
+          delete this.r.id;
+          expect(this.lair.updateOne('a', '1', {propB: 'another'})).to.be.eql({id: '1', propB: 'another'});
+        });
+      });
+
     });
 
     describe('with related records', () => {
@@ -2263,6 +2306,58 @@ describe('Lair', () => {
 
         });
 
+      });
+
+      describe('RU methods should return copies of records from the db', () => {
+        class A extends Factory {
+          attrs = {
+            propB: Factory.hasOne('b', 'propA')
+          };
+          createRelated = {
+            propB: 1
+          }
+        }
+        class B extends Factory {
+          attrs = {
+            propA: Factory.hasOne('a', 'propB')
+          }
+        }
+        beforeEach(() => {
+          this.lair.registerFactory(new A(), 'a');
+          this.lair.registerFactory(new B(), 'b');
+          this.lair.createRecords('a', 1);
+          this.r = this.lair.getOne('a', '1');
+          this.originA1 = {id: '1', propB: {id: '1', propA: '1'}};
+        });
+        it('#getOne', () => {
+          expect(this.r).to.be.eql(this.originA1);
+          delete this.r.propB.id;
+          expect(this.lair.getOne('a', '1')).to.be.eql(this.originA1);
+        });
+
+        it('#queryOne', () => {
+          expect(this.r).to.be.eql(this.originA1);
+          delete this.r.propB.id;
+          expect(this.lair.queryOne('a', r => r.id === '1')).to.be.eql(this.originA1);
+        });
+
+        it('#getAll', () => {
+          expect(this.r).to.be.eql(this.originA1);
+          delete this.r.propB.id;
+          expect(this.lair.getAll('a')).to.be.eql([this.originA1]);
+        });
+
+        it('#queryMany', () => {
+          expect(this.r).to.be.eql(this.originA1);
+          delete this.r.propB.id;
+          expect(this.lair.queryMany('a', r => r.id === '1')).to.be.eql([this.originA1]);
+        });
+
+        it('#updateOne', () => {
+          expect(this.r).to.be.eql(this.originA1);
+          delete this.r.propB.id;
+          expect(this.lair.updateOne('a', '1', {})).to.be.eql(this.originA1);
+        });
       });
 
     });

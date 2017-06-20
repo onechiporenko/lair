@@ -138,12 +138,12 @@ export default class Lair {
   private getRecordWithRelationships(factoryName: string, id: string, relatedFor: any = {}): Record {
     const recordRelationships = this.relationships.getRelationshipsForRecord(factoryName, id);
     const meta = this.getMetaFor(factoryName);
-    const record = this.db[factoryName][id];
+    let record = this.db[factoryName][id];
     if (!record) {
       return null;
     }
+    record = JSON.parse(JSON.stringify(record));
     if (recordRelationships) {
-      console.log(recordRelationships, record);
       keys(recordRelationships).forEach(attrName => {
         const relatedIds = recordRelationships[attrName];
         const relatedFactoryName = meta[attrName].factoryName;

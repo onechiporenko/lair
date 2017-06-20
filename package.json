@@ -4,7 +4,8 @@
   "description": "JS database",
   "main": "./dist/index.js",
   "scripts": {
-    "test": "mocha -r ts-node/register tests/**/*.ts"
+    "test": "mocha -r ts-node/register tests/**/*.ts",
+    "lint": "tslint -c tslint.json lib/**/*.ts"
   },
   "keywords": [
     "js",
@@ -20,6 +21,7 @@
     "chai": "^4.0.2",
     "mocha": "^3.4.2",
     "ts-node": "^3.0.6",
+    "tslint": "^5.4.3",
     "typings": "^2.1.1"
   }
 }

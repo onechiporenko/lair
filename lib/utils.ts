@@ -17,5 +17,5 @@ export function arrayDiff(arr1: string[], arr2: string[]): string[] {
 }
 
 export function uniq(list: any[]): any[] {
-  return list.filter((item ,index, collection) => collection.indexOf(item) === index);
+  return list.filter((item, index, collection) => collection.indexOf(item) === index);
 }

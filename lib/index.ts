@@ -1,4 +1,4 @@
-import Lair from './lair';
 import Factory from './factory';
+import Lair from './lair';
 
 export {Lair, Factory};

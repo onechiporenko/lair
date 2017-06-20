@@ -1,7 +1,7 @@
 import Factory, {FactoryData, Meta, MetaAttrType} from './factory';
 import {Record} from './record';
 import Relationships from './relationships';
-import {isId, assert} from './utils';
+import {assert, isId} from './utils';
 
 const {keys} = Object;
 const {isArray} = Array;
@@ -11,7 +11,7 @@ function assertHasType(target, key, descriptor): any {
     descriptor = Object.getOwnPropertyDescriptor(target, key);
   }
   const originalMethod = descriptor.value;
-  descriptor.value = function (...args) {
+  descriptor.value = function(...args) {
     const type = args[0];
     assert(`"${type}"-type doesn't exist in the database`, this.hasType(type));
     return originalMethod.apply(this, args);
@@ -22,10 +22,10 @@ function assertHasType(target, key, descriptor): any {
 export interface InternalDb {
   [factoryName: string]: {
     [recordId: string]: Record;
-  }
+  };
 }
 
-interface internalMetaStore {
+interface InternalMetaStore {
   [factoryName: string]: Meta;
 }
 
@@ -33,25 +33,6 @@ interface internalMetaStore {
  * @class Lair
  */
 export default class Lair {
-  private factories: { [id: string]: FactoryData } = {};
-  private relationships: Relationships;
-  private db: InternalDb = {};
-  private meta: internalMetaStore = {};
-
-  private constructor() {
-    this.relationships = new Relationships();
-  }
-  private hasType(type: string): boolean {
-    return !!this.db[type];
-  }
-  private addType(type: string): void {
-    this.db[type] = {};
-  }
-  private getMetaFor(factoryName: string): Meta {
-    return this.meta[factoryName];
-  }
-
-  private static instance: Lair;
 
   /**
    * Lair implements singleton-pattern
@@ -72,6 +53,17 @@ export default class Lair {
     Lair.instance = new Lair();
   }
 
+  private static instance: Lair;
+
+  private factories: { [id: string]: FactoryData } = {};
+  private relationships: Relationships;
+  private db: InternalDb = {};
+  private meta: InternalMetaStore = {};
+
+  private constructor() {
+    this.relationships = new Relationships();
+  }
+
   /**
    * Register factory instance in the Lair
    * Lair works only with registered factories
@@ -81,7 +73,7 @@ export default class Lair {
   public registerFactory(factory: Factory, factoryName: string): void {
     const fName = factoryName || factory.constructor['name'].toLowerCase();
     assert(`Factory with name "${fName}" is already registered`, !this.factories[fName]);
-    this.factories[fName] = <FactoryData>{factory, id: 1};
+    this.factories[fName] = {factory, id: 1} as FactoryData;
     this.meta[factoryName] = factory.meta;
     this.relationships.addFactory(fName);
     this.relationships.updateMeta(this.meta);
@@ -96,6 +88,130 @@ export default class Lair {
    */
   public createRecords(factoryName: string, count: number): void {
     this.internalCreateRecords(factoryName, count, {}, []);
+  }
+
+  /**
+   * Filter records of needed factory
+   * Callback is called with one parameter - record
+   * @param {string} factoryName
+   * @param {Function} clb
+   * @returns {Record[]}
+   */
+  @assertHasType
+  public queryMany(factoryName: string, clb: (recordId: string) => boolean): Record[] {
+    return keys(this.db[factoryName])
+      .filter(id => clb.call(null, this.db[factoryName][id]))
+      .map(id => this.getRecordWithRelationships(factoryName, id));
+  }
+
+  /**
+   * Get all records of needed factory
+   * @param {string} factoryName
+   * @returns {Record[]}
+   */
+  @assertHasType
+  public getAll(factoryName: string): Record[] {
+    return keys(this.db[factoryName]).map(id => this.getRecordWithRelationships(factoryName, id));
+  }
+
+  /**
+   * Get one record of needed factory by its id
+   * @param {string} factoryName
+   * @param {string} id
+   * @returns {Record}
+   */
+  @assertHasType
+  public getOne(factoryName: string, id: string): Record {
+    return this.getRecordWithRelationships(factoryName, id);
+  }
+
+  /**
+   * Filter one record of needed factory
+   * Callback is called with one parameter - record
+   * @param {string} factoryName
+   * @param {Function} clb
+   * @returns {Record}
+   */
+  @assertHasType
+  public queryOne(factoryName: string, clb: (recordId: string) => boolean): Record {
+    const records = this.db[factoryName];
+    const ids = keys(records);
+    for (const id of ids) {
+      if (clb.call(null, records[id])) {
+        return this.getRecordWithRelationships(factoryName, id);
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Create one record of needed factory
+   * ID is auto generated for new record. Don't include it to `data` (`data.id` will be skipped)
+   * All `data`-fields than not declared in the factory will be skipped
+   * Relationships with records of other factories will be automatically updated.
+   * Important! All related records should already be in the db
+   * @param {string} factoryName
+   * @param {object} data
+   * @returns {Record}
+   */
+  @assertHasType
+  public createOne(factoryName: string, data: any): Record {
+    const meta = this.getMetaFor(factoryName);
+    const id = String(this.factories[factoryName].id);
+    this.relationships.addRecord(factoryName, id);
+    const newRecord = {id};
+    keys(meta).forEach(attrName => {
+      if (data.hasOwnProperty(attrName)) {
+        newRecord[attrName] = this.createAttrValue(factoryName, id, attrName, data[attrName]);
+      }
+    });
+    this.db[factoryName][id] = newRecord;
+    this.factories[factoryName].id++;
+    return this.getRecordWithRelationships(factoryName, newRecord.id);
+  }
+
+  /**
+   * Update one record of needed factory
+   * ID and any field from `data` which doesn't exist in the factory's meta will be skipped (same as for `createOne`)
+   * Relationships with records of other factories will be automatically updated.
+   * Important! All related records should already be in the db
+   * @param {string} factoryName
+   * @param {string} id
+   * @param {object} data
+   * @returns {Record}
+   */
+  @assertHasType
+  public updateOne(factoryName: string, id: string, data: any): Record {
+    const record = this.getOne(factoryName, id);
+    assert(`Record of "${factoryName}" with id "${id}" doesn't exist`, !!record);
+    const meta = this.getMetaFor(factoryName);
+    keys(meta).forEach(attrName => {
+      if (data.hasOwnProperty(attrName)) {
+        record[attrName] = this.createAttrValue(factoryName, id, attrName, data[attrName]);
+      }
+    });
+    this.db[factoryName][id] = record;
+    return this.getRecordWithRelationships(factoryName, record.id);
+  }
+
+  /**
+   * Delete one record of needed factory
+   * Relationships with records of other factories will be automatically updated
+   * @param {string} factoryName
+   * @param {string} id
+   */
+  @assertHasType
+  public deleteOne(factoryName: string, id: string): void {
+    delete this.db[factoryName][id];
+    this.relationships.deleteRelationshipsForRecord(factoryName, id);
+  }
+
+  private hasType(type: string): boolean {
+    return !!this.db[type];
+  }
+
+  private addType(type: string): void {
+    this.db[type] = {};
   }
 
   private internalCreateRecords(factoryName: string, count: number, extraData: any = {}, relatedChain: string[] = []): Record[] {
@@ -113,16 +229,16 @@ export default class Lair {
       this.db[factoryName][record.id] = record;
       newRecords.push(record);
       this.factories[factoryName].id = i + 1;
-      if(related) {
+      if (related) {
         keys(related).forEach(attrName => {
           const fName = meta[attrName].factoryName;
           const isHasMany = meta[attrName].type === MetaAttrType.HAS_MANY;
           const relatedCount = isHasMany ? this.getNeededRelatedRecordsCount(related[attrName], record.id) : 1;
-          const extraData = {};
+          const eData = {};
           if (meta[attrName].invertedAttrName) {
-            extraData[meta[attrName].invertedAttrName] = record.id;
+            eData[meta[attrName].invertedAttrName] = record.id;
           }
-          const relatedRecords = this.internalCreateRecords(fName, relatedCount, extraData, [...relatedChain, factoryName]);
+          const relatedRecords = this.internalCreateRecords(fName, relatedCount, eData, [...relatedChain, factoryName]);
           this.db[factoryName][record.id][attrName] = isHasMany ? relatedRecords : relatedRecords[0];
         });
       }
@@ -149,8 +265,7 @@ export default class Lair {
         const relatedFactoryName = meta[attrName].factoryName;
         if (relatedFor.factoryName === relatedFactoryName && relatedFor.attrName && relatedFor.attrName === meta[attrName].invertedAttrName) {
           record[attrName] = relatedIds;
-        }
-        else {
+        } else {
           const isRelatedFor = {factoryName, id, attrName};
           record[attrName] = isArray(relatedIds) ?
             relatedIds.map(relatedId => this.getRecordWithRelationships(relatedFactoryName, relatedId, isRelatedFor)) :
@@ -174,8 +289,7 @@ export default class Lair {
         if (distMeta[distAttrName].type === MetaAttrType.HAS_MANY) {
           return this.createManyToManyAttrValue(factoryName, id, attrName, val, distFactoryName, distAttrName);
         }
-      }
-      else {
+      } else {
         this.relationships.setMany(factoryName, id, attrName, val);
       }
     }
@@ -187,8 +301,7 @@ export default class Lair {
         if (distMeta[distAttrName].type === MetaAttrType.HAS_MANY) {
           return this.createOneToManyAttrValue(factoryName, id, attrName, val, distFactoryName, distAttrName);
         }
-      }
-      else {
+      } else {
         this.relationships.setOne(factoryName, id, attrName, val);
       }
     }
@@ -245,119 +358,8 @@ export default class Lair {
     return newDistIds;
   }
 
-  /**
-   * Filter records of needed factory
-   * Callback is called with one parameter - record
-   * @param {string} factoryName
-   * @param {Function} clb
-   * @returns {Record[]}
-   */
-  @assertHasType
-  public queryMany(factoryName: string, clb: Function): Record[] {
-    return keys(this.db[factoryName])
-      .filter(id => clb.call(null, this.db[factoryName][id]))
-      .map(id => this.getRecordWithRelationships(factoryName, id));
-  }
-
-  /**
-   * Get all records of needed factory
-   * @param {string} factoryName
-   * @returns {Record[]}
-   */
-  @assertHasType
-  public getAll(factoryName: string): Record[] {
-    return keys(this.db[factoryName]).map(id => this.getRecordWithRelationships(factoryName, id));
-  }
-
-  /**
-   * Get one record of needed factory by its id
-   * @param {string} factoryName
-   * @param {string} id
-   * @returns {Record}
-   */
-  @assertHasType
-  public getOne(factoryName: string, id: string): Record {
-    return this.getRecordWithRelationships(factoryName, id);
-  }
-
-  /**
-   * Filter one record of needed factory
-   * Callback is called with one parameter - record
-   * @param {string} factoryName
-   * @param {Function} clb
-   * @returns {Record}
-   */
-  @assertHasType
-  public queryOne(factoryName: string, clb: Function): Record {
-    const records = this.db[factoryName];
-    const ids = keys(records);
-    for (let i = 0; i < ids.length; i++) {
-      const id = ids[i];
-      if (clb.call(null, records[id])) {
-        return this.getRecordWithRelationships(factoryName, id);
-      }
-    }
-    return null;
-  }
-
-  /**
-   * Create one record of needed factory
-   * ID is auto generated for new record. Don't include it to `data` (`data.id` will be skipped)
-   * All `data`-fields than not declared in the factory will be skipped
-   * Relationships with records of other factories will be automatically updated. Important! All related records should already be in the db
-   * @param {string} factoryName
-   * @param {object} data
-   * @returns {Record}
-   */
-  @assertHasType
-  public createOne(factoryName: string, data: any): Record {
-    const meta = this.getMetaFor(factoryName);
-    const id = String(this.factories[factoryName].id);
-    this.relationships.addRecord(factoryName, id);
-    const newRecord = {id};
-    keys(meta).forEach(attrName => {
-      if (data.hasOwnProperty(attrName)) {
-        newRecord[attrName] = this.createAttrValue(factoryName, id, attrName, data[attrName]);
-      }
-    });
-    this.db[factoryName][id] = newRecord;
-    this.factories[factoryName].id++;
-    return this.getRecordWithRelationships(factoryName, newRecord.id);
-  }
-
-  /**
-   * Update one record of needed factory
-   * ID and any field from `data` which doesn't exist in the factory's meta will be skipped (same as for `createOne`)
-   * Relationships with records of other factories will be automatically updated. Important! All related records should already be in the db
-   * @param {string} factoryName
-   * @param {string} id
-   * @param {object} data
-   * @returns {Record}
-   */
-  @assertHasType
-  public updateOne(factoryName: string, id: string, data: any): Record {
-    const record = this.getOne(factoryName, id);
-    assert(`Record of "${factoryName}" with id "${id}" doesn't exist`, !!record);
-    const meta = this.getMetaFor(factoryName);
-    keys(meta).forEach(attrName => {
-      if (data.hasOwnProperty(attrName)) {
-        record[attrName] = this.createAttrValue(factoryName, id, attrName, data[attrName]);
-      }
-    });
-    this.db[factoryName][id] = record;
-    return this.getRecordWithRelationships(factoryName, record.id);
-  }
-
-  /**
-   * Delete one record of needed factory
-   * Relationships with records of other factories will be automatically updated
-   * @param {string} factoryName
-   * @param {string} id
-   */
-  @assertHasType
-  public deleteOne(factoryName: string, id: string): void {
-    delete this.db[factoryName][id];
-    this.relationships.deleteRelationshipsForRecord(factoryName, id);
+  private getMetaFor(factoryName: string): Meta {
+    return this.meta[factoryName];
   }
 
 }

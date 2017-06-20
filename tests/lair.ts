@@ -1755,6 +1755,96 @@ describe('Lair', () => {
             this.lair.registerFactory(new C(), 'c');
           });
 
+          describe('#getOne', () => {
+            class aFactory extends Factory {
+              attrs = {
+                propB: Factory.hasOne('bFactory', null)
+              };
+              createRelated = {
+                propB: 1
+              }
+            }
+            class bFactory extends Factory {
+              attrs = {}
+            }
+            class cFactory extends Factory {
+              attrs = {
+                propB: Factory.hasMany('bFactory', null)
+              };
+              createRelated = {
+                propB: 2
+              }
+            }
+            beforeEach(() => {
+              this.lair.registerFactory(new aFactory(), 'aFactory');
+              this.lair.registerFactory(new bFactory(), 'bFactory');
+              this.lair.registerFactory(new cFactory(), 'cFactory');
+              this.lair.createRecords('aFactory', 1);
+              this.lair.createRecords('cFactory', 1);
+            });
+            it('propB for A doesn\'t have related fields for A', () => {
+              expect(this.lair.getOne('aFactory', '1')).to.be.eql({
+                id: '1',
+                propB: {
+                  id: '1'
+                }
+              });
+            });
+            it('propB for C doesn\'t have related fields for C', () => {
+              expect(this.lair.getOne('cFactory', '1')).to.be.eql({
+                id: '1',
+                propB: [
+                  {id: '2'}, {id: '3'}
+                ]
+              });
+            });
+          });
+
+          describe('#queryOne', () => {
+            class aFactory extends Factory {
+              attrs = {
+                propB: Factory.hasOne('bFactory', null)
+              };
+              createRelated = {
+                propB: 1
+              }
+            }
+            class bFactory extends Factory {
+              attrs = {}
+            }
+            class cFactory extends Factory {
+              attrs = {
+                propB: Factory.hasMany('bFactory', null)
+              };
+              createRelated = {
+                propB: 2
+              }
+            }
+            beforeEach(() => {
+              this.lair.registerFactory(new aFactory(), 'aFactory');
+              this.lair.registerFactory(new bFactory(), 'bFactory');
+              this.lair.registerFactory(new cFactory(), 'cFactory');
+              this.lair.createRecords('aFactory', 1);
+              this.lair.createRecords('cFactory', 1);
+            });
+            it('propB for A doesn\'t have related fields for A', () => {
+              expect(this.lair.queryOne('aFactory', r => r.id === '1')).to.be.eql({
+                id: '1',
+                propB: {
+                  id: '1'
+                }
+              });
+            });
+            it('propB for C doesn\'t have related fields for C', () => {
+              expect(this.lair.queryOne('cFactory', r => r.id === '1')).to.be.eql({
+                id: '1',
+                propB: [
+                  {id: '2'}, {id: '3'}
+                ]
+              });
+            });
+          });
+
           describe('#createOne', () => {
             describe('has one', () => {
               it('one A created', () => {
@@ -2074,6 +2164,100 @@ describe('Lair', () => {
                 manyToManyBaz('1'),
                 manyToManyBaz('2')
               ]);
+            });
+          });
+
+        });
+
+        describe('non-cross relationships', () => {
+
+          describe('#getAll', () => {
+            class aFactory extends Factory {
+              attrs = {
+                propB: Factory.hasOne('bFactory', null)
+              };
+              createRelated = {
+                propB: 1
+              }
+            }
+            class bFactory extends Factory {
+              attrs = {}
+            }
+            class cFactory extends Factory {
+              attrs = {
+                propB: Factory.hasMany('bFactory', null)
+              };
+              createRelated = {
+                propB: 2
+              }
+            }
+            beforeEach(() => {
+              this.lair.registerFactory(new aFactory(), 'aFactory');
+              this.lair.registerFactory(new bFactory(), 'bFactory');
+              this.lair.registerFactory(new cFactory(), 'cFactory');
+              this.lair.createRecords('aFactory', 1);
+              this.lair.createRecords('cFactory', 1);
+            });
+            it('propB for A doesn\'t have related fields for A', () => {
+              expect(this.lair.getAll('aFactory')).to.be.eql([{
+                id: '1',
+                propB: {
+                  id: '1'
+                }
+              }]);
+            });
+            it('propB for C doesn\'t have related fields for C', () => {
+              expect(this.lair.getAll('cFactory')).to.be.eql([{
+                id: '1',
+                propB: [
+                  {id: '2'}, {id: '3'}
+                ]
+              }]);
+            });
+          });
+
+          describe('#queryMany', () => {
+            class aFactory extends Factory {
+              attrs = {
+                propB: Factory.hasOne('bFactory', null)
+              };
+              createRelated = {
+                propB: 1
+              }
+            }
+            class bFactory extends Factory {
+              attrs = {}
+            }
+            class cFactory extends Factory {
+              attrs = {
+                propB: Factory.hasMany('bFactory', null)
+              };
+              createRelated = {
+                propB: 2
+              }
+            }
+            beforeEach(() => {
+              this.lair.registerFactory(new aFactory(), 'aFactory');
+              this.lair.registerFactory(new bFactory(), 'bFactory');
+              this.lair.registerFactory(new cFactory(), 'cFactory');
+              this.lair.createRecords('aFactory', 1);
+              this.lair.createRecords('cFactory', 1);
+            });
+            it('propB for A doesn\'t have related fields for A', () => {
+              expect(this.lair.queryMany('aFactory', r => r.id === '1')).to.be.eql([{
+                id: '1',
+                propB: {
+                  id: '1'
+                }
+              }]);
+            });
+            it('propB for C doesn\'t have related fields for C', () => {
+              expect(this.lair.queryMany('cFactory', r => r.id === '1')).to.be.eql([{
+                id: '1',
+                propB: [
+                  {id: '2'}, {id: '3'}
+                ]
+              }]);
             });
           });
 

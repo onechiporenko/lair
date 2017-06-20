@@ -118,7 +118,11 @@ export default class Lair {
           const fName = meta[attrName].factoryName;
           const isHasMany = meta[attrName].type === MetaAttrType.HAS_MANY;
           const relatedCount = isHasMany ? this.getNeededRelatedRecordsCount(related[attrName], record.id) : 1;
-          const relatedRecords = this.internalCreateRecords(fName, relatedCount, {[meta[attrName].invertedAttrName]: record.id}, [...relatedChain, factoryName]);
+          const extraData = {};
+          if (meta[attrName].invertedAttrName) {
+            extraData[meta[attrName].invertedAttrName] = record.id;
+          }
+          const relatedRecords = this.internalCreateRecords(fName, relatedCount, extraData, [...relatedChain, factoryName]);
           this.db[factoryName][record.id][attrName] = isHasMany ? relatedRecords : relatedRecords[0];
         });
       }
@@ -139,10 +143,11 @@ export default class Lair {
       return null;
     }
     if (recordRelationships) {
+      console.log(recordRelationships, record);
       keys(recordRelationships).forEach(attrName => {
         const relatedIds = recordRelationships[attrName];
         const relatedFactoryName = meta[attrName].factoryName;
-        if (relatedFor.factoryName === relatedFactoryName && relatedFor.attrName === meta[attrName].invertedAttrName) {
+        if (relatedFor.factoryName === relatedFactoryName && relatedFor.attrName && relatedFor.attrName === meta[attrName].invertedAttrName) {
           record[attrName] = relatedIds;
         }
         else {

@@ -1,7 +1,7 @@
 import {Factory, FactoryData, Meta, MetaAttrType} from './factory';
 import {Record} from './record';
 import {Relationships} from './relationships';
-import {assert, isId} from './utils';
+import {assert, copy, isId} from './utils';
 
 const {keys} = Object;
 const {isArray} = Array;
@@ -218,8 +218,7 @@ export class Lair {
     assert(`Factory with name "${factoryName}" is not registered`, !!this.factories[factoryName]);
     assert(`Loop is detected in the "createRelated". Chain is ${JSON.stringify(relatedChain)}. You try to create records for "${factoryName}" again.`, relatedChain.indexOf(factoryName) === -1);
     const factoryData = this.factories[factoryName];
-    const related = factoryData.factory.createRelated;
-    const meta = factoryData.factory.meta;
+    const {meta, afterCreate, createRelated} = factoryData.factory;
     const limit = factoryData.id + count;
     const newRecords = [];
     for (let i = factoryData.id; i < limit; i++) {
@@ -229,11 +228,11 @@ export class Lair {
       this.db[factoryName][record.id] = record;
       newRecords.push(record);
       this.factories[factoryName].id = i + 1;
-      if (related) {
-        keys(related).forEach(attrName => {
+      if (createRelated) {
+        keys(createRelated).forEach(attrName => {
           const fName = meta[attrName].factoryName;
           const isHasMany = meta[attrName].type === MetaAttrType.HAS_MANY;
-          const relatedCount = isHasMany ? this.getNeededRelatedRecordsCount(related[attrName], record.id) : 1;
+          const relatedCount = isHasMany ? this.getNeededRelatedRecordsCount(createRelated[attrName], record.id) : 1;
           const eData = {};
           if (meta[attrName].invertedAttrName) {
             eData[meta[attrName].invertedAttrName] = record.id;
@@ -242,6 +241,12 @@ export class Lair {
           this.db[factoryName][record.id][attrName] = isHasMany ? relatedRecords : relatedRecords[0];
         });
       }
+      const newData = afterCreate.call(null, copy(record));
+      keys(meta).forEach(attrName => {
+        if (newData.hasOwnProperty(attrName) && meta[attrName].type === MetaAttrType.FIELD) {
+          record[attrName] = newData[attrName];
+        }
+      });
       this.relationships.recalculateRelationshipsForRecord(factoryName, record);
     }
     return newRecords;
@@ -258,7 +263,7 @@ export class Lair {
     if (!record) {
       return null;
     }
-    record = JSON.parse(JSON.stringify(record));
+    record = copy(record);
     if (recordRelationships) {
       keys(recordRelationships).forEach(attrName => {
         const relatedIds = recordRelationships[attrName];

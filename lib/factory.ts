@@ -63,7 +63,6 @@ export class Factory {
 
   public attrs = {};
   public createRelated: { [attrName: string]: number | ((id: string) => number) } = {};
-
   get meta() {
     if (!this.internalMeta) {
       this.getMeta();
@@ -85,6 +84,10 @@ export class Factory {
     const newRecord = {id: String(id)} as Record;
     keys(attrs).forEach(attrName => newRecord[attrName] = this.parseAttr(attrs[attrName], id));
     return newRecord;
+  }
+
+  public afterCreate(record: Record): Record {
+    return record;
   }
 
   protected parseAttr(val, id: number) {

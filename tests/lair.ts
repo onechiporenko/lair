@@ -356,6 +356,156 @@ describe('Lair', () => {
 
     });
 
+    describe('#afterCreate', () => {
+
+      describe('should allow update record fields', () => {
+        class A extends Factory {
+          attrs = {
+            a: '1',
+            b: '2',
+            c: '3',
+          };
+          afterCreate(record) {
+            record.a = 'a';
+            record.b = 'b';
+            record.c = 'c';
+            return record;
+          }
+        }
+        beforeEach(() => {
+          this.lair.registerFactory(new A(), 'a');
+          this.lair.createRecords('a', 1);
+          this.r = this.lair.getOne('a', '1');
+        });
+        it('fields are updated', () => {
+          expect(this.r.a).to.be.equal('a');
+          expect(this.r.b).to.be.equal('b');
+          expect(this.r.c).to.be.equal('c');
+        });
+      });
+
+      describe('should receive record with related data', () => {
+        it('record has all related data', () => {
+          class A extends Factory {
+            attrs = {
+              a: 'a',
+              propB: Factory.hasOne('b', 'propA'),
+            };
+            createRelated = {
+              propB: 1,
+            };
+            afterCreate(record) {
+              expect(record).to.be.eql({
+                id: '1',
+                a: 'a',
+                propB: {
+                  id: '1',
+                  b: 'b',
+                  propA: '1',
+                  propC: [
+                    {id: '1', propB: '1', c: 'c'},
+                    {id: '2', propB: '1', c: 'c'},
+                  ],
+                },
+              });
+              return record;
+            }
+          }
+          class B extends Factory {
+            attrs = {
+              b: 'b',
+              propA: Factory.hasOne('a', 'propB'),
+              propC: Factory.hasMany('c', 'propB'),
+            };
+            createRelated = {
+              propC: 2,
+            };
+          }
+          class C extends Factory {
+            attrs = {
+              c: 'c',
+              propB: Factory.hasOne('b', 'propC'),
+            };
+          }
+          this.lair.registerFactory(new A(), 'a');
+          this.lair.registerFactory(new B(), 'b');
+          this.lair.registerFactory(new C(), 'c');
+          this.lair.createRecords('a', 1);
+        });
+      });
+
+      describe('should ignore updating related data', () => {
+        class A extends Factory {
+          attrs = {
+            a: 'a',
+            propB: Factory.hasMany('b', 'propA'),
+            propC: Factory.hasOne('c', 'propA'),
+          };
+          createRelated = {
+            propB: 2,
+            propC: 1,
+          };
+          afterCreate(record) {
+            record.propC.id = '100500';
+            delete record.propB;
+            return record;
+          }
+        }
+        class B extends Factory {
+          attrs = {
+            b: 'b',
+            propA: Factory.hasOne('a', 'propB'),
+          };
+        }
+        class C extends Factory {
+          attrs = {
+            c: 'c',
+            propA: Factory.hasMany('a', 'propC'),
+          };
+        }
+        beforeEach(() => {
+          this.lair.registerFactory(new A(), 'a');
+          this.lair.registerFactory(new B(), 'b');
+          this.lair.registerFactory(new C(), 'c');
+          this.lair.createRecords('a', 1);
+        });
+        it('a1 relationships are not changed', () => {
+          expect(this.lair.getOne('a', '1')).to.be.eql({
+            id: '1',
+            a: 'a',
+            propB: [
+              {id: '1', propA: '1', b: 'b'},
+              {id: '2', propA: '1', b: 'b'},
+            ],
+            propC: {id: '1', propA: ['1'], c: 'c'},
+          });
+        });
+        it('b1 relationships are not changed', () => {
+          expect(this.lair.getOne('b', '1')).to.be.eql({
+            id: '1',
+            b: 'b',
+            propA: {id: '1', a: 'a', propB: ['1', '2'], propC: {id: '1', propA: ['1'], c: 'c'}},
+          });
+        });
+        it('b2 relationships are not changed', () => {
+          expect(this.lair.getOne('b', '2')).to.be.eql({
+            id: '2',
+            b: 'b',
+            propA: {id: '1', a: 'a', propB: ['1', '2'], propC: {id: '1', propA: ['1'], c: 'c'}},
+          });
+        });
+        it('c1 relationships are not changed', () => {
+          expect(this.lair.getOne('c', '1')).to.be.eql({id: '1', c: 'c', propA: [
+            {id: '1', a: 'a', propB: [
+              {id: '1', propA: '1', b: 'b'},
+              {id: '2', propA: '1', b: 'b'},
+            ], propC: '1'},
+          ]});
+        });
+      });
+
+    });
+
   });
 
   describe('DB CRUD', () => {

@@ -19,3 +19,7 @@ export function arrayDiff(arr1: string[], arr2: string[]): string[] {
 export function uniq(list: any[]): any[] {
   return list.filter((item, index, collection) => collection.indexOf(item) === index);
 }
+
+export function copy(val: any): any {
+  return JSON.parse(JSON.stringify(val));
+}

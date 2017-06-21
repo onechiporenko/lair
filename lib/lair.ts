@@ -98,7 +98,7 @@ export class Lair {
    * @returns {Record[]}
    */
   @assertHasType
-  public queryMany(factoryName: string, clb: (recordId: string) => boolean): Record[] {
+  public queryMany(factoryName: string, clb: (record: Record) => boolean): Record[] {
     return keys(this.db[factoryName])
       .filter(id => clb.call(null, this.db[factoryName][id]))
       .map(id => this.getRecordWithRelationships(factoryName, id));
@@ -133,7 +133,7 @@ export class Lair {
    * @returns {Record}
    */
   @assertHasType
-  public queryOne(factoryName: string, clb: (recordId: string) => boolean): Record {
+  public queryOne(factoryName: string, clb: (record: Record) => boolean): Record {
     const records = this.db[factoryName];
     const ids = keys(records);
     for (const id of ids) {

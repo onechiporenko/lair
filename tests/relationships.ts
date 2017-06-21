@@ -1,6 +1,6 @@
-import Relationships from '../lib/relationships';
-import Factory, {MetaAttrType} from '../lib/factory';
 import {expect} from 'chai';
+import {Factory, MetaAttrType} from '../lib/factory';
+import {Relationships} from '../lib/relationships';
 
 describe('Relationships', () => {
 

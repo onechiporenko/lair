@@ -1,5 +1,5 @@
-import Lair from '../lib/lair';
-import Factory from '../lib/factory';
+import {Lair} from '../lib/lair';
+import {Factory} from '../lib/factory';
 import {expect} from 'chai';
 
 class TestFactory extends Factory {

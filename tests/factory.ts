@@ -1,5 +1,5 @@
-import Factory, {MetaAttrType} from '../lib/factory';
 import {expect} from 'chai';
+import {Factory, MetaAttrType} from '../lib/factory';
 
 class TestFactory extends Factory {
   attrs = {

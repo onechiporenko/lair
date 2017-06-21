@@ -1,6 +1,6 @@
-import Factory, {FactoryData, Meta, MetaAttrType} from './factory';
+import {Factory, FactoryData, Meta, MetaAttrType} from './factory';
 import {Record} from './record';
-import Relationships from './relationships';
+import {Relationships} from './relationships';
 import {assert, isId} from './utils';
 
 const {keys} = Object;
@@ -32,7 +32,7 @@ interface InternalMetaStore {
 /**
  * @class Lair
  */
-export default class Lair {
+export class Lair {
 
   /**
    * Lair implements singleton-pattern

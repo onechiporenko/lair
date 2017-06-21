@@ -17,7 +17,7 @@ function mapIds(val: any[]): string[] {
   return val.filter(v => v !== null && v !== undefined).map(v => v.id || v);
 }
 
-export default class Relationships {
+export class Relationships {
   private relationships: InternalRelationships = {};
   private meta = {};
 

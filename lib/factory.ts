@@ -37,7 +37,7 @@ export interface RelationshipMetaAttr extends MetaAttr {
  *    Relationship may be "has_one" (single record) and "has_many" (array of records)
  * @class Factory
  */
-export default class Factory {
+export class Factory {
 
   /**
    * Use `Factory.hasOne` for relationship-fields

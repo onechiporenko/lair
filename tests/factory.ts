@@ -8,8 +8,8 @@ class TestFactory extends Factory {
       return `dynamic ${id}`;
     },
     one: Factory.hasOne('anotherFactory', 'attr1'),
-    many: Factory.hasMany('anotherFactory', 'attr2')
-  }
+    many: Factory.hasMany('anotherFactory', 'attr2'),
+  };
 }
 
 describe('Factory', () => {
@@ -38,10 +38,10 @@ describe('Factory', () => {
     });
 
     it('should throw error if `id` is defined in the `attrs`', () => {
-      class f extends Factory {
+      class F extends Factory {
         attrs = {id: '100500'};
       }
-      expect(() => new f().createRecord(1)).to.throw(`Don't add "id" to the "attrs"`);
+      expect(() => new F().createRecord(1)).to.throw(`Don't add "id" to the "attrs"`);
     });
 
   });

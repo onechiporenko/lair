@@ -1,27 +1,27 @@
-import {Lair} from '../lib/lair';
-import {Factory} from '../lib/factory';
 import {expect} from 'chai';
+import {Factory} from '../lib/factory';
+import {Lair} from '../lib/lair';
 
 class TestFactory extends Factory {
   attrs = {
-    name (id) {
+    name(id) {
       return `unit ${id}`;
-    }
-  }
+    },
+  };
 }
 class FooFactory extends Factory {
   attrs = {
     foo(id) {
       return `foo ${id}`;
-    }
-  }
+    },
+  };
 }
 class BarFactory extends Factory {
   attrs = {
     bar(id) {
       return `foo ${id}`;
-    }
-  }
+    },
+  };
 }
 
 function incStr(val: string): string {
@@ -68,23 +68,23 @@ describe('Lair', () => {
       class Foo extends Factory {
         attrs = {
           bar: Factory.hasMany('bar', 'foo'),
-          propFoo: 'static foo'
+          propFoo: 'static foo',
         };
-        createRelated = {bar: 2}
+        createRelated = {bar: 2};
       }
       class Bar extends Factory {
         attrs = {
           foo: Factory.hasMany('foo', 'bar'),
           baz: Factory.hasMany('baz', 'bar'),
-          propBar: 'static bar'
+          propBar: 'static bar',
         };
-        createRelated = {baz: 2}
+        createRelated = {baz: 2};
       }
       class Baz extends Factory {
         attrs = {
           bar: Factory.hasMany('bar', 'baz'),
-          propBaz: 'static baz'
-        }
+          propBaz: 'static baz',
+        };
       }
 
       beforeEach(() => {
@@ -147,20 +147,20 @@ describe('Lair', () => {
       describe('should create related without relation', () => {
         class A extends Factory {
           attrs = {
-            b: Factory.hasMany('b', null)
+            b: Factory.hasMany('b', null),
           };
           createRelated = {
-            b: 2
-          }
+            b: 2,
+          };
         }
         class B extends Factory {}
         class C extends Factory {
           attrs = {
-            b: Factory.hasOne('b', null)
+            b: Factory.hasOne('b', null),
           };
           createRelated = {
-            b: 1
-          }
+            b: 1,
+          };
         }
         beforeEach(() => {
           this.lair.registerFactory(new A(), 'a');
@@ -175,7 +175,7 @@ describe('Lair', () => {
             expect(this.lair.getAll('a')).to.have.property('length', 1);
           });
           it('has 2 related B', () => {
-            expect(this.lair.getOne('a', '1').b.map(c=>c.id)).to.be.eql(['1', '2']);
+            expect(this.lair.getOne('a', '1').b.map(c => c.id)).to.be.eql(['1', '2']);
           });
         });
 
@@ -198,14 +198,14 @@ describe('Lair', () => {
       describe('should not create related', () => {
         class A extends Factory {
           attrs = {
-            b: Factory.hasMany('b', null)
-          }
+            b: Factory.hasMany('b', null),
+          };
         }
         class B extends Factory {}
         class C extends Factory {
           attrs = {
-            b: Factory.hasOne('b', null)
-          }
+            b: Factory.hasOne('b', null),
+          };
         }
         beforeEach(() => {
           this.lair.registerFactory(new A(), 'a');
@@ -230,19 +230,19 @@ describe('Lair', () => {
         describe('a-b-a', () => {
           class A extends Factory {
             attrs = {
-              b: Factory.hasMany('b', 'a')
+              b: Factory.hasMany('b', 'a'),
             };
             createRelated = {
-              b: 2
-            }
+              b: 2,
+            };
           }
           class B extends Factory {
             attrs = {
-              a: Factory.hasMany('a', 'b')
+              a: Factory.hasMany('a', 'b'),
             };
             createRelated = {
-              a: 2
-            }
+              a: 2,
+            };
           }
           beforeEach(() => {
             this.lair.registerFactory(new A(), 'a');
@@ -258,29 +258,29 @@ describe('Lair', () => {
           class A extends Factory {
             attrs = {
               b: Factory.hasMany('b', 'a'),
-              c: Factory.hasMany('c', 'a')
+              c: Factory.hasMany('c', 'a'),
             };
             createRelated = {
-              b: 2
-            }
+              b: 2,
+            };
           }
           class B extends Factory {
             attrs = {
               a: Factory.hasMany('a', 'b'),
-              c: Factory.hasMany('c', 'b')
+              c: Factory.hasMany('c', 'b'),
             };
             createRelated = {
-              c: 2
-            }
+              c: 2,
+            };
           }
           class C extends Factory {
             attrs = {
               a: Factory.hasMany('a', 'c'),
-              b: Factory.hasMany('b', 'c')
+              b: Factory.hasMany('b', 'c'),
             };
             createRelated = {
-              a: 2
-            }
+              a: 2,
+            };
           }
           beforeEach(() => {
             this.lair.registerFactory(new A(), 'a');
@@ -297,28 +297,28 @@ describe('Lair', () => {
           class A extends Factory {
             attrs = {
               b: Factory.hasMany('b', 'a'),
-              c: Factory.hasMany('c', 'a')
+              c: Factory.hasMany('c', 'a'),
             };
             createRelated = {
-              b: 2
-            }
+              b: 2,
+            };
           }
           class B extends Factory {
             attrs = {
               a: Factory.hasMany('a', 'b'),
-              c: Factory.hasMany('c', 'b')
+              c: Factory.hasMany('c', 'b'),
             };
             createRelated = {
-              c: 2
-            }
+              c: 2,
+            };
           }
           class C extends Factory {
             attrs = {
-              b: Factory.hasMany('b', 'c')
+              b: Factory.hasMany('b', 'c'),
             };
             createRelated = {
-              b: 2
-            }
+              b: 2,
+            };
           }
           beforeEach(() => {
             this.lair.registerFactory(new A(), 'a');
@@ -337,20 +337,20 @@ describe('Lair', () => {
         it('record id is passed to the function', () => {
           class A extends Factory {
             attrs = {
-              b: Factory.hasOne('b', null)
+              b: Factory.hasOne('b', null),
             };
             createRelated = {
               b(id) {
                 expect(id).to.be.equal('1');
                 return 1;
-              }
-            }
+              },
+            };
           }
           class B extends Factory {}
           this.lair.registerFactory(new A(), 'a');
           this.lair.registerFactory(new B(), 'b');
           this.lair.createRecords('a', 1);
-          expect(this.lair.getAll('b').map(c=>c.id)).to.be.eql(['1']);
+          expect(this.lair.getAll('b').map(c => c.id)).to.be.eql(['1']);
         });
       });
 
@@ -399,8 +399,7 @@ describe('Lair', () => {
         });
 
         it('should throw an error for unknown type', () => {
-          expect(() => this.lair.queryMany('fake', () => {
-          })).to.throw('"fake"-type doesn\'t exist in the database');
+          expect(() => this.lair.queryMany('fake', r => !!r)).to.throw('"fake"-type doesn\'t exist in the database');
         });
       });
 
@@ -410,8 +409,7 @@ describe('Lair', () => {
         });
 
         it('should throw an error for unknown type', () => {
-          expect(() => this.lair.queryOne('fake', () => {
-          })).to.throw('"fake"-type doesn\'t exist in the database');
+          expect(() => this.lair.queryOne('fake', r => !!r)).to.throw('"fake"-type doesn\'t exist in the database');
         });
       });
 
@@ -480,8 +478,8 @@ describe('Lair', () => {
       describe('RU methods should return copies of records from the db', () => {
         class A extends Factory {
           attrs = {
-            propB: 'some'
-          }
+            propB: 'some',
+          };
         }
         beforeEach(() => {
           this.lair.registerFactory(new A(), 'a');
@@ -534,10 +532,10 @@ describe('Lair', () => {
             propBaz: {
               id,
               propBar: id,
-              sBaz: 'static baz'
-            }
-          }
-        }
+              sBaz: 'static baz',
+            },
+          },
+        };
       };
       const oneToOneBar = (id = '1') => {
         return {
@@ -546,14 +544,14 @@ describe('Lair', () => {
           propFoo: {
             id,
             sFoo: 'static foo',
-            propBar: id
+            propBar: id,
           },
           propBaz: {
             id,
             propBar: id,
-            sBaz: 'static baz'
-          }
-        }
+            sBaz: 'static baz',
+          },
+        };
       };
       const oneToOneBaz = (id = '1') => {
         return {
@@ -566,10 +564,10 @@ describe('Lair', () => {
             propFoo: {
               id,
               sFoo: 'static foo',
-              propBar: id
-            }
-          }
-        }
+              propBar: id,
+            },
+          },
+        };
       };
 
       const oneToManyFoo = (id = '1') => {
@@ -579,14 +577,14 @@ describe('Lair', () => {
           propBar: {
             id,
             propFoo: [id],
-            sBar: 'static bar'
+            sBar: 'static bar',
           },
           propBaz: {
             id,
             propFoo: [id],
-            sBaz: 'static baz'
-          }
-        }
+            sBaz: 'static baz',
+          },
+        };
       };
       const oneToManyBar = (id = '1') => {
         return {
@@ -599,10 +597,10 @@ describe('Lair', () => {
             propBaz: {
               id,
               sBaz: 'static baz',
-              propFoo: [id]
-            }
-          }]
-        }
+              propFoo: [id],
+            },
+          }],
+        };
       };
       const oneToManyBaz = (id = '1') => {
         return {
@@ -616,11 +614,11 @@ describe('Lair', () => {
               propBar: {
                 id,
                 sBar: 'static bar',
-                propFoo: [id]
-              }
-            }
-          ]
-        }
+                propFoo: [id],
+              },
+            },
+          ],
+        };
       };
 
       const manyToOneFoo = (id = '1') => {
@@ -629,13 +627,13 @@ describe('Lair', () => {
           sFoo: 'static foo',
           propBar: [
             {id: '1', sBar: 'static bar', propFoo: id},
-            {id: '2', sBar: 'static bar', propFoo: id}
+            {id: '2', sBar: 'static bar', propFoo: id},
           ],
           propBaz: [
             {id: '1', sBaz: 'static baz', propFoo: id},
-            {id: '2', sBaz: 'static baz', propFoo: id}
-          ]
-        }
+            {id: '2', sBaz: 'static baz', propFoo: id},
+          ],
+        };
       };
       const manyToOneBar = (id = '1', barId = '1') => {
         return {
@@ -647,10 +645,10 @@ describe('Lair', () => {
             propBar: ['1', '2'],
             propBaz: [
               {id: '1', sBaz: 'static baz', propFoo: id},
-              {id: '2', sBaz: 'static baz', propFoo: id}
-            ]
-          }
-        }
+              {id: '2', sBaz: 'static baz', propFoo: id},
+            ],
+          },
+        };
       };
       const manyToOneBaz = (id = '1', bazId = '1') => {
         return {
@@ -662,10 +660,10 @@ describe('Lair', () => {
             propBaz: ['1', '2'],
             propBar: [
               {id: '1', sBar: 'static bar', propFoo: id},
-              {id: '2', sBar: 'static bar', propFoo: id}
-            ]
-          }
-        }
+              {id: '2', sBar: 'static bar', propFoo: id},
+            ],
+          },
+        };
       };
 
       const manyToManyFoo = (id = '1', barId = '1', bazId = '1') => {
@@ -674,13 +672,13 @@ describe('Lair', () => {
           sFoo: 'static foo',
           propBar: [
             {id: barId, sBar: 'static bar', propFoo: [id]},
-            {id: incStr(barId), sBar: 'static bar', propFoo: [id]}
+            {id: incStr(barId), sBar: 'static bar', propFoo: [id]},
           ],
           propBaz: [
             {id: bazId, sBaz: 'static baz', propFoo: [id]},
-            {id: incStr(bazId), sBaz: 'static baz', propFoo: [id]}
-          ]
-        }
+            {id: incStr(bazId), sBaz: 'static baz', propFoo: [id]},
+          ],
+        };
       };
       const manyToManyBar = (id = '1', fooId = '1', barId = '1', bazId = '1') => {
         return {
@@ -693,11 +691,11 @@ describe('Lair', () => {
               propBar: [barId, incStr(barId)],
               propBaz: [
                 {id: bazId, sBaz: 'static baz', propFoo: [fooId]},
-                {id: incStr(bazId), sBaz: 'static baz', propFoo: [fooId]}
-              ]
-            }
-          ]
-        }
+                {id: incStr(bazId), sBaz: 'static baz', propFoo: [fooId]},
+              ],
+            },
+          ],
+        };
       };
       const manyToManyBaz = (id = '1', fooId = '1', barId = '1', bazId = '1') => {
         return {
@@ -709,14 +707,14 @@ describe('Lair', () => {
               sFoo: 'static foo',
               propBar: [
                 {id: barId, sBar: 'static bar', propFoo: [fooId]},
-                {id: incStr(barId), sBar: 'static bar', propFoo: [fooId]}
+                {id: incStr(barId), sBar: 'static bar', propFoo: [fooId]},
               ],
-              propBaz: [bazId, incStr(bazId)]
-            }
-          ]
-        }
+              propBaz: [bazId, incStr(bazId)],
+            },
+          ],
+        };
       };
-      
+
       describe('single record', () => {
 
         describe('one-to-one', () => {
@@ -724,23 +722,23 @@ describe('Lair', () => {
           class Foo extends Factory {
             attrs = {
               propBar: Factory.hasOne('bar', 'propFoo'),
-              sFoo: 'static foo'
+              sFoo: 'static foo',
             };
-            createRelated = {propBar: 1}
+            createRelated = {propBar: 1};
           }
           class Bar extends Factory {
             attrs = {
               propFoo: Factory.hasOne('foo', 'propBar'),
               propBaz: Factory.hasOne('baz', 'propBar'),
-              sBar: 'static bar'
+              sBar: 'static bar',
             };
-            createRelated = {propBaz: 1}
+            createRelated = {propBaz: 1};
           }
           class Baz extends Factory {
             attrs = {
               propBar: Factory.hasOne('bar', 'propBaz'),
-              sBaz: 'static baz'
-            }
+              sBaz: 'static baz',
+            };
           }
 
           beforeEach(() => {
@@ -817,8 +815,8 @@ describe('Lair', () => {
                   propBaz: {
                     id: '2',
                     propBar: '2',
-                    sBaz: 'static baz'
-                  }
+                    sBaz: 'static baz',
+                  },
                 };
                 expect(this.updatedFoo1).to.be.eql(expectedFoo1);
               });
@@ -842,13 +840,13 @@ describe('Lair', () => {
                   propFoo: {
                     id: '1',
                     sFoo: 'static foo',
-                    propBar: '2'
+                    propBar: '2',
                   },
                   propBaz: {
                     id: '2',
                     propBar: '2',
-                    sBaz: 'static baz'
-                  }
+                    sBaz: 'static baz',
+                  },
                 });
               });
             });
@@ -875,8 +873,8 @@ describe('Lair', () => {
                   propBaz: {
                     id: '2',
                     propBar: '2',
-                    sBaz: 'static baz'
-                  }
+                    sBaz: 'static baz',
+                  },
                 };
                 expect(this.updatedFoo1).to.be.eql(expectedFoo1);
               });
@@ -900,13 +898,13 @@ describe('Lair', () => {
                   propFoo: {
                     id: '1',
                     sFoo: 'static foo',
-                    propBar: '2'
+                    propBar: '2',
                   },
                   propBaz: {
                     id: '2',
                     propBar: '2',
-                    sBaz: 'static baz'
-                  }
+                    sBaz: 'static baz',
+                  },
                 });
               });
 
@@ -933,13 +931,13 @@ describe('Lair', () => {
             describe('should create relationships', () => {
               class A extends Factory {
                 attrs = {
-                  propB: Factory.hasOne('b', 'propA')
+                  propB: Factory.hasOne('b', 'propA'),
                 };
-                createRelated = {propB: 1}
+                createRelated = {propB: 1};
               }
               class B extends Factory {
                 attrs = {
-                  propA: Factory.hasOne('a', 'propB')
+                  propA: Factory.hasOne('a', 'propB'),
                 };
               }
 
@@ -972,24 +970,24 @@ describe('Lair', () => {
             attrs = {
               propBar: Factory.hasOne('bar', 'propFoo'),
               propBaz: Factory.hasOne('baz', 'propFoo'),
-              sFoo: 'static foo'
+              sFoo: 'static foo',
             };
             createRelated = {
               propBar: 1,
-              propBaz: 1
-            }
+              propBaz: 1,
+            };
           }
           class Bar extends Factory {
             attrs = {
               propFoo: Factory.hasMany('foo', 'propBar'),
-              sBar: 'static bar'
-            }
+              sBar: 'static bar',
+            };
           }
           class Baz extends Factory {
             attrs = {
               propFoo: Factory.hasMany('foo', 'propBaz'),
-              sBaz: 'static baz'
-            }
+              sBaz: 'static baz',
+            };
           }
 
           beforeEach(() => {
@@ -1053,14 +1051,14 @@ describe('Lair', () => {
 
               class A extends Factory {
                 attrs = {
-                  propB: Factory.hasOne('b', 'propA')
-                }
+                  propB: Factory.hasOne('b', 'propA'),
+                };
               }
               class B extends Factory {
                 attrs = {
-                  propA: Factory.hasMany('a', 'propB')
+                  propA: Factory.hasMany('a', 'propB'),
                 };
-                createRelated = { propA: 1 }
+                createRelated = { propA: 1 };
               }
 
               beforeEach(() => {
@@ -1073,7 +1071,7 @@ describe('Lair', () => {
               it('check initial state', () => {
                 expect(this.lair.getOne('a', '1').propB.id).to.be.equal('1');
                 expect(this.lair.getOne('a', '2').propB).to.be.null;
-                expect(this.lair.getOne('b', '1').propA.map(c=>c.id)).to.be.eql(['1']);
+                expect(this.lair.getOne('b', '1').propA.map(c => c.id)).to.be.eql(['1']);
               });
 
               describe('', () => {
@@ -1099,16 +1097,16 @@ describe('Lair', () => {
 
               class A extends Factory {
                 attrs = {
-                  propB: Factory.hasOne('b', 'propA')
+                  propB: Factory.hasOne('b', 'propA'),
                 };
               }
               class B extends Factory {
                 attrs = {
-                  propA: Factory.hasMany('a', 'propB')
+                  propA: Factory.hasMany('a', 'propB'),
                 };
                 createRelated = {
-                  propA: 2
-                }
+                  propA: 2,
+                };
               }
 
               beforeEach(() => {
@@ -1136,8 +1134,8 @@ describe('Lair', () => {
                     id: '1',
                     propB: {
                       id: '2',
-                      propA: ['1', '3', '4']
-                    }
+                      propA: ['1', '3', '4'],
+                    },
                   });
                 });
                 it('a#2 is not updated', () => {
@@ -1145,8 +1143,8 @@ describe('Lair', () => {
                     id: '2',
                     propB: {
                       id: '1',
-                      propA: ['2']
-                    }
+                      propA: ['2'],
+                    },
                   });
                 });
                 it('b#1 updated', () => {
@@ -1154,8 +1152,8 @@ describe('Lair', () => {
                   expect(this.lair.getOne('b', '1')).to.be.eql({
                     id: '1',
                     propA: [
-                      {id: '2', propB: '1'}
-                    ]
+                      {id: '2', propB: '1'},
+                    ],
                   });
                 });
                 it('b#2 updated', () => {
@@ -1165,8 +1163,8 @@ describe('Lair', () => {
                     propA: [
                       {id: '1', propB: '2'},
                       {id: '3', propB: '2'},
-                      {id: '4', propB: '2'}
-                    ]
+                      {id: '4', propB: '2'},
+                    ],
                   });
                 });
               });
@@ -1194,15 +1192,15 @@ describe('Lair', () => {
             describe('should create relationships', () => {
               class A extends Factory {
                 attrs = {
-                  propB: Factory.hasOne('b', 'propA')
+                  propB: Factory.hasOne('b', 'propA'),
                 };
                 createRelated = {
-                  propB: 1
-                }
+                  propB: 1,
+                };
               }
               class B extends Factory {
                 attrs = {
-                  propA: Factory.hasMany('a', 'propB')
+                  propA: Factory.hasMany('a', 'propB'),
                 };
               }
 
@@ -1249,20 +1247,20 @@ describe('Lair', () => {
             };
             createRelated = {
               propBar: 2,
-              propBaz: 2
-            }
+              propBaz: 2,
+            };
           }
           class Bar extends Factory {
             attrs = {
               propFoo: Factory.hasOne('foo', 'propBar'),
-              sBar: 'static bar'
-            }
+              sBar: 'static bar',
+            };
           }
           class Baz extends Factory {
             attrs = {
               propFoo: Factory.hasOne('foo', 'propBaz'),
-              sBaz: 'static baz'
-            }
+              sBaz: 'static baz',
+            };
           }
 
           beforeEach(() => {
@@ -1327,15 +1325,15 @@ describe('Lair', () => {
 
               class A extends Factory {
                 attrs = {
-                  propB: Factory.hasMany('b', 'propA')
+                  propB: Factory.hasMany('b', 'propA'),
                 };
                 createRelated = {
-                  propB: 2
-                }
+                  propB: 2,
+                };
               }
               class B extends Factory {
                 attrs = {
-                  propA: Factory.hasOne('a', 'propB')
+                  propA: Factory.hasOne('a', 'propB'),
                 };
               }
 
@@ -1347,7 +1345,7 @@ describe('Lair', () => {
               });
 
               it('check initial state', () => {
-                expect(this.lair.getOne('a', '1').propB.map(c=>c.id)).to.be.eql(['1', '2']);
+                expect(this.lair.getOne('a', '1').propB.map(c => c.id)).to.be.eql(['1', '2']);
                 expect(this.lair.getOne('b', '1').propA.id).to.be.equal('1');
                 expect(this.lair.getOne('b', '2').propA.id).to.be.equal('1');
                 expect(this.lair.getOne('b', '3').propA).to.be.null;
@@ -1363,28 +1361,28 @@ describe('Lair', () => {
                     id: '1',
                     propB: [
                       {id: '2', propA: '1'},
-                      {id: '3', propA: '1'}
-                    ]
+                      {id: '3', propA: '1'},
+                    ],
                   });
                 });
                 it('b#1 updated', () => {
                   // b1.a -> null
                   expect(this.lair.getOne('b', '1')).to.be.eql({
                     id: '1',
-                    propA: null
+                    propA: null,
                   });
                 });
                 it('b#2 is not updated', () => {
                   expect(this.lair.getOne('b', '2')).to.be.eql({
                     id: '2',
-                    propA: {id: '1', propB: ['2', '3']}
+                    propA: {id: '1', propB: ['2', '3']},
                   });
                 });
                 it('b#3 updated', () => {
                   // b3.a -> a1
                   expect(this.lair.getOne('b', '3')).to.be.eql({
                     id: '3',
-                    propA: {id: '1', propB: ['2', '3']}
+                    propA: {id: '1', propB: ['2', '3']},
                   });
                 });
               });
@@ -1406,15 +1404,15 @@ describe('Lair', () => {
 
               class A extends Factory {
                 attrs = {
-                  propB: Factory.hasMany('b', 'propA')
+                  propB: Factory.hasMany('b', 'propA'),
                 };
                 createRelated = {
-                  propB: 2
-                }
+                  propB: 2,
+                };
               }
               class B extends Factory {
                 attrs = {
-                  propA: Factory.hasOne('a', 'propB')
+                  propA: Factory.hasOne('a', 'propB'),
                 };
               }
 
@@ -1426,7 +1424,7 @@ describe('Lair', () => {
               });
 
               it('check initial state', () => {
-                expect(this.lair.getOne('a', '1').propB.map(c=>c.id)).to.be.eql(['1', '2']);
+                expect(this.lair.getOne('a', '1').propB.map(c => c.id)).to.be.eql(['1', '2']);
                 expect(this.lair.getOne('b', '1').propA.id).to.be.equal('1');
                 expect(this.lair.getOne('b', '2').propA.id).to.be.equal('1');
                 expect(this.lair.getOne('b', '3').propA).to.be.null;
@@ -1440,8 +1438,8 @@ describe('Lair', () => {
                   expect(this.lair.getOne('a', '1')).to.be.eql({
                     id: '1',
                     propB: [
-                      {id: '1', propA: '1'}
-                    ]
+                      {id: '1', propA: '1'},
+                    ],
                   });
                 });
                 it('a#2 created', () => {
@@ -1449,8 +1447,8 @@ describe('Lair', () => {
                     id: '2',
                     propB: [
                       {id: '2', propA: '2'},
-                      {id: '3', propA: '2'}
-                    ]
+                      {id: '3', propA: '2'},
+                    ],
                   });
                 });
                 it('b#1 updated', () => {
@@ -1458,20 +1456,20 @@ describe('Lair', () => {
                     id: '1',
                     propA: {
                       id: '1',
-                      propB: ['1']
-                    }
+                      propB: ['1'],
+                    },
                   });
                 });
                 it('b#2 updated', () => {
                   expect(this.lair.getOne('b', '2')).to.be.eql({
                     id: '2',
-                    propA: {id: '2', propB: ['2', '3']}
+                    propA: {id: '2', propB: ['2', '3']},
                   });
                 });
                 it('b#3 updated', () => {
                   expect(this.lair.getOne('b', '3')).to.be.eql({
                     id: '3',
-                    propA: {id: '2', propB: ['2', '3']}
+                    propA: {id: '2', propB: ['2', '3']},
                   });
                 });
               });
@@ -1489,20 +1487,20 @@ describe('Lair', () => {
             };
             createRelated = {
               propBar: 2,
-              propBaz: 2
-            }
+              propBaz: 2,
+            };
           }
           class Bar extends Factory {
             attrs = {
               propFoo: Factory.hasMany('foo', 'propBar'),
-              sBar: 'static bar'
-            }
+              sBar: 'static bar',
+            };
           }
           class Baz extends Factory {
             attrs = {
               propFoo: Factory.hasMany('foo', 'propBaz'),
-              sBaz: 'static baz'
-            }
+              sBaz: 'static baz',
+            };
           }
           beforeEach(() => {
             this.lair.registerFactory(new Foo(), 'foo');
@@ -1565,15 +1563,15 @@ describe('Lair', () => {
 
               class A extends Factory {
                 attrs = {
-                  propB: Factory.hasMany('b', 'propA')
+                  propB: Factory.hasMany('b', 'propA'),
                 };
                 createRelated = {
-                  propB: 2
-                }
+                  propB: 2,
+                };
               }
               class B extends Factory {
                 attrs = {
-                  propA: Factory.hasMany('a', 'propB')
+                  propA: Factory.hasMany('a', 'propB'),
                 };
               }
 
@@ -1584,12 +1582,12 @@ describe('Lair', () => {
               });
 
               it('check initial state', () => {
-                expect(this.lair.getOne('a', '1').propB.map(c=>c.id)).to.be.eql(['1', '2']);
-                expect(this.lair.getOne('a', '2').propB.map(c=>c.id)).to.be.eql(['3', '4']);
-                expect(this.lair.getOne('b', '1').propA.map(c=>c.id)).to.be.eql(['1']);
-                expect(this.lair.getOne('b', '2').propA.map(c=>c.id)).to.be.eql(['1']);
-                expect(this.lair.getOne('b', '3').propA.map(c=>c.id)).to.be.eql(['2']);
-                expect(this.lair.getOne('b', '4').propA.map(c=>c.id)).to.be.eql(['2']);
+                expect(this.lair.getOne('a', '1').propB.map(c => c.id)).to.be.eql(['1', '2']);
+                expect(this.lair.getOne('a', '2').propB.map(c => c.id)).to.be.eql(['3', '4']);
+                expect(this.lair.getOne('b', '1').propA.map(c => c.id)).to.be.eql(['1']);
+                expect(this.lair.getOne('b', '2').propA.map(c => c.id)).to.be.eql(['1']);
+                expect(this.lair.getOne('b', '3').propA.map(c => c.id)).to.be.eql(['2']);
+                expect(this.lair.getOne('b', '4').propA.map(c => c.id)).to.be.eql(['2']);
               });
 
               describe('', () => {
@@ -1602,8 +1600,8 @@ describe('Lair', () => {
                     id: '1',
                     propB: [
                       {id: '2', propA: ['1']},
-                      {id: '3', propA: ['1', '2']}
-                    ]
+                      {id: '3', propA: ['1', '2']},
+                    ],
                   });
                 });
                 it('a2 updated', () => {
@@ -1612,15 +1610,15 @@ describe('Lair', () => {
                     id: '2',
                     propB: [
                       {id: '3', propA: ['1', '2']},
-                      {id: '4', propA: ['2']}
-                    ]
+                      {id: '4', propA: ['2']},
+                    ],
                   });
                 });
                 it('b1 updated', () => {
                   // b1.a -> []
                   expect(this.lair.getOne('b', '1')).to.be.eql({
                     id: '1',
-                    propA: []
+                    propA: [],
                   });
                 });
                 it('b2 updated', () => {
@@ -1628,8 +1626,8 @@ describe('Lair', () => {
                   expect(this.lair.getOne('b', '2')).to.be.eql({
                     id: '2',
                     propA: [
-                      {id: '1', propB: ['2', '3']}
-                    ]
+                      {id: '1', propB: ['2', '3']},
+                    ],
                   });
                 });
                 it('b3 updated', () => {
@@ -1638,8 +1636,8 @@ describe('Lair', () => {
                     id: '3',
                     propA: [
                       {id: '1', propB: ['2', '3']},
-                      {id: '2', propB: ['3', '4']}
-                    ]
+                      {id: '2', propB: ['3', '4']},
+                    ],
                   });
                 });
                 it('b4 updated', () => {
@@ -1647,8 +1645,8 @@ describe('Lair', () => {
                   expect(this.lair.getOne('b', '4')).to.be.eql({
                     id: '4',
                     propA: [
-                      {id: '2', propB: ['3', '4']}
-                    ]
+                      {id: '2', propB: ['3', '4']},
+                    ],
                   });
                 });
               });
@@ -1668,15 +1666,15 @@ describe('Lair', () => {
 
               class A extends Factory {
                 attrs = {
-                  propB: Factory.hasMany('b', 'propA')
+                  propB: Factory.hasMany('b', 'propA'),
                 };
                 createRelated = {
-                  propB: 2
-                }
+                  propB: 2,
+                };
               }
               class B extends Factory {
                 attrs = {
-                  propA: Factory.hasMany('a', 'propB')
+                  propA: Factory.hasMany('a', 'propB'),
                 };
               }
 
@@ -1688,13 +1686,13 @@ describe('Lair', () => {
               });
 
               it('check initial state', () => {
-                expect(this.lair.getOne('a', '1').propB.map(c=>c.id)).to.be.eql(['1', '2']);
-                expect(this.lair.getOne('a', '2').propB.map(c=>c.id)).to.be.eql(['3', '4']);
-                expect(this.lair.getOne('b', '1').propA.map(c=>c.id)).to.be.eql(['1']);
-                expect(this.lair.getOne('b', '2').propA.map(c=>c.id)).to.be.eql(['1']);
-                expect(this.lair.getOne('b', '3').propA.map(c=>c.id)).to.be.eql(['2']);
-                expect(this.lair.getOne('b', '4').propA.map(c=>c.id)).to.be.eql(['2']);
-                expect(this.lair.getOne('b', '5').propA.map(c=>c.id)).to.be.eql([]);
+                expect(this.lair.getOne('a', '1').propB.map(c => c.id)).to.be.eql(['1', '2']);
+                expect(this.lair.getOne('a', '2').propB.map(c => c.id)).to.be.eql(['3', '4']);
+                expect(this.lair.getOne('b', '1').propA.map(c => c.id)).to.be.eql(['1']);
+                expect(this.lair.getOne('b', '2').propA.map(c => c.id)).to.be.eql(['1']);
+                expect(this.lair.getOne('b', '3').propA.map(c => c.id)).to.be.eql(['2']);
+                expect(this.lair.getOne('b', '4').propA.map(c => c.id)).to.be.eql(['2']);
+                expect(this.lair.getOne('b', '5').propA.map(c => c.id)).to.be.eql([]);
               });
 
               describe('', () => {
@@ -1706,8 +1704,8 @@ describe('Lair', () => {
                     id: '1',
                     propB: [
                       {id: '1', propA: ['1']},
-                      {id: '2', propA: ['1', '3']}
-                    ]
+                      {id: '2', propA: ['1', '3']},
+                    ],
                   });
                 });
                 it('a2 updated', () => {
@@ -1715,8 +1713,8 @@ describe('Lair', () => {
                     id: '2',
                     propB: [
                       {id: '3', propA: ['2', '3']},
-                      {id: '4', propA: ['2']}
-                    ]
+                      {id: '4', propA: ['2']},
+                    ],
                   });
                 });
                 it('a3 created', () => {
@@ -1725,16 +1723,16 @@ describe('Lair', () => {
                     propB: [
                       {id: '2', propA: ['1', '3']},
                       {id: '3', propA: ['2', '3']},
-                      {id: '5', propA: ['3']}
-                    ]
+                      {id: '5', propA: ['3']},
+                    ],
                   });
                 });
                 it('b1 updated', () => {
                   expect(this.lair.getOne('b', '1')).to.be.eql({
                     id: '1',
                     propA: [
-                      {id: '1', propB: ['1', '2']}
-                    ]
+                      {id: '1', propB: ['1', '2']},
+                    ],
                   });
                 });
                 it('b2 updated', () => {
@@ -1742,8 +1740,8 @@ describe('Lair', () => {
                     id: '2',
                     propA: [
                       {id: '1', propB: ['1', '2']},
-                      {id: '3', propB: ['2', '3', '5']}
-                    ]
+                      {id: '3', propB: ['2', '3', '5']},
+                    ],
                   });
                 });
                 it('b3 updated', () => {
@@ -1751,24 +1749,24 @@ describe('Lair', () => {
                     id: '3',
                     propA: [
                       {id: '2', propB: ['3', '4']},
-                      {id: '3', propB: ['2', '3', '5']}
-                    ]
+                      {id: '3', propB: ['2', '3', '5']},
+                    ],
                   });
                 });
                 it('b4 updated', () => {
                   expect(this.lair.getOne('b', '4')).to.be.eql({
                     id: '4',
                     propA: [
-                      {id: '2', propB: ['3', '4']}
-                    ]
+                      {id: '2', propB: ['3', '4']},
+                    ],
                   });
                 });
                 it('b5 updated', () => {
                   expect(this.lair.getOne('b', '5')).to.be.eql({
                     id: '5',
                     propA: [
-                      {id: '3', propB: ['2', '3', '5']}
-                    ]
+                      {id: '3', propB: ['2', '3', '5']},
+                    ],
                   });
                 });
               });
@@ -1780,15 +1778,15 @@ describe('Lair', () => {
 
           class A extends Factory {
             attrs = {
-              propB: Factory.hasOne('b', null)
+              propB: Factory.hasOne('b', null),
             };
           }
           class B extends Factory {
-            attrs = {}
+            attrs = {};
           }
           class C extends Factory {
             attrs = {
-              propB: Factory.hasMany('b', null)
+              propB: Factory.hasMany('b', null),
             };
           }
 
@@ -1799,29 +1797,29 @@ describe('Lair', () => {
           });
 
           describe('#getOne', () => {
-            class aFactory extends Factory {
+            class AFactory extends Factory {
               attrs = {
-                propB: Factory.hasOne('bFactory', null)
+                propB: Factory.hasOne('bFactory', null),
               };
               createRelated = {
-                propB: 1
-              }
+                propB: 1,
+              };
             }
-            class bFactory extends Factory {
-              attrs = {}
+            class BFactory extends Factory {
+              attrs = {};
             }
-            class cFactory extends Factory {
+            class CFactory extends Factory {
               attrs = {
-                propB: Factory.hasMany('bFactory', null)
+                propB: Factory.hasMany('bFactory', null),
               };
               createRelated = {
-                propB: 2
-              }
+                propB: 2,
+              };
             }
             beforeEach(() => {
-              this.lair.registerFactory(new aFactory(), 'aFactory');
-              this.lair.registerFactory(new bFactory(), 'bFactory');
-              this.lair.registerFactory(new cFactory(), 'cFactory');
+              this.lair.registerFactory(new AFactory(), 'aFactory');
+              this.lair.registerFactory(new BFactory(), 'bFactory');
+              this.lair.registerFactory(new CFactory(), 'cFactory');
               this.lair.createRecords('aFactory', 1);
               this.lair.createRecords('cFactory', 1);
             });
@@ -1829,44 +1827,44 @@ describe('Lair', () => {
               expect(this.lair.getOne('aFactory', '1')).to.be.eql({
                 id: '1',
                 propB: {
-                  id: '1'
-                }
+                  id: '1',
+                },
               });
             });
             it('propB for C doesn\'t have related fields for C', () => {
               expect(this.lair.getOne('cFactory', '1')).to.be.eql({
                 id: '1',
                 propB: [
-                  {id: '2'}, {id: '3'}
-                ]
+                  {id: '2'}, {id: '3'},
+                ],
               });
             });
           });
 
           describe('#queryOne', () => {
-            class aFactory extends Factory {
+            class AFactory extends Factory {
               attrs = {
-                propB: Factory.hasOne('bFactory', null)
+                propB: Factory.hasOne('bFactory', null),
               };
               createRelated = {
-                propB: 1
-              }
+                propB: 1,
+              };
             }
-            class bFactory extends Factory {
-              attrs = {}
+            class BFactory extends Factory {
+              attrs = {};
             }
-            class cFactory extends Factory {
+            class CFactory extends Factory {
               attrs = {
-                propB: Factory.hasMany('bFactory', null)
+                propB: Factory.hasMany('bFactory', null),
               };
               createRelated = {
-                propB: 2
-              }
+                propB: 2,
+              };
             }
             beforeEach(() => {
-              this.lair.registerFactory(new aFactory(), 'aFactory');
-              this.lair.registerFactory(new bFactory(), 'bFactory');
-              this.lair.registerFactory(new cFactory(), 'cFactory');
+              this.lair.registerFactory(new AFactory(), 'aFactory');
+              this.lair.registerFactory(new BFactory(), 'bFactory');
+              this.lair.registerFactory(new CFactory(), 'cFactory');
               this.lair.createRecords('aFactory', 1);
               this.lair.createRecords('cFactory', 1);
             });
@@ -1874,16 +1872,16 @@ describe('Lair', () => {
               expect(this.lair.queryOne('aFactory', r => r.id === '1')).to.be.eql({
                 id: '1',
                 propB: {
-                  id: '1'
-                }
+                  id: '1',
+                },
               });
             });
             it('propB for C doesn\'t have related fields for C', () => {
               expect(this.lair.queryOne('cFactory', r => r.id === '1')).to.be.eql({
                 id: '1',
                 propB: [
-                  {id: '2'}, {id: '3'}
-                ]
+                  {id: '2'}, {id: '3'},
+                ],
               });
             });
           });
@@ -1956,23 +1954,23 @@ describe('Lair', () => {
           class Foo extends Factory {
             attrs = {
               propBar: Factory.hasOne('bar', 'propFoo'),
-              sFoo: 'static foo'
+              sFoo: 'static foo',
             };
-            createRelated = {propBar: 1}
+            createRelated = {propBar: 1};
           }
           class Bar extends Factory {
             attrs = {
               propFoo: Factory.hasOne('foo', 'propBar'),
               propBaz: Factory.hasOne('baz', 'propBar'),
-              sBar: 'static bar'
+              sBar: 'static bar',
             };
-            createRelated = {propBaz: 1}
+            createRelated = {propBaz: 1};
           }
           class Baz extends Factory {
             attrs = {
               propBar: Factory.hasOne('bar', 'propBaz'),
-              sBaz: 'static baz'
-            }
+              sBaz: 'static baz',
+            };
           }
 
           beforeEach(() => {
@@ -2017,24 +2015,24 @@ describe('Lair', () => {
             attrs = {
               propBar: Factory.hasOne('bar', 'propFoo'),
               propBaz: Factory.hasOne('baz', 'propFoo'),
-              sFoo: 'static foo'
+              sFoo: 'static foo',
             };
             createRelated = {
               propBar: 1,
-              propBaz: 1
-            }
+              propBaz: 1,
+            };
           }
           class Bar extends Factory {
             attrs = {
               propFoo: Factory.hasMany('foo', 'propBar'),
-              sBar: 'static bar'
-            }
+              sBar: 'static bar',
+            };
           }
           class Baz extends Factory {
             attrs = {
               propFoo: Factory.hasMany('foo', 'propBaz'),
-              sBaz: 'static baz'
-            }
+              sBaz: 'static baz',
+            };
           }
 
           beforeEach(() => {
@@ -2083,20 +2081,20 @@ describe('Lair', () => {
             };
             createRelated = {
               propBar: 2,
-              propBaz: 2
-            }
+              propBaz: 2,
+            };
           }
           class Bar extends Factory {
             attrs = {
               propFoo: Factory.hasOne('foo', 'propBar'),
-              sBar: 'static bar'
-            }
+              sBar: 'static bar',
+            };
           }
           class Baz extends Factory {
             attrs = {
               propFoo: Factory.hasOne('foo', 'propBaz'),
-              sBaz: 'static baz'
-            }
+              sBaz: 'static baz',
+            };
           }
 
           beforeEach(() => {
@@ -2144,20 +2142,20 @@ describe('Lair', () => {
             };
             createRelated = {
               propBar: 2,
-              propBaz: 2
-            }
+              propBaz: 2,
+            };
           }
           class Bar extends Factory {
             attrs = {
               propFoo: Factory.hasMany('foo', 'propBar'),
-              sBar: 'static bar'
-            }
+              sBar: 'static bar',
+            };
           }
           class Baz extends Factory {
             attrs = {
               propFoo: Factory.hasMany('foo', 'propBaz'),
-              sBaz: 'static baz'
-            }
+              sBaz: 'static baz',
+            };
           }
           beforeEach(() => {
             this.lair.registerFactory(new Foo(), 'foo');
@@ -2176,7 +2174,7 @@ describe('Lair', () => {
                 manyToManyBar('1'),
                 manyToManyBar('2'),
                 manyToManyBar('3', '2', '3', '3'),
-                manyToManyBar('4', '2', '3', '3')
+                manyToManyBar('4', '2', '3', '3'),
               ]);
             });
 
@@ -2185,7 +2183,7 @@ describe('Lair', () => {
                 manyToManyBaz('1'),
                 manyToManyBaz('2'),
                 manyToManyBaz('3', '2', '3', '3'),
-                manyToManyBaz('4', '2', '3', '3')
+                manyToManyBaz('4', '2', '3', '3'),
               ]);
             });
           });
@@ -2198,14 +2196,14 @@ describe('Lair', () => {
             it('should return queried `bar` records with relationships', () => {
               expect(this.lair.queryMany('bar', r => r.id === '1' || r.id === '2')).to.be.eql([
                 manyToManyBar('1'),
-                manyToManyBar('2')
+                manyToManyBar('2'),
               ]);
             });
 
             it('should return queried `baz` records with relationships', () => {
               expect(this.lair.queryMany('baz', r => r.id === '1' || r.id === '2')).to.be.eql([
                 manyToManyBaz('1'),
-                manyToManyBaz('2')
+                manyToManyBaz('2'),
               ]);
             });
           });
@@ -2215,29 +2213,29 @@ describe('Lair', () => {
         describe('non-cross relationships', () => {
 
           describe('#getAll', () => {
-            class aFactory extends Factory {
+            class AFactory extends Factory {
               attrs = {
-                propB: Factory.hasOne('bFactory', null)
+                propB: Factory.hasOne('bFactory', null),
               };
               createRelated = {
-                propB: 1
-              }
+                propB: 1,
+              };
             }
-            class bFactory extends Factory {
-              attrs = {}
+            class BFactory extends Factory {
+              attrs = {};
             }
-            class cFactory extends Factory {
+            class CFactory extends Factory {
               attrs = {
-                propB: Factory.hasMany('bFactory', null)
+                propB: Factory.hasMany('bFactory', null),
               };
               createRelated = {
-                propB: 2
-              }
+                propB: 2,
+              };
             }
             beforeEach(() => {
-              this.lair.registerFactory(new aFactory(), 'aFactory');
-              this.lair.registerFactory(new bFactory(), 'bFactory');
-              this.lair.registerFactory(new cFactory(), 'cFactory');
+              this.lair.registerFactory(new AFactory(), 'aFactory');
+              this.lair.registerFactory(new BFactory(), 'bFactory');
+              this.lair.registerFactory(new CFactory(), 'cFactory');
               this.lair.createRecords('aFactory', 1);
               this.lair.createRecords('cFactory', 1);
             });
@@ -2245,44 +2243,44 @@ describe('Lair', () => {
               expect(this.lair.getAll('aFactory')).to.be.eql([{
                 id: '1',
                 propB: {
-                  id: '1'
-                }
+                  id: '1',
+                },
               }]);
             });
             it('propB for C doesn\'t have related fields for C', () => {
               expect(this.lair.getAll('cFactory')).to.be.eql([{
                 id: '1',
                 propB: [
-                  {id: '2'}, {id: '3'}
-                ]
+                  {id: '2'}, {id: '3'},
+                ],
               }]);
             });
           });
 
           describe('#queryMany', () => {
-            class aFactory extends Factory {
+            class AFactory extends Factory {
               attrs = {
-                propB: Factory.hasOne('bFactory', null)
+                propB: Factory.hasOne('bFactory', null),
               };
               createRelated = {
-                propB: 1
-              }
+                propB: 1,
+              };
             }
-            class bFactory extends Factory {
-              attrs = {}
+            class BFactory extends Factory {
+              attrs = {};
             }
-            class cFactory extends Factory {
+            class CFactory extends Factory {
               attrs = {
-                propB: Factory.hasMany('bFactory', null)
+                propB: Factory.hasMany('bFactory', null),
               };
               createRelated = {
-                propB: 2
-              }
+                propB: 2,
+              };
             }
             beforeEach(() => {
-              this.lair.registerFactory(new aFactory(), 'aFactory');
-              this.lair.registerFactory(new bFactory(), 'bFactory');
-              this.lair.registerFactory(new cFactory(), 'cFactory');
+              this.lair.registerFactory(new AFactory(), 'aFactory');
+              this.lair.registerFactory(new BFactory(), 'bFactory');
+              this.lair.registerFactory(new CFactory(), 'cFactory');
               this.lair.createRecords('aFactory', 1);
               this.lair.createRecords('cFactory', 1);
             });
@@ -2290,16 +2288,16 @@ describe('Lair', () => {
               expect(this.lair.queryMany('aFactory', r => r.id === '1')).to.be.eql([{
                 id: '1',
                 propB: {
-                  id: '1'
-                }
+                  id: '1',
+                },
               }]);
             });
             it('propB for C doesn\'t have related fields for C', () => {
               expect(this.lair.queryMany('cFactory', r => r.id === '1')).to.be.eql([{
                 id: '1',
                 propB: [
-                  {id: '2'}, {id: '3'}
-                ]
+                  {id: '2'}, {id: '3'},
+                ],
               }]);
             });
           });
@@ -2311,16 +2309,16 @@ describe('Lair', () => {
       describe('RU methods should return copies of records from the db', () => {
         class A extends Factory {
           attrs = {
-            propB: Factory.hasOne('b', 'propA')
+            propB: Factory.hasOne('b', 'propA'),
           };
           createRelated = {
-            propB: 1
-          }
+            propB: 1,
+          };
         }
         class B extends Factory {
           attrs = {
-            propA: Factory.hasOne('a', 'propB')
-          }
+            propA: Factory.hasOne('a', 'propB'),
+          };
         }
         beforeEach(() => {
           this.lair.registerFactory(new A(), 'a');

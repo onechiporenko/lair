@@ -48,16 +48,16 @@ describe('Relationships', () => {
       this.relationships.meta = {
         f: {
           a: {type: MetaAttrType.HAS_MANY},
-          b: {type: MetaAttrType.HAS_ONE}
-        }
+          b: {type: MetaAttrType.HAS_ONE},
+        },
       };
       this.relationships.relationships = {
         f: {
           '1': {
             a: [],
-            b: '1'
-          }
-        }
+            b: '1',
+          },
+        },
       };
     });
     it('should set value', () => {
@@ -75,9 +75,9 @@ describe('Relationships', () => {
         f: {
           '1': {
             a: null,
-            b: '1'
-          }
-        }
+            b: '1',
+          },
+        },
       };
     });
     it('should return value', () => {
@@ -90,16 +90,16 @@ describe('Relationships', () => {
       this.relationships.meta = {
         f: {
           a: {type: MetaAttrType.HAS_MANY},
-          b: {type: MetaAttrType.HAS_ONE}
-        }
+          b: {type: MetaAttrType.HAS_ONE},
+        },
       };
       this.relationships.relationships = {
         f: {
           '1': {
             a: [],
-            b: '1'
-          }
-        }
+            b: '1',
+          },
+        },
       };
     });
     it('should set value', () => {
@@ -126,9 +126,9 @@ describe('Relationships', () => {
         f: {
           '1': {
             a: null,
-            b: ['1', '2']
-          }
-        }
+            b: ['1', '2'],
+          },
+        },
       };
     });
     it('should return value', () => {
@@ -141,16 +141,16 @@ describe('Relationships', () => {
       this.relationships.meta = {
         f: {
           a: {type: MetaAttrType.HAS_MANY},
-          b: {type: MetaAttrType.HAS_ONE}
-        }
+          b: {type: MetaAttrType.HAS_ONE},
+        },
       };
       this.relationships.relationships = {
         f: {
           '1': {
             a: [],
-            b: '1'
-          }
-        }
+            b: '1',
+          },
+        },
       };
     });
     it('should add to value', () => {
@@ -178,16 +178,16 @@ describe('Relationships', () => {
       this.relationships.meta = {
         f: {
           a: {type: MetaAttrType.HAS_MANY},
-          b: {type: MetaAttrType.HAS_ONE}
-        }
+          b: {type: MetaAttrType.HAS_ONE},
+        },
       };
       this.relationships.relationships = {
         f: {
           '1': {
             a: ['1', '2', '3'],
-            b: '1'
-          }
-        }
+            b: '1',
+          },
+        },
       };
     });
     it('should remove from value', () => {
@@ -206,14 +206,14 @@ describe('Relationships', () => {
       class FooFactory extends Factory {
         attrs = {
           b: Factory.hasOne('bar', 'f'),
-          prop: 'static'
-        }
+          prop: 'static',
+        };
       }
       class BarFactory extends Factory {
         attrs = {
           f: Factory.hasOne('foo', 'b'),
-          prop: 'static'
-        }
+          prop: 'static',
+        };
       }
 
       beforeEach(() => {
@@ -225,7 +225,7 @@ describe('Relationships', () => {
         this.relationships.addFactory('foo');
         this.relationships.updateMeta({
           foo: this.foo.meta,
-          bar: this.bar.meta
+          bar: this.bar.meta,
         });
       });
 
@@ -233,7 +233,7 @@ describe('Relationships', () => {
         this.relationships.recalculateRelationshipsForRecord('foo', {id: '1', b: '2'});
         expect(this.relationships.relationships).to.be.eql({
           foo: {'1': {b: '2'}},
-          bar: {'2': {f: '1'}}
+          bar: {'2': {f: '1'}},
         });
       });
 
@@ -241,31 +241,31 @@ describe('Relationships', () => {
         this.relationships.recalculateRelationshipsForRecord('foo', {id: '1', b: {id: '2'}});
         expect(this.relationships.relationships).to.be.eql({
           foo: {'1': {b: '2'}},
-          bar: {'2': {f: '1'}}
+          bar: {'2': {f: '1'}},
         });
       });
 
       it('should update relationships for the records', () => {
         this.relationships.relationships = {
           foo: {'1': {b: '3'}},
-          bar: {'2': {f: '4'}}
+          bar: {'2': {f: '4'}},
         };
         this.relationships.recalculateRelationshipsForRecord('foo', {id: '1', b: '2'});
         expect(this.relationships.relationships).to.be.eql({
           foo: {'1': {b: '2'}},
-          bar: {'2': {f: '1'}}
+          bar: {'2': {f: '1'}},
         });
       });
 
       it('should update relationships for the records (with `null`)', () => {
         this.relationships.relationships = {
           foo: {'1': {b: '2'}},
-          bar: {'2': {f: '1'}}
+          bar: {'2': {f: '1'}},
         };
         this.relationships.recalculateRelationshipsForRecord('foo', {id: '1', b: null});
         expect(this.relationships.relationships).to.be.eql({
           foo: {'1': {b: null}},
-          bar: {'2': {f: null}}
+          bar: {'2': {f: null}},
         });
       });
     });
@@ -275,13 +275,13 @@ describe('Relationships', () => {
       class FooFactory extends Factory {
         attrs = {
           b: Factory.hasMany('bar', 'f'),
-          prop: 'static'
+          prop: 'static',
         };
       }
       class BarFactory extends Factory {
         attrs = {
           f: Factory.hasOne('foo', 'b'),
-          prop: 'static'
+          prop: 'static',
         };
       }
 
@@ -294,7 +294,7 @@ describe('Relationships', () => {
         this.relationships.addFactory('foo');
         this.relationships.updateMeta({
           foo: this.foo.meta,
-          bar: this.bar.meta
+          bar: this.bar.meta,
         });
       });
 
@@ -302,7 +302,7 @@ describe('Relationships', () => {
         this.relationships.recalculateRelationshipsForRecord('foo', {id: '1', b: ['2', '3']});
         expect(this.relationships.relationships).to.be.eql({
           foo: {'1': {b: ['2', '3']}},
-          bar: {'2': {f: '1'}, '3': {f: '1'}}
+          bar: {'2': {f: '1'}, '3': {f: '1'}},
         });
       });
 
@@ -310,55 +310,55 @@ describe('Relationships', () => {
         this.relationships.recalculateRelationshipsForRecord('foo', {id: '1', b: [{id: '2'}, {id: '3'}]});
         expect(this.relationships.relationships).to.be.eql({
           foo: {'1': {b: ['2', '3']}},
-          bar: {'2': {f: '1'}, '3': {f: '1'}}
+          bar: {'2': {f: '1'}, '3': {f: '1'}},
         });
       });
 
       it('should update relationships for the records (remove one record)', () => {
         this.relationships.relationships = {
           foo: {'1': {b: ['2', '3']}},
-          bar: {'2': {f: '1'}, '3': {f: '1'}}
+          bar: {'2': {f: '1'}, '3': {f: '1'}},
         };
         this.relationships.recalculateRelationshipsForRecord('foo', {id: '1', b: [{id: '2'}]});
         expect(this.relationships.relationships).to.be.eql({
           foo: {'1': {b: ['2']}},
-          bar: {'2': {f: '1'}, '3': {f: null}}
+          bar: {'2': {f: '1'}, '3': {f: null}},
         });
       });
 
       it('should update relationships for the records (remove one record and add another)', () => {
         this.relationships.relationships = {
           foo: {'1': {b: ['2', '3']}},
-          bar: {'2': {f: '1'}, '3': {f: '1'}}
+          bar: {'2': {f: '1'}, '3': {f: '1'}},
         };
         this.relationships.recalculateRelationshipsForRecord('foo', {id: '1', b: ['2', '4']});
         expect(this.relationships.relationships).to.be.eql({
           foo: {'1': {b: ['2', '4']}},
-          bar: {'2': {f: '1'}, '3': {f: null}, '4': {f: '1'}}
+          bar: {'2': {f: '1'}, '3': {f: null}, '4': {f: '1'}},
         });
       });
 
       it('should update relationships for the records (null)', () => {
         this.relationships.relationships = {
           foo: {'1': {b: ['2', '3']}},
-          bar: {'2': {f: '1'}, '3': {f: '1'}}
+          bar: {'2': {f: '1'}, '3': {f: '1'}},
         };
         this.relationships.recalculateRelationshipsForRecord('foo', {id: '1', b: null});
         expect(this.relationships.relationships).to.be.eql({
           foo: {'1': {b: []}},
-          bar: {'2': {f: null}, '3': {f: null}}
+          bar: {'2': {f: null}, '3': {f: null}},
         });
       });
 
       it('should update relationships for the records (should ignore null and undefined in the array)', () => {
         this.relationships.relationships = {
           foo: {'1': {b: ['2', '3']}},
-          bar: {'2': {f: '1'}, '3': {f: '1'}}
+          bar: {'2': {f: '1'}, '3': {f: '1'}},
         };
         this.relationships.recalculateRelationshipsForRecord('foo', {id: '1', b: [null, '2', undefined, '3']});
         expect(this.relationships.relationships).to.be.eql({
           foo: {'1': {b: ['2', '3']}},
-          bar: {'2': {f: '1'}, '3': {f: '1'}}
+          bar: {'2': {f: '1'}, '3': {f: '1'}},
         });
       });
     });
@@ -367,13 +367,13 @@ describe('Relationships', () => {
       class FooFactory extends Factory {
         attrs = {
           b: Factory.hasOne('bar', 'f'),
-          prop: 'static'
+          prop: 'static',
         };
       }
       class BarFactory extends Factory {
         attrs = {
           f: Factory.hasMany('foo', 'b'),
-          prop: 'static'
+          prop: 'static',
         };
       }
 
@@ -386,7 +386,7 @@ describe('Relationships', () => {
         this.relationships.addFactory('foo');
         this.relationships.updateMeta({
           foo: this.foo.meta,
-          bar: this.bar.meta
+          bar: this.bar.meta,
         });
       });
 
@@ -394,7 +394,7 @@ describe('Relationships', () => {
         this.relationships.recalculateRelationshipsForRecord('foo', {id: '1', b: '2'});
         expect(this.relationships.relationships).to.be.eql({
           foo: {'1': {b: '2'}},
-          bar: {'2': {f: ['1']}}
+          bar: {'2': {f: ['1']}},
         });
       });
 
@@ -402,55 +402,55 @@ describe('Relationships', () => {
         this.relationships.recalculateRelationshipsForRecord('foo', {id: '1', b: {id: '2'}});
         expect(this.relationships.relationships).to.be.eql({
           foo: {'1': {b: '2'}},
-          bar: {'2': {f: ['1']}}
+          bar: {'2': {f: ['1']}},
         });
       });
 
       it('should update relationships for the records (move to another record)', () => {
         this.relationships.relationships = {
           foo: {'1': {b: '2'}},
-          bar: {'2': {f: ['1']}}
+          bar: {'2': {f: ['1']}},
         };
         this.relationships.recalculateRelationshipsForRecord('foo', {id: '1', b: {id: '3'}});
         expect(this.relationships.relationships).to.be.eql({
           foo: {'1': {b: '3'}},
-          bar: {'2': {f: []}, '3': {f: ['1']}}
+          bar: {'2': {f: []}, '3': {f: ['1']}},
         });
       });
 
       it('should update relationships for the records (move to another record 2)', () => {
         this.relationships.relationships = {
           foo: {'1': {b: '2'}, '2': {b: '2'}},
-          bar: {'2': {f: ['1', '2']}}
+          bar: {'2': {f: ['1', '2']}},
         };
         this.relationships.recalculateRelationshipsForRecord('foo', {id: '1', b: {id: '3'}});
         expect(this.relationships.relationships).to.be.eql({
           foo: {'1': {b: '3'}, '2': {b: '2'}},
-          bar: {'2': {f: ['2']}, '3': {f: ['1']}}
+          bar: {'2': {f: ['2']}, '3': {f: ['1']}},
         });
       });
 
       it('should update relationships for the records (null)', () => {
         this.relationships.relationships = {
           foo: {'1': {b: '2'}},
-          bar: {'2': {f: ['1']}}
+          bar: {'2': {f: ['1']}},
         };
         this.relationships.recalculateRelationshipsForRecord('foo', {id: '1', b: null});
         expect(this.relationships.relationships).to.be.eql({
           foo: {'1': {b: null}},
-          bar: {'2': {f: []}}
+          bar: {'2': {f: []}},
         });
       });
 
       it('should update relationships for the records (null 2)', () => {
         this.relationships.relationships = {
           foo: {'1': {b: '2'}, '2': {b: '2'}},
-          bar: {'2': {f: ['1', '2']}}
+          bar: {'2': {f: ['1', '2']}},
         };
         this.relationships.recalculateRelationshipsForRecord('foo', {id: '1', b: null});
         expect(this.relationships.relationships).to.be.eql({
           foo: {'1': {b: null}, '2': {b: '2'}},
-          bar: {'2': {f: ['2']}}
+          bar: {'2': {f: ['2']}},
         });
       });
     });
@@ -459,13 +459,13 @@ describe('Relationships', () => {
       class FooFactory extends Factory {
         attrs = {
           b: Factory.hasMany('bar', 'f'),
-          prop: 'static'
+          prop: 'static',
         };
       }
       class BarFactory extends Factory {
         attrs = {
           f: Factory.hasMany('foo', 'b'),
-          prop: 'static'
+          prop: 'static',
         };
       }
 
@@ -478,7 +478,7 @@ describe('Relationships', () => {
         this.relationships.addFactory('foo');
         this.relationships.updateMeta({
           foo: this.foo.meta,
-          bar: this.bar.meta
+          bar: this.bar.meta,
         });
       });
 
@@ -486,7 +486,7 @@ describe('Relationships', () => {
         this.relationships.recalculateRelationshipsForRecord('foo', {id: '1', b: ['1', '2']});
         expect(this.relationships.relationships).to.be.eql({
           foo: {'1': {b: ['1', '2']}},
-          bar: {'1': {f: ['1']}, '2': {f: ['1']}}
+          bar: {'1': {f: ['1']}, '2': {f: ['1']}},
         });
       });
 
@@ -494,55 +494,55 @@ describe('Relationships', () => {
         this.relationships.recalculateRelationshipsForRecord('foo', {id: '1', b: [{id: '1'}, {id: '2'}]});
         expect(this.relationships.relationships).to.be.eql({
           foo: {'1': {b: ['1', '2']}},
-          bar: {'1': {f: ['1']}, '2': {f: ['1']}}
+          bar: {'1': {f: ['1']}, '2': {f: ['1']}},
         });
       });
 
       it('should update relationships for the records (remove one record)', () => {
         this.relationships.relationships = {
           foo: {'1': {b: ['1', '2']}},
-          bar: {'1': {f: ['1']}, '2': {f: ['1']}}
+          bar: {'1': {f: ['1']}, '2': {f: ['1']}},
         };
         this.relationships.recalculateRelationshipsForRecord('foo', {id: '1', b: ['1']});
         expect(this.relationships.relationships).to.be.eql({
           foo: {'1': {b: ['1']}},
-          bar: {'1': {f: ['1']}, '2': {f: []}}
+          bar: {'1': {f: ['1']}, '2': {f: []}},
         });
       });
 
       it('should update relationships for the records (remove one record and add another)', () => {
         this.relationships.relationships = {
           foo: {'1': {b: ['2', '3']}},
-          bar: {'2': {f: ['1']}, '3': {f: ['1']}}
+          bar: {'2': {f: ['1']}, '3': {f: ['1']}},
         };
         this.relationships.recalculateRelationshipsForRecord('foo', {id: '1', b: ['2', '4']});
         expect(this.relationships.relationships).to.be.eql({
           foo: {'1': {b: ['2', '4']}},
-          bar: {'2': {f: ['1']}, '3': {f: []}, '4': {f: ['1']}}
+          bar: {'2': {f: ['1']}, '3': {f: []}, '4': {f: ['1']}},
         });
       });
 
       it('should update relationships for the records (null)', () => {
         this.relationships.relationships = {
           foo: {'1': {b: ['2', '3']}},
-          bar: {'2': {f: ['1']}, '3': {f: ['1']}}
+          bar: {'2': {f: ['1']}, '3': {f: ['1']}},
         };
         this.relationships.recalculateRelationshipsForRecord('foo', {id: '1', b: null});
         expect(this.relationships.relationships).to.be.eql({
           foo: {'1': {b: []}},
-          bar: {'2': {f: []}, '3': {f: []}}
+          bar: {'2': {f: []}, '3': {f: []}},
         });
       });
 
       it('should update relationships for the records (should ignore null and undefined in the array)', () => {
         this.relationships.relationships = {
           foo: {'1': {b: ['2', '3']}},
-          bar: {'2': {f: ['1']}, '3': {f: ['1']}}
+          bar: {'2': {f: ['1']}, '3': {f: ['1']}},
         };
         this.relationships.recalculateRelationshipsForRecord('foo', {id: '1', b: [null, '2', undefined, '3']});
         expect(this.relationships.relationships).to.be.eql({
           foo: {'1': {b: ['2', '3']}},
-          bar: {'2': {f: ['1']}, '3': {f: ['1']}}
+          bar: {'2': {f: ['1']}, '3': {f: ['1']}},
         });
       });
     });
@@ -555,14 +555,14 @@ describe('Relationships', () => {
       class FooFactory extends Factory {
         attrs = {
           b: Factory.hasOne('bar', 'f'),
-          prop: 'static'
-        }
+          prop: 'static',
+        };
       }
       class BarFactory extends Factory {
         attrs = {
           f: Factory.hasOne('foo', 'b'),
-          prop: 'static'
-        }
+          prop: 'static',
+        };
       }
 
       beforeEach(() => {
@@ -574,19 +574,19 @@ describe('Relationships', () => {
         this.relationships.addFactory('foo');
         this.relationships.updateMeta({
           foo: this.foo.meta,
-          bar: this.bar.meta
+          bar: this.bar.meta,
         });
       });
 
       it('should delete existing relationships for the records', () => {
         this.relationships.relationships = {
           foo: {'1': {b: '2'}, '2': {b: '1'}},
-          bar: {'1': {f: '2'}, '2': {f: '1'}}
+          bar: {'1': {f: '2'}, '2': {f: '1'}},
         };
         this.relationships.deleteRelationshipsForRecord('foo', '1');
         expect(this.relationships.relationships).to.be.eql({
           foo: {'2': {b: '1'}},
-          bar: {'1': {f: '2'}, '2': {f: null}}
+          bar: {'1': {f: '2'}, '2': {f: null}},
         });
       });
     });
@@ -595,14 +595,14 @@ describe('Relationships', () => {
       class FooFactory extends Factory {
         attrs = {
           b: Factory.hasOne('bar', 'f'),
-          prop: 'static'
-        }
+          prop: 'static',
+        };
       }
       class BarFactory extends Factory {
         attrs = {
           f: Factory.hasMany('foo', 'b'),
-          prop: 'static'
-        }
+          prop: 'static',
+        };
       }
 
       beforeEach(() => {
@@ -614,19 +614,19 @@ describe('Relationships', () => {
         this.relationships.addFactory('foo');
         this.relationships.updateMeta({
           foo: this.foo.meta,
-          bar: this.bar.meta
+          bar: this.bar.meta,
         });
       });
 
       it('should delete existing relationships for the records', () => {
         this.relationships.relationships = {
           foo: {'1': {b: '2'}, '2': {b: '1'}},
-          bar: {'1': {f: ['3']}, '2': {f: ['1', '2']}}
+          bar: {'1': {f: ['3']}, '2': {f: ['1', '2']}},
         };
         this.relationships.deleteRelationshipsForRecord('foo', '1');
         expect(this.relationships.relationships).to.be.eql({
           foo: {'2': {b: '1'}},
-          bar: {'1': {f: ['3']}, '2': {f: ['2']}}
+          bar: {'1': {f: ['3']}, '2': {f: ['2']}},
         });
       });
     });
@@ -635,14 +635,14 @@ describe('Relationships', () => {
       class FooFactory extends Factory {
         attrs = {
           b: Factory.hasMany('bar', 'f'),
-          prop: 'static'
-        }
+          prop: 'static',
+        };
       }
       class BarFactory extends Factory {
         attrs = {
           f: Factory.hasOne('foo', 'b'),
-          prop: 'static'
-        }
+          prop: 'static',
+        };
       }
 
       beforeEach(() => {
@@ -654,19 +654,19 @@ describe('Relationships', () => {
         this.relationships.addFactory('foo');
         this.relationships.updateMeta({
           foo: this.foo.meta,
-          bar: this.bar.meta
+          bar: this.bar.meta,
         });
       });
 
       it('should delete existing relationships for the records', () => {
         this.relationships.relationships = {
           foo: {'1': {b: ['2']}, '2': {b: ['1']}},
-          bar: {'1': {f: '2'}, '2': {f: '1'}}
+          bar: {'1': {f: '2'}, '2': {f: '1'}},
         };
         this.relationships.deleteRelationshipsForRecord('foo', '1');
         expect(this.relationships.relationships).to.be.eql({
           foo: {'2': {b: ['1']}},
-          bar: {'1': {f: '2'}, '2': {f: null}}
+          bar: {'1': {f: '2'}, '2': {f: null}},
         });
       });
     });
@@ -675,14 +675,14 @@ describe('Relationships', () => {
       class FooFactory extends Factory {
         attrs = {
           b: Factory.hasMany('bar', 'f'),
-          prop: 'static'
-        }
+          prop: 'static',
+        };
       }
       class BarFactory extends Factory {
         attrs = {
           f: Factory.hasMany('foo', 'b'),
-          prop: 'static'
-        }
+          prop: 'static',
+        };
       }
 
       beforeEach(() => {
@@ -694,19 +694,19 @@ describe('Relationships', () => {
         this.relationships.addFactory('foo');
         this.relationships.updateMeta({
           foo: this.foo.meta,
-          bar: this.bar.meta
+          bar: this.bar.meta,
         });
       });
 
       it('should delete existing relationships for the records', () => {
         this.relationships.relationships = {
           foo: {'1': {b: ['1', '2']}, '2': {b: ['1', '2']}},
-          bar: {'1': {f: ['1', '2']}, '2': {f: ['1', '2']}}
+          bar: {'1': {f: ['1', '2']}, '2': {f: ['1', '2']}},
         };
         this.relationships.deleteRelationshipsForRecord('foo', '1');
         expect(this.relationships.relationships).to.be.eql({
           foo: {'2': {b: ['1', '2']}},
-          bar: {'1': {f: ['2']}, '2': {f: ['2']}}
+          bar: {'1': {f: ['2']}, '2': {f: ['2']}},
         });
       });
     });

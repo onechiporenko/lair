@@ -5,7 +5,7 @@
   "main": "./dist/index.js",
   "scripts": {
     "test": "mocha -r ts-node/register tests/**/*.ts",
-    "lint": "tslint -c tslint.json lib/**/*.ts"
+    "lint": "tslint -c tslint.json lib/**/*.ts && tslint -c tests/tslint.json tests/**/*.ts"
   },
   "keywords": [
     "js",

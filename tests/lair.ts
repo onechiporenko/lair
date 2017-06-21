@@ -404,7 +404,6 @@ describe('Lair', () => {
                   propA: '1',
                   propC: [
                     {id: '1', propB: '1', c: 'c'},
-                    {id: '2', propB: '1', c: 'c'},
                   ],
                 },
               });
@@ -418,14 +417,46 @@ describe('Lair', () => {
               propC: Factory.hasMany('c', 'propB'),
             };
             createRelated = {
-              propC: 2,
+              propC: 1,
             };
+            afterCreate(record) {
+              expect(record).to.be.eql({
+                id: '1',
+                b: 'b',
+                propA: {
+                  id: '1',
+                  a: 'a',
+                  propB: '1',
+                },
+                propC: [
+                  {id: '1', propB: '1', c: 'c'},
+                ],
+              });
+              return record;
+            }
           }
           class C extends Factory {
             attrs = {
               c: 'c',
               propB: Factory.hasOne('b', 'propC'),
             };
+            afterCreate(record) {
+              expect(record).to.be.eql({
+                id: '1',
+                c: 'c',
+                propB: {
+                  id: '1',
+                  b: 'b',
+                  propA: {
+                    id: '1',
+                    a: 'a',
+                    propB: '1',
+                  },
+                  propC: ['1'],
+                },
+              });
+              return record;
+            }
           }
           this.lair.registerFactory(new A(), 'a');
           this.lair.registerFactory(new B(), 'b');

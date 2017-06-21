@@ -29,6 +29,11 @@ interface InternalMetaStore {
   [factoryName: string]: Meta;
 }
 
+interface AfterCreateItem {
+  factoryName: string;
+  id: string;
+}
+
 /**
  * @class Lair
  */
@@ -59,6 +64,7 @@ export class Lair {
   private relationships: Relationships;
   private db: InternalDb = {};
   private meta: InternalMetaStore = {};
+  private afterCreateQueue: AfterCreateItem[] = [];
 
   private constructor() {
     this.relationships = new Relationships();
@@ -87,7 +93,18 @@ export class Lair {
    * @param {number} count
    */
   public createRecords(factoryName: string, count: number): void {
+    this.afterCreateQueue = [];
     this.internalCreateRecords(factoryName, count, {}, []);
+    while (this.afterCreateQueue.length) {
+      const {factoryName: fName, id} = this.afterCreateQueue.shift();
+      const factory = this.factories[fName].factory;
+      const newData = factory.afterCreate.call(null, this.getRecordWithRelationships(fName, id));
+      keys(factory.meta).forEach(attrName => {
+        if (newData.hasOwnProperty(attrName) && factory.meta[attrName].type === MetaAttrType.FIELD) {
+          this.db[fName][id][attrName] = newData[attrName];
+        }
+      });
+    }
   }
 
   /**
@@ -241,13 +258,8 @@ export class Lair {
           this.db[factoryName][record.id][attrName] = isHasMany ? relatedRecords : relatedRecords[0];
         });
       }
-      const newData = afterCreate.call(null, copy(record));
-      keys(meta).forEach(attrName => {
-        if (newData.hasOwnProperty(attrName) && meta[attrName].type === MetaAttrType.FIELD) {
-          record[attrName] = newData[attrName];
-        }
-      });
-      this.relationships.recalculateRelationshipsForRecord(factoryName, record);
+      this.relationships.recalculateRelationshipsForRecord(factoryName, this.db[factoryName][record.id]);
+      this.afterCreateQueue.push({factoryName, id: record.id});
     }
     return newRecords;
   }

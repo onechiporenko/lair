@@ -245,6 +245,7 @@ export class Lair {
       this.db[factoryName][record.id] = record;
       newRecords.push(record);
       this.factories[factoryName].id = i + 1;
+      this.afterCreateQueue.push({factoryName, id: record.id});
       if (createRelated) {
         keys(createRelated).forEach(attrName => {
           const fName = meta[attrName].factoryName;
@@ -259,7 +260,6 @@ export class Lair {
         });
       }
       this.relationships.recalculateRelationshipsForRecord(factoryName, this.db[factoryName][record.id]);
-      this.afterCreateQueue.push({factoryName, id: record.id});
     }
     return newRecords;
   }

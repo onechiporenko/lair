@@ -19,6 +19,29 @@ function assertHasType(target, key, descriptor): any {
   return descriptor;
 }
 
+/* tslint:disable:no-console */
+function verbose(target, key, descriptor): any {
+  if (descriptor === undefined) {
+    descriptor = Object.getOwnPropertyDescriptor(target, key);
+  }
+  const originalMethod = descriptor.value;
+  descriptor.value = function(...args) {
+    const strArgs = args.map(arg => arg instanceof Function ? 'callback' : `${JSON.stringify(arg)}`).join(', ');
+    const msg = `${key} (args - [${strArgs}]) execution time`;
+    console.time(msg);
+    const result = originalMethod.apply(this, args);
+    if (this.verbose) {
+      console.timeEnd(msg);
+      if (isArray(result)) {
+        console.log(`Result: ${result.length} item(s)`);
+      }
+    }
+    return result;
+  };
+  return descriptor;
+}
+/* tslint:enable:no-console */
+
 export interface InternalDb {
   [factoryName: string]: {
     [recordId: string]: Record;
@@ -60,6 +83,8 @@ export class Lair {
 
   private static instance: Lair;
 
+  public verbose = false;
+
   private factories: { [id: string]: FactoryData } = {};
   private relationships: Relationships;
   private db: InternalDb = {};
@@ -92,6 +117,7 @@ export class Lair {
    * @param {string} factoryName
    * @param {number} count
    */
+  @verbose
   public createRecords(factoryName: string, count: number): void {
     this.afterCreateQueue = [];
     this.internalCreateRecords(factoryName, count, {}, []);
@@ -114,6 +140,7 @@ export class Lair {
    * @param {Function} clb
    * @returns {Record[]}
    */
+  @verbose
   @assertHasType
   public queryMany(factoryName: string, clb: (record: Record) => boolean): Record[] {
     return keys(this.db[factoryName])
@@ -126,6 +153,7 @@ export class Lair {
    * @param {string} factoryName
    * @returns {Record[]}
    */
+  @verbose
   @assertHasType
   public getAll(factoryName: string): Record[] {
     return keys(this.db[factoryName]).map(id => this.getRecordWithRelationships(factoryName, id));
@@ -137,6 +165,7 @@ export class Lair {
    * @param {string} id
    * @returns {Record}
    */
+  @verbose
   @assertHasType
   public getOne(factoryName: string, id: string): Record {
     return this.getRecordWithRelationships(factoryName, id);
@@ -149,6 +178,7 @@ export class Lair {
    * @param {Function} clb
    * @returns {Record}
    */
+  @verbose
   @assertHasType
   public queryOne(factoryName: string, clb: (record: Record) => boolean): Record {
     const records = this.db[factoryName];
@@ -171,6 +201,7 @@ export class Lair {
    * @param {object} data
    * @returns {Record}
    */
+  @verbose
   @assertHasType
   public createOne(factoryName: string, data: any): Record {
     const meta = this.getMetaFor(factoryName);
@@ -197,6 +228,7 @@ export class Lair {
    * @param {object} data
    * @returns {Record}
    */
+  @verbose
   @assertHasType
   public updateOne(factoryName: string, id: string, data: any): Record {
     const record = this.getOne(factoryName, id);
@@ -217,6 +249,7 @@ export class Lair {
    * @param {string} factoryName
    * @param {string} id
    */
+  @verbose
   @assertHasType
   public deleteOne(factoryName: string, id: string): void {
     delete this.db[factoryName][id];

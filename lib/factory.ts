@@ -62,6 +62,7 @@ export class Factory {
   }
 
   public attrs = {};
+  public afterCreateRelationshipsDepth = Infinity;
   public createRelated: { [attrName: string]: number | ((id: string) => number) } = {};
   get meta() {
     if (!this.internalMeta) {

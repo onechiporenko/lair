@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {Factory} from '../lib/factory';
 import {Lair} from '../lib/lair';
+import {copy} from '../lib/utils';
 
 class TestFactory extends Factory {
   attrs = {
@@ -2537,6 +2538,293 @@ describe('Lair', () => {
           delete this.r.propB.id;
           expect(this.lair.updateOne('a', '1', {})).to.be.eql(this.originA1);
         });
+      });
+
+      describe('RU method should allow to set depth of relationships to be included in their response', () => {
+        class A extends Factory {
+          attrs = {
+            propB: Factory.hasMany('b', 'propA'),
+          };
+          createRelated = {
+            propB: 1,
+          };
+        }
+        class B extends Factory {
+          attrs = {
+            propA: Factory.hasOne('a', 'propB'),
+            propC: Factory.hasMany('c', 'propB'),
+          };
+          createRelated = {
+            propC: 1,
+          };
+        }
+        class C extends Factory {
+          attrs = {
+            propB: Factory.hasOne('b', 'propC'),
+            propD: Factory.hasMany('d', 'propC'),
+          };
+          createRelated = {
+            propD: 1,
+          };
+        }
+        class D extends Factory {
+          attrs = {
+            propC: Factory.hasOne('c', 'propD'),
+            propE: Factory.hasMany('e', 'propD'),
+          };
+          createRelated = {
+            propE: 1,
+          };
+        }
+        class E extends Factory {
+          attrs = {
+            propD: Factory.hasOne('d', 'propE'),
+          };
+        }
+        beforeEach(() => {
+          this.a1 = {
+            id: '1',
+            propB: [
+              {
+                id: '1',
+                propA: '1',
+                propC: [
+                  {
+                    id: '1',
+                    propB: '1',
+                    propD: [
+                      {
+                        id: '1',
+                        propC: '1',
+                        propE: [
+                          {
+                            id: '1',
+                            propD: '1',
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          };
+          this.b1 = {
+            id: '1',
+            propA: {
+              id: '1',
+              propB: ['1'],
+            },
+            propC: [
+              {
+                id: '1',
+                propB: '1',
+                propD: [
+                  {
+                    id: '1',
+                    propC: '1',
+                    propE: [
+                      {
+                        id: '1',
+                        propD: '1',
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          };
+          this.c1 = {
+            id: '1',
+            propB: {
+              id: '1',
+              propA: {
+                id: '1',
+                propB: ['1'],
+              },
+              propC: ['1'],
+            },
+            propD: [
+              {
+                id: '1',
+                propC: '1',
+                propE: [
+                  {
+                    id: '1',
+                    propD: '1',
+                  },
+                ],
+              },
+            ],
+          };
+          this.d1 = {
+            id: '1',
+            propC: {
+              id: '1',
+              propB: {
+                id: '1',
+                propA: {
+                  id: '1',
+                  propB: ['1'],
+                },
+                propC: ['1'],
+              },
+              propD: ['1'],
+            },
+            propE: [
+              {
+                id: '1',
+                propD: '1',
+              },
+            ],
+          };
+          this.e1 = {
+            id: '1',
+            propD: {
+              id: '1',
+              propE: ['1'],
+              propC: {
+                id: '1',
+                propD: ['1'],
+                propB: {
+                  id: '1',
+                  propA: {
+                    id: '1',
+                    propB: ['1'],
+                  },
+                  propC: ['1'],
+                },
+              },
+            },
+          };
+          this.a2 = {
+            id: '1',
+            propB: ['1'],
+          };
+          this.b2 = {
+            id: '1',
+            propA: '1',
+            propC: ['1'],
+          };
+          this.c2 = {
+            id: '1',
+            propB: '1',
+            propD: ['1'],
+          };
+          this.d2 = {
+            id: '1',
+            propC: '1',
+            propE: ['1'],
+          };
+          this.e2 = {
+            id: '1',
+            propD: '1',
+          };
+          this.a3 = {
+            id: '1',
+            propB: [
+              {id: '1', propA: '1', propC: ['1']},
+            ],
+          };
+          this.b3 = {
+            id: '1',
+            propA: {
+              id: '1',
+              propB: ['1'],
+            },
+            propC: [
+              {id: '1', propB: '1', propD: ['1']},
+            ],
+          };
+          this.c3 = {
+            id: '1',
+            propB: {
+              id: '1',
+              propA: '1',
+              propC: ['1'],
+            },
+            propD: [
+              {id: '1', propC: '1', propE: ['1']},
+            ],
+          };
+          this.d3 = {
+            id: '1',
+            propC: {
+              id: '1',
+              propB: '1',
+              propD: ['1'],
+            },
+            propE: [
+              {id: '1', propD: '1'},
+            ],
+          };
+          this.e3 = {
+            id: '1',
+            propD: {
+              id: '1',
+              propE: ['1'],
+              propC: '1',
+            },
+          };
+          this.lair.registerFactory(new A(), 'a');
+          this.lair.registerFactory(new B(), 'b');
+          this.lair.registerFactory(new C(), 'c');
+          this.lair.registerFactory(new D(), 'd');
+          this.lair.registerFactory(new E(), 'e');
+          this.lair.createRecords('a', 1);
+        });
+
+        describe('#getOne', () => {
+          [5, 1, 2].forEach((depth, index) => {
+            ['a', 'b', 'c', 'd', 'e'].forEach(f => {
+              it(`${f}, depth = ${depth}`, () => {
+                expect(this.lair.getOne(f, '1', {depth})).to.be.eql(this[`${f}${index + 1}`]);
+              });
+            });
+          });
+        });
+
+        describe('#queryOne', () => {
+          [5, 1, 2].forEach((depth, index) => {
+            ['a', 'b', 'c', 'd', 'e'].forEach(f => {
+              it(`${f}, depth = ${depth}`, () => {
+                expect(this.lair.queryOne(f, r => r.id === '1', {depth})).to.be.eql(this[`${f}${index + 1}`]);
+              });
+            });
+          });
+
+        });
+
+        describe('#getAll', () => {
+          [5, 1, 2].forEach((depth, index) => {
+            ['a', 'b', 'c', 'd', 'e'].forEach(f => {
+              it(`${f}, depth = ${depth}`, () => {
+                expect(this.lair.getAll(f, {depth})).to.be.eql([this[`${f}${index + 1}`]]);
+              });
+            });
+          });
+        });
+
+        describe('#queryMany', () => {
+          [5, 1, 2].forEach((depth, index) => {
+            ['a', 'b', 'c', 'd', 'e'].forEach(f => {
+              it(`${f}, depth = ${depth}`, () => {
+                expect(this.lair.queryMany(f, r => r.id === '1', {depth})).to.be.eql([this[`${f}${index + 1}`]]);
+              });
+            });
+          });
+        });
+
+        describe('#updateOne', () => {
+          [5, 1, 2].forEach((depth, index) => {
+            ['a', 'b', 'c', 'd', 'e'].forEach(f => {
+              it(`${f}, depth = ${depth}`, () => {
+                expect(this.lair.updateOne(f, '1', {}, {depth})).to.be.eql(this[`${f}${index + 1}`]);
+              });
+            });
+          });
+        });
+
       });
 
     });

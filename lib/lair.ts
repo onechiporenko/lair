@@ -57,6 +57,10 @@ interface AfterCreateItem {
   id: string;
 }
 
+export interface CRUDOptions {
+  depth: number;
+}
+
 /**
  * @class Lair
  */
@@ -124,7 +128,7 @@ export class Lair {
     while (this.afterCreateQueue.length) {
       const {factoryName: fName, id} = this.afterCreateQueue.shift();
       const factory = this.factories[fName].factory;
-      const newData = factory.afterCreate.call(null, this.getRecordWithRelationships(fName, id));
+      const newData = factory.afterCreate.call(null, this.getRecordWithRelationships(fName, id, [], {maxDepth: factory.afterCreateRelationshipsDepth, currentDepth: 1}));
       keys(factory.meta).forEach(attrName => {
         if (newData.hasOwnProperty(attrName) && factory.meta[attrName].type === MetaAttrType.FIELD) {
           this.db[fName][id][attrName] = newData[attrName];
@@ -138,37 +142,43 @@ export class Lair {
    * Callback is called with one parameter - record
    * @param {string} factoryName
    * @param {Function} clb
+   * @param {CRUDOptions} options
    * @returns {Record[]}
    */
   @verbose
   @assertHasType
-  public queryMany(factoryName: string, clb: (record: Record) => boolean): Record[] {
+  public queryMany(factoryName: string, clb: (record: Record) => boolean, options: CRUDOptions = {depth: Infinity}): Record[] {
+    const opts = {maxDepth: options.depth, currentDepth: 1};
     return keys(this.db[factoryName])
       .filter(id => clb.call(null, this.db[factoryName][id]))
-      .map(id => this.getRecordWithRelationships(factoryName, id));
+      .map(id => this.getRecordWithRelationships(factoryName, id, [], opts));
   }
 
   /**
    * Get all records of needed factory
    * @param {string} factoryName
+   * @param {CRUDOptions} options
    * @returns {Record[]}
    */
   @verbose
   @assertHasType
-  public getAll(factoryName: string): Record[] {
-    return keys(this.db[factoryName]).map(id => this.getRecordWithRelationships(factoryName, id));
+  public getAll(factoryName: string, options: CRUDOptions = {depth: Infinity}): Record[] {
+    const opts = {maxDepth: options.depth, currentDepth: 1};
+    return keys(this.db[factoryName]).map(id => this.getRecordWithRelationships(factoryName, id, [], opts));
   }
 
   /**
    * Get one record of needed factory by its id
    * @param {string} factoryName
    * @param {string} id
+   * @param {CRUDOptions} options
    * @returns {Record}
    */
   @verbose
   @assertHasType
-  public getOne(factoryName: string, id: string): Record {
-    return this.getRecordWithRelationships(factoryName, id);
+  public getOne(factoryName: string, id: string, options: CRUDOptions = {depth: Infinity}): Record {
+    const opts = {maxDepth: options.depth, currentDepth: 1};
+    return this.getRecordWithRelationships(factoryName, id, [], opts);
   }
 
   /**
@@ -176,16 +186,18 @@ export class Lair {
    * Callback is called with one parameter - record
    * @param {string} factoryName
    * @param {Function} clb
+   * @param {CRUDOptions} options
    * @returns {Record}
    */
   @verbose
   @assertHasType
-  public queryOne(factoryName: string, clb: (record: Record) => boolean): Record {
+  public queryOne(factoryName: string, clb: (record: Record) => boolean, options: CRUDOptions = {depth: Infinity}): Record {
+    const opts = {maxDepth: options.depth, currentDepth: 1};
     const records = this.db[factoryName];
     const ids = keys(records);
     for (const id of ids) {
       if (clb.call(null, records[id])) {
-        return this.getRecordWithRelationships(factoryName, id);
+        return this.getRecordWithRelationships(factoryName, id, [], opts);
       }
     }
     return null;
@@ -199,11 +211,13 @@ export class Lair {
    * Important! All related records should already be in the db
    * @param {string} factoryName
    * @param {object} data
+   * @param {CRUDOptions} options
    * @returns {Record}
    */
   @verbose
   @assertHasType
-  public createOne(factoryName: string, data: any): Record {
+  public createOne(factoryName: string, data: any, options: CRUDOptions = {depth: Infinity}): Record {
+    const opts = {maxDepth: options.depth, currentDepth: 1};
     const meta = this.getMetaFor(factoryName);
     const id = String(this.factories[factoryName].id);
     this.relationships.addRecord(factoryName, id);
@@ -215,7 +229,7 @@ export class Lair {
     });
     this.db[factoryName][id] = newRecord;
     this.factories[factoryName].id++;
-    return this.getRecordWithRelationships(factoryName, newRecord.id);
+    return this.getRecordWithRelationships(factoryName, newRecord.id, [], opts);
   }
 
   /**
@@ -226,11 +240,13 @@ export class Lair {
    * @param {string} factoryName
    * @param {string} id
    * @param {object} data
+   * @param {CRUDOptions} options
    * @returns {Record}
    */
   @verbose
   @assertHasType
-  public updateOne(factoryName: string, id: string, data: any): Record {
+  public updateOne(factoryName: string, id: string, data: any, options: CRUDOptions = {depth: Infinity}): Record {
+    const opts = {maxDepth: options.depth, currentDepth: 1};
     const record = this.getOne(factoryName, id);
     assert(`Record of "${factoryName}" with id "${id}" doesn't exist`, !!record);
     const meta = this.getMetaFor(factoryName);
@@ -240,7 +256,7 @@ export class Lair {
       }
     });
     this.db[factoryName][id] = record;
-    return this.getRecordWithRelationships(factoryName, record.id);
+    return this.getRecordWithRelationships(factoryName, record.id, [], opts);
   }
 
   /**
@@ -268,7 +284,7 @@ export class Lair {
     assert(`Factory with name "${factoryName}" is not registered`, !!this.factories[factoryName]);
     assert(`Loop is detected in the "createRelated". Chain is ${JSON.stringify(relatedChain)}. You try to create records for "${factoryName}" again.`, relatedChain.indexOf(factoryName) === -1);
     const factoryData = this.factories[factoryName];
-    const {meta, afterCreate, createRelated} = factoryData.factory;
+    const {meta, createRelated} = factoryData.factory;
     const limit = factoryData.id + count;
     const newRecords = [];
     for (let i = factoryData.id; i < limit; i++) {
@@ -301,7 +317,7 @@ export class Lair {
     return v instanceof Function ? v.call(null, id) : v;
   }
 
-  private getRecordWithRelationships(factoryName: string, id: string, relatedFor: any = {}): Record {
+  private getRecordWithRelationships(factoryName: string, id: string, relatedFor: any = [], options: any = {maxDepth: Infinity, currentDepth: 1}): Record {
     const recordRelationships = this.relationships.getRelationshipsForRecord(factoryName, id);
     const meta = this.getMetaFor(factoryName);
     let record = this.db[factoryName][id];
@@ -309,21 +325,32 @@ export class Lair {
       return null;
     }
     record = copy(record);
+    if (options.currentDepth >= options.maxDepth) {
+      return {...record, ...recordRelationships};
+    }
     if (recordRelationships) {
       keys(recordRelationships).forEach(attrName => {
         const relatedIds = recordRelationships[attrName];
         const relatedFactoryName = meta[attrName].factoryName;
-        if (relatedFor.factoryName === relatedFactoryName && relatedFor.attrName && relatedFor.attrName === meta[attrName].invertedAttrName) {
+        if (this.isRelated(factoryName, attrName, relatedFor)) {
           record[attrName] = relatedIds;
         } else {
-          const isRelatedFor = {factoryName, id, attrName};
+          const isRelatedFor = [...relatedFor, {factoryName, id, attrName}];
+          const opts = {...options};
+          opts.currentDepth++;
           record[attrName] = isArray(relatedIds) ?
-            relatedIds.map(relatedId => this.getRecordWithRelationships(relatedFactoryName, relatedId, isRelatedFor)) :
-            (relatedIds ? this.getRecordWithRelationships(relatedFactoryName, relatedIds, isRelatedFor) : null);
+            relatedIds.map(relatedId => this.getRecordWithRelationships(relatedFactoryName, relatedId, isRelatedFor, opts)) :
+            (relatedIds ? this.getRecordWithRelationships(relatedFactoryName, relatedIds, isRelatedFor, opts) : null);
         }
       });
     }
     return record;
+  }
+
+  private isRelated(factoryName, attrName, relatedFor: any = []) {
+    const meta = this.getMetaFor(factoryName);
+    const relatedFactoryName = meta[attrName].factoryName;
+    return relatedFor.some(r => r.factoryName === relatedFactoryName && r.attrName && r.attrName === meta[attrName].invertedAttrName);
   }
 
   private createAttrValue(factoryName: string, id: string, attrName: string, val: any): string | string[] | null {

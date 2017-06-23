@@ -145,7 +145,8 @@ export class Relationships {
     assert(`"removeFromMany" should be used only for HAS_MANY relationships. You try to use for "${factoryName}.${attrName}"`, this.meta[factoryName][attrName].type === MetaAttrType.HAS_MANY);
     const oldDistRelationships = this.getMany(factoryName, id, attrName) || [];
     this.addRecord(factoryName, id);
-    this.setMany(factoryName, id, attrName, oldDistRelationships.filter(v => v !== valueToRemove));
+    const newValue = oldDistRelationships.indexOf(valueToRemove) === -1 ? oldDistRelationships : oldDistRelationships.filter(v => v !== valueToRemove);
+    this.setMany(factoryName, id, attrName, newValue);
   }
 
   public addToMany(factoryName: string, id: string, attrName: string, valueToAdd: string): void {
@@ -268,14 +269,14 @@ export class Relationships {
     }
     keys(this.relationships[distFactoryName]).forEach(recordId => {
       const r = this.relationships[distFactoryName][recordId][distAttrName];
-      if (isArray(r)) {
+      if (isArray(r) && r.indexOf(sourceRecordId) !== -1) {
         this.relationships[distFactoryName][recordId][distAttrName] = r.filter(v => v !== sourceRecordId);
       }
     });
     if (distRecordId) {
       const currentRelationship = this.relationships[distFactoryName][distRecordId][distAttrName];
       if (currentRelationship) {
-        this.relationships[distFactoryName][distRecordId][distAttrName] = isArray(currentRelationship) && currentRelationship.length ? currentRelationship.filter(v => v !== sourceRecordId) : [sourceRecordId];
+        this.relationships[distFactoryName][distRecordId][distAttrName] = isArray(currentRelationship) && currentRelationship.length ? (currentRelationship.indexOf(sourceRecordId) === -1 ? currentRelationship : currentRelationship.filter(v => v !== sourceRecordId)) : [sourceRecordId];
       } else {
         this.relationships[distFactoryName][distRecordId][distAttrName] = sourceRecordId ? [sourceRecordId] : [];
       }
@@ -290,7 +291,7 @@ export class Relationships {
     }
     keys(this.relationships[distFactoryName]).forEach(distRecordId => {
       const r = this.relationships[distFactoryName][distRecordId][distAttrName];
-      if (isArray(r)) {
+      if (isArray(r) && r.indexOf(sourceRecordId) !== -1) {
         this.relationships[distFactoryName][distRecordId][distAttrName] = r.filter(v => v !== sourceRecordId);
       }
     });

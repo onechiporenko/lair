@@ -1,26 +1,25 @@
 import {expect} from 'chai';
 import {Factory} from '../lib/factory';
 import {Lair} from '../lib/lair';
-import {copy} from '../lib/utils';
 
 class TestFactory extends Factory {
   attrs = {
-    name(id) {
-      return `unit ${id}`;
+    name() {
+      return `unit ${this.id}`;
     },
   };
 }
 class FooFactory extends Factory {
   attrs = {
-    foo(id) {
-      return `foo ${id}`;
+    foo() {
+      return `foo ${this.id}`;
     },
   };
 }
 class BarFactory extends Factory {
   attrs = {
-    bar(id) {
-      return `foo ${id}`;
+    bar() {
+      return `foo ${this.id}`;
     },
   };
 }

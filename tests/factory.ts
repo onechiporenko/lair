@@ -4,8 +4,11 @@ import {Factory, MetaAttrType} from '../lib/factory';
 class TestFactory extends Factory {
   attrs = {
     first: 'static',
-    second(id) {
-      return `dynamic ${id}`;
+    second() {
+      return `dynamic ${this.id}`;
+    },
+    third() {
+      return `third is ${this.second}`;
     },
     one: Factory.hasOne('anotherFactory', 'attr1'),
     many: Factory.hasMany('anotherFactory', 'attr2'),
@@ -18,6 +21,7 @@ describe('Factory', () => {
 
     before(() => {
       this.factory = new TestFactory();
+      this.factory.init();
       this.firstInstance = this.factory.createRecord(1);
       this.secondInstance = this.factory.createRecord(2);
     });
@@ -44,12 +48,24 @@ describe('Factory', () => {
       expect(() => new F().createRecord(1)).to.throw(`Don't add "id" to the "attrs"`);
     });
 
+    describe('dynamic attributes may get values for other attributes', () => {
+      it('dynamic -> static', () => {
+        expect(this.firstInstance.second).to.be.equal('dynamic 1');
+        expect(this.secondInstance.second).to.be.equal('dynamic 2');
+      });
+      it('dynamic -> dynamic', () => {
+        expect(this.firstInstance.third).to.be.equal('third is dynamic 1');
+        expect(this.secondInstance.third).to.be.equal('third is dynamic 2');
+      });
+    });
+
   });
 
   describe('#meta', () => {
 
     beforeEach(() => {
       this.f = new TestFactory();
+      this.f.init();
       this.f.createRecord(1);
       this.meta = this.f.meta;
     });

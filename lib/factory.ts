@@ -1,7 +1,7 @@
 import {Record} from './record';
 import {assert} from './utils';
 
-const {keys} = Object;
+const {keys, defineProperty} = Object;
 
 export enum MetaAttrType {
   FIELD,
@@ -72,6 +72,7 @@ export class Factory {
   }
 
   private internalMeta: Meta = null;
+  private internalFactory = null;
 
   /**
    * Forget about this. It's only for Lair
@@ -79,11 +80,11 @@ export class Factory {
    * @returns {Record}
    */
   public createRecord(id: number): Record {
-    this.getMeta();
     this.checkAttrs();
     const attrs = this.attrs;
     const newRecord = {id: String(id)} as Record;
-    keys(attrs).forEach(attrName => newRecord[attrName] = this.parseAttr(attrs[attrName], id));
+    const n = new this.internalFactory(id);
+    keys(attrs).forEach(attrName => newRecord[attrName] = n[attrName]);
     return newRecord;
   }
 
@@ -91,8 +92,38 @@ export class Factory {
     return record;
   }
 
-  protected parseAttr(val, id: number) {
-    return val instanceof Function ? val.call(null, id) : val;
+  public init(): void {
+    this.getMeta();
+    this.checkAttrs();
+    this.initInternalFactory();
+  }
+
+  protected initInternalFactory(): void {
+    const attrs = this.attrs;
+    function internalFactory(id) {
+      this.id = String(id);
+      keys(attrs).forEach(attrName => {
+        const attr = attrs[attrName];
+        const options: PropertyDescriptor = {enumerable: true};
+        if (attr.type === MetaAttrType.HAS_ONE) {
+          options.value = null;
+        }
+        if (attr.type === MetaAttrType.HAS_MANY) {
+          options.value = [];
+        }
+        if (!attr.type) {
+          if (attr instanceof Function) {
+            options.get = function() {
+              return attr.call(this);
+            };
+          } else {
+            options.value = attr;
+          }
+        }
+        defineProperty(this, attrName, options);
+      });
+    }
+    this.internalFactory = internalFactory;
   }
 
   protected getMeta(): void {

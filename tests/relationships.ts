@@ -219,6 +219,8 @@ describe('Relationships', () => {
       beforeEach(() => {
         this.foo = new FooFactory();
         this.bar = new BarFactory();
+        this.foo.init();
+        this.bar.init();
         this.foo.createRecord(1);
         this.bar.createRecord(1);
         this.relationships.addFactory('bar');
@@ -288,6 +290,8 @@ describe('Relationships', () => {
       beforeEach(() => {
         this.foo = new FooFactory();
         this.bar = new BarFactory();
+        this.foo.init();
+        this.bar.init();
         this.foo.createRecord(1);
         this.bar.createRecord(1);
         this.relationships.addFactory('bar');
@@ -380,6 +384,8 @@ describe('Relationships', () => {
       beforeEach(() => {
         this.foo = new FooFactory();
         this.bar = new BarFactory();
+        this.foo.init();
+        this.bar.init();
         this.foo.createRecord(1);
         this.bar.createRecord(1);
         this.relationships.addFactory('bar');
@@ -472,6 +478,8 @@ describe('Relationships', () => {
       beforeEach(() => {
         this.foo = new FooFactory();
         this.bar = new BarFactory();
+        this.foo.init();
+        this.bar.init();
         this.foo.createRecord(1);
         this.bar.createRecord(1);
         this.relationships.addFactory('bar');
@@ -568,6 +576,8 @@ describe('Relationships', () => {
       beforeEach(() => {
         this.foo = new FooFactory();
         this.bar = new BarFactory();
+        this.foo.init();
+        this.bar.init();
         this.foo.createRecord(1);
         this.bar.createRecord(1);
         this.relationships.addFactory('bar');
@@ -608,6 +618,8 @@ describe('Relationships', () => {
       beforeEach(() => {
         this.foo = new FooFactory();
         this.bar = new BarFactory();
+        this.foo.init();
+        this.bar.init();
         this.foo.createRecord(1);
         this.bar.createRecord(1);
         this.relationships.addFactory('bar');
@@ -648,6 +660,8 @@ describe('Relationships', () => {
       beforeEach(() => {
         this.foo = new FooFactory();
         this.bar = new BarFactory();
+        this.foo.init();
+        this.bar.init();
         this.foo.createRecord(1);
         this.bar.createRecord(1);
         this.relationships.addFactory('bar');
@@ -688,6 +702,8 @@ describe('Relationships', () => {
       beforeEach(() => {
         this.foo = new FooFactory();
         this.bar = new BarFactory();
+        this.foo.init();
+        this.bar.init();
         this.foo.createRecord(1);
         this.bar.createRecord(1);
         this.relationships.addFactory('bar');

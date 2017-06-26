@@ -113,6 +113,7 @@ export class Lair {
     this.relationships.addFactory(fName);
     this.relationships.updateMeta(this.meta);
     this.addType(fName);
+    factory.init();
   }
 
   /**

@@ -236,10 +236,10 @@ export class Relationships {
 
   protected updateOneToOne(sourceFactoryName: string, sourceRecordId: string, sourceAttrName: string, distFactoryName: string, distRecordId: string, distAttrName: string): void {
     this.addRecord(sourceFactoryName, sourceRecordId);
-    this.relationships[sourceFactoryName][sourceRecordId][sourceAttrName] = distRecordId;
+    this.setOne(sourceFactoryName, sourceRecordId, sourceAttrName, distRecordId);
     if (distRecordId) {
       this.addRecord(distFactoryName, distRecordId);
-      this.relationships[distFactoryName][distRecordId][distAttrName] = sourceRecordId;
+      this.setOne(distFactoryName, distRecordId, distAttrName, sourceRecordId);
     } else {
       this.dropRelationship(distFactoryName, distAttrName, sourceRecordId);
     }
@@ -250,42 +250,43 @@ export class Relationships {
     if (distRecordIds) {
       distRecordIds.forEach(distRecordId => this.addRecord(distFactoryName, distRecordId));
     }
-    this.relationships[sourceFactoryName][sourceRecordId][sourceAttrName] = isArray(distRecordIds) ? distRecordIds : [];
+    this.setMany(sourceFactoryName, sourceRecordId, sourceAttrName, isArray(distRecordIds) ? distRecordIds : []);
     // drop old relationships
     this.dropRelationship(distFactoryName, distAttrName, sourceRecordId);
     // set new relationships
     if (distRecordIds) {
-      distRecordIds.forEach(distRecordId => this.relationships[distFactoryName][distRecordId][distAttrName] = sourceRecordId);
+      distRecordIds.forEach(distRecordId => this.setOne(distFactoryName, distRecordId, distAttrName, sourceRecordId));
     }
   }
 
   protected updateOneToMany(sourceFactoryName: string, sourceRecordId: string, sourceAttrName: string, distFactoryName: string, distRecordId: string, distAttrName: string): void {
     if (sourceRecordId) {
       this.addRecord(sourceFactoryName, sourceRecordId);
-      this.relationships[sourceFactoryName][sourceRecordId][sourceAttrName] = distRecordId;
+      this.setOne(sourceFactoryName, sourceRecordId, sourceAttrName, distRecordId);
     }
     if (distRecordId) {
       this.addRecord(distFactoryName, distRecordId);
     }
     keys(this.relationships[distFactoryName]).forEach(recordId => {
-      const r = this.relationships[distFactoryName][recordId][distAttrName];
-      if (isArray(r) && r.indexOf(sourceRecordId) !== -1) {
-        this.relationships[distFactoryName][recordId][distAttrName] = r.filter(v => v !== sourceRecordId);
+      const r = this.getMany(distFactoryName, recordId, distAttrName);
+      if (r.indexOf(sourceRecordId) !== -1) {
+        this.setMany(distFactoryName, recordId, distAttrName, r.filter(v => v !== sourceRecordId));
       }
     });
     if (distRecordId) {
       const currentRelationship = this.relationships[distFactoryName][distRecordId][distAttrName];
       if (currentRelationship) {
-        this.relationships[distFactoryName][distRecordId][distAttrName] = isArray(currentRelationship) && currentRelationship.length ? (currentRelationship.indexOf(sourceRecordId) === -1 ? currentRelationship : currentRelationship.filter(v => v !== sourceRecordId)) : [sourceRecordId];
+        const valueToSet = isArray(currentRelationship) && currentRelationship.length ? (currentRelationship.indexOf(sourceRecordId) === -1 ? currentRelationship : currentRelationship.filter(v => v !== sourceRecordId)) : [sourceRecordId];
+        this.setMany(distFactoryName, distRecordId, distAttrName, valueToSet);
       } else {
-        this.relationships[distFactoryName][distRecordId][distAttrName] = sourceRecordId ? [sourceRecordId] : [];
+        this.setMany(distFactoryName, distRecordId, distAttrName, sourceRecordId ? [sourceRecordId] : []);
       }
     }
   }
 
   protected updateManyToMany(sourceFactoryName: string, sourceRecordId: string, sourceAttrName: string, distFactoryName: string, distRecordIds: string[], distAttrName: string): void {
     this.addRecord(sourceFactoryName, sourceRecordId);
-    this.relationships[sourceFactoryName][sourceRecordId][sourceAttrName] = isArray(distRecordIds) ? distRecordIds : [];
+    this.setMany(sourceFactoryName, sourceRecordId, sourceAttrName, isArray(distRecordIds) ? distRecordIds : []);
     if (isArray(distRecordIds)) {
       distRecordIds.forEach(distRecordId => this.addRecord(distFactoryName, distRecordId));
     }

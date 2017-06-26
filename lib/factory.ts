@@ -102,6 +102,7 @@ export class Factory {
     const attrs = this.attrs;
     function internalFactory(id) {
       this.id = String(id);
+      this.cache = {};
       keys(attrs).forEach(attrName => {
         const attr = attrs[attrName];
         const options: PropertyDescriptor = {enumerable: true};
@@ -113,8 +114,12 @@ export class Factory {
         }
         if (!attr.type) {
           if (attr instanceof Function) {
+            const self = this;
             options.get = function() {
-              return attr.call(this);
+              if (!self.cache.hasOwnProperty(attrName)) {
+                self.cache[attrName] = attr.call(this);
+              }
+              return self.cache[attrName];
             };
           } else {
             options.value = attr;

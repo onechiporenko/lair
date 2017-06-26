@@ -10,6 +10,15 @@ class TestFactory extends Factory {
     third() {
       return `third is ${this.second}`;
     },
+    rand() {
+      return Math.random();
+    },
+    r1() {
+      return this.rand;
+    },
+    r2() {
+      return this.rand;
+    },
     one: Factory.hasOne('anotherFactory', 'attr1'),
     many: Factory.hasMany('anotherFactory', 'attr2'),
   };
@@ -56,6 +65,17 @@ describe('Factory', () => {
       it('dynamic -> dynamic', () => {
         expect(this.firstInstance.third).to.be.equal('third is dynamic 1');
         expect(this.secondInstance.third).to.be.equal('third is dynamic 2');
+      });
+      describe('dynamic attribute should not be recalculated', () => {
+        it('first instance', () => {
+          expect(this.firstInstance.r1).to.be.equal(this.firstInstance.r2);
+        });
+        it('second instance', () => {
+          expect(this.secondInstance.r1).to.be.equal(this.secondInstance.r2);
+        });
+        it('both instances', () => {
+          expect(this.firstInstance.r1).to.be.not.equal(this.secondInstance.r1);
+        });
       });
     });
 

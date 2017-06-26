@@ -2,10 +2,6 @@ export function isId(id: string): boolean {
   return !isNaN(parseInt(id, 10));
 }
 
-export function isArrayOfIds(list: any[]): boolean {
-  return !list.some(item => !isId(item));
-}
-
 export function assert(msg: string, condition: boolean) {
   if (!condition) {
     throw new Error(msg);

@@ -22,7 +22,17 @@ export interface MetaAttr {
 export interface RelationshipMetaAttr extends MetaAttr {
   factoryName: string;
   invertedAttrName: string;
+  reflexive: boolean;
+  reflexiveDepth: number;
   type: MetaAttrType;
+}
+export interface RelationshipOptions {
+  reflexive: boolean;
+  depth: number;
+}
+
+function getVal(obj, key, defaultVal) {
+  return obj && obj.hasOwnProperty(key) ? obj[key] : defaultVal;
 }
 
 /**
@@ -44,10 +54,13 @@ export class Factory {
    * Used for 'one-to-one' and 'one-to-many'
    * @param {string} factoryName
    * @param {string} invertedAttrName
-   * @returns {{factoryName: string, invertedAttrName: string, type: MetaAttrType}}
+   * @param {RelationshipOptions} options
+   * @returns {RelationshipMetaAttr}
    */
-  public static hasOne(factoryName: string, invertedAttrName: string): RelationshipMetaAttr {
-    return {factoryName, invertedAttrName, type: MetaAttrType.HAS_ONE};
+  public static hasOne(factoryName: string, invertedAttrName: string, options?: RelationshipOptions): RelationshipMetaAttr {
+    const reflexive = getVal(options, 'reflexive', false);
+    const reflexiveDepth = reflexive ? getVal(options, 'depth', 2) : 2;
+    return {factoryName, invertedAttrName, type: MetaAttrType.HAS_ONE, reflexive, reflexiveDepth};
   }
 
   /**
@@ -55,10 +68,13 @@ export class Factory {
    * Used for 'many-to-one' and 'many-to-many'
    * @param {string} factoryName
    * @param {string} invertedAttrName
-   * @returns {{factoryName: string, invertedAttrName: string, type: MetaAttrType}}
+   * @param {RelationshipOptions} options
+   * @returns {RelationshipMetaAttr}
    */
-  public static hasMany(factoryName: string, invertedAttrName: string): RelationshipMetaAttr {
-    return {factoryName, invertedAttrName, type: MetaAttrType.HAS_MANY};
+  public static hasMany(factoryName: string, invertedAttrName: string, options?: RelationshipOptions): RelationshipMetaAttr {
+    const reflexive = getVal(options, 'reflexive', false);
+    const reflexiveDepth = reflexive ? getVal(options, 'depth', 2) : 2;
+    return {factoryName, invertedAttrName, type: MetaAttrType.HAS_MANY, reflexive, reflexiveDepth};
   }
 
   public attrs = {};

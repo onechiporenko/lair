@@ -354,6 +354,193 @@ describe('Lair', () => {
         });
       });
 
+      describe('should create records with reflexive relations', () => {
+
+        describe('one level depth', () => {
+          describe('one-to-one', () => {
+            class R extends Factory {
+              attrs = {
+                propR: Factory.hasOne('r', 'propC', {reflexive: true, depth: 2}),
+                propC: Factory.hasOne('r', 'propR'),
+              };
+              createRelated = {
+                propR: 1,
+              };
+            }
+            beforeEach(() => {
+              this.lair.registerFactory(new R(), 'r');
+              this.lair.createRecords('r', 1);
+            });
+            it('reflexive records are created', () => {
+              expect(this.lair.getAll('r')).to.be.eql([
+                {id: '1', propC: null, propR: {id: '2', propC: '1', propR: null}},
+                {id: '2', propC: {id: '1', propC: null, propR: '2'}, propR: null},
+              ]);
+            });
+          });
+
+          describe('one-to-many', () => {
+            class R extends Factory {
+              attrs = {
+                propR: Factory.hasOne('r', 'propC', {reflexive: true, depth: 2}),
+                propC: Factory.hasMany('r', 'propR'),
+              };
+              createRelated = {
+                propR: 1,
+              };
+            }
+            beforeEach(() => {
+              this.lair.registerFactory(new R(), 'r');
+              this.lair.createRecords('r', 1);
+            });
+            it('reflexive records are created', () => {
+              expect(this.lair.getAll('r')).to.be.eql([
+                {id: '1', propC: [], propR: {id: '2', propC: ['1'], propR: null}},
+                {id: '2', propC: [{id: '1', propC: [], propR: '2'}], propR: null},
+              ]);
+            });
+          });
+
+          describe('many-to-one', () => {
+            class R extends Factory {
+              attrs = {
+                propR: Factory.hasMany('r', 'propC', {reflexive: true, depth: 2}),
+                propC: Factory.hasOne('r', 'propR'),
+              };
+              createRelated = {
+                propR: 1,
+              };
+            }
+            beforeEach(() => {
+              this.lair.registerFactory(new R(), 'r');
+              this.lair.createRecords('r', 1);
+            });
+            it('reflexive records are created', () => {
+              expect(this.lair.getAll('r')).to.be.eql([
+                {id: '1', propC: null, propR: [{id: '2', propC: '1', propR: []}]},
+                {id: '2', propC: {id: '1', propC: null, propR: ['2']}, propR: []},
+              ]);
+            });
+          });
+
+          describe('many-to-many', () => {
+            class R extends Factory {
+              attrs = {
+                propR: Factory.hasMany('r', 'propC', {reflexive: true, depth: 2}),
+                propC: Factory.hasMany('r', 'propR'),
+              };
+              createRelated = {
+                propR: 1,
+              };
+            }
+            beforeEach(() => {
+              this.lair.registerFactory(new R(), 'r');
+              this.lair.createRecords('r', 1);
+            });
+            it('reflexive records are created', () => {
+              expect(this.lair.getAll('r')).to.be.eql([
+                {id: '1', propC: [], propR: [{id: '2', propC: ['1'], propR: []}]},
+                {id: '2', propC: [{id: '1', propC: [], propR: ['2']}], propR: []},
+              ]);
+            });
+          });
+        });
+
+        describe('two levels depth', () => {
+          describe('one-to-one', () => {
+            class R extends Factory {
+              attrs = {
+                propR: Factory.hasOne('r', 'propC', {reflexive: true, depth: 3}),
+                propC: Factory.hasOne('r', 'propR'),
+              };
+              createRelated = {
+                propR: 1,
+              };
+            }
+            beforeEach(() => {
+              this.lair.registerFactory(new R(), 'r');
+              this.lair.createRecords('r', 1);
+            });
+            it('reflexive records are created', () => {
+              expect(this.lair.getAll('r')).to.be.eql([
+                {id: '1', propC: null, propR: {id: '2', propC: '1', propR: {id: '3', propC: '2', propR: null}}},
+                {id: '2', propC: {id: '1', propC: null, propR: '2'}, propR: {id: '3', propC: '2', propR: null}},
+                {id: '3', propC: {id: '2', propR: '3', propC: {id: '1', propC: null, propR: '2'}}, propR: null},
+              ]);
+            });
+          });
+
+          describe('one-to-many', () => {
+            class R extends Factory {
+              attrs = {
+                propR: Factory.hasOne('r', 'propC', {reflexive: true, depth: 3}),
+                propC: Factory.hasMany('r', 'propR'),
+              };
+              createRelated = {
+                propR: 1,
+              };
+            }
+            beforeEach(() => {
+              this.lair.registerFactory(new R(), 'r');
+              this.lair.createRecords('r', 1);
+            });
+            it('reflexive records are created', () => {
+              expect(this.lair.getAll('r')).to.be.eql([
+                {id: '1', propC: [], propR: {id: '2', propC: ['1'], propR: {id: '3', propC: ['2'], propR: null}}},
+                {id: '2', propC: [{id: '1', propC: [], propR: '2'}], propR: {id: '3', propC: ['2'], propR: null}},
+                {id: '3', propC: [{id: '2', propR: '3', propC: [{id: '1', propC: [], propR: '2'}]}], propR: null},
+              ]);
+            });
+          });
+
+          describe('many-to-one', () => {
+            class R extends Factory {
+              attrs = {
+                propR: Factory.hasMany('r', 'propC', {reflexive: true, depth: 3}),
+                propC: Factory.hasOne('r', 'propR'),
+              };
+              createRelated = {
+                propR: 1,
+              };
+            }
+            beforeEach(() => {
+              this.lair.registerFactory(new R(), 'r');
+              this.lair.createRecords('r', 1);
+            });
+            it('reflexive records are created', () => {
+              expect(this.lair.getAll('r')).to.be.eql([
+                {id: '1', propC: null, propR: [{id: '2', propC: '1', propR: [{id: '3', propC: '2', propR: []}]}]},
+                {id: '2', propC: {id: '1', propC: null, propR: ['2']}, propR: [{id: '3', propC: '2', propR: []}]},
+                {id: '3', propC: {id: '2', propR: ['3'], propC: {id: '1', propC: null, propR: ['2']}}, propR: []},
+              ]);
+            });
+          });
+
+          describe('many-to-many', () => {
+            class R extends Factory {
+              attrs = {
+                propR: Factory.hasMany('r', 'propC', {reflexive: true, depth: 3}),
+                propC: Factory.hasMany('r', 'propR'),
+              };
+              createRelated = {
+                propR: 1,
+              };
+            }
+            beforeEach(() => {
+              this.lair.registerFactory(new R(), 'r');
+              this.lair.createRecords('r', 1);
+            });
+            it('reflexive records are created', () => {
+              expect(this.lair.getAll('r')).to.be.eql([
+                {id: '1', propC: [], propR: [{id: '2', propC: ['1'], propR: [{id: '3', propC: ['2'], propR: []}]}]},
+                {id: '2', propC: [{id: '1', propC: [], propR: ['2']}], propR: [{id: '3', propC: ['2'], propR: []}]},
+                {id: '3', propC: [{id: '2', propR: ['3'], propC: [{id: '1', propC: [], propR: ['2']}]}], propR: []},
+              ]);
+            });
+          });
+        });
+      });
+
     });
 
     describe('#afterCreate', () => {

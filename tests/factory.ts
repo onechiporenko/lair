@@ -21,6 +21,8 @@ class TestFactory extends Factory {
     },
     one: Factory.hasOne('anotherFactory', 'attr1'),
     many: Factory.hasMany('anotherFactory', 'attr2'),
+    oneTest: Factory.hasOne('test', null, {reflexive: true, depth: 2}),
+    manyTests: Factory.hasMany('test', null, {reflexive: true, depth: 2}),
   };
 }
 
@@ -99,15 +101,35 @@ describe('Factory', () => {
     });
 
     it('single relationship attr is marked as `HAS_ONE`', () => {
-      expect(this.meta.one.type).to.be.equal(MetaAttrType.HAS_ONE);
-      expect(this.meta.one.factoryName).to.be.equal('anotherFactory');
-      expect(this.meta.one.invertedAttrName).to.be.equal('attr1');
+      const one = this.meta.one;
+      expect(one.type).to.be.equal(MetaAttrType.HAS_ONE);
+      expect(one.factoryName).to.be.equal('anotherFactory');
+      expect(one.invertedAttrName).to.be.equal('attr1');
+    });
+
+    it('single reflexive relationship attr is marked as `HAS_ONE` with needed attributes', () => {
+      const oneTest = this.meta.oneTest;
+      expect(oneTest.type).to.be.equal(MetaAttrType.HAS_ONE);
+      expect(oneTest.factoryName).to.be.equal('test');
+      expect(oneTest.invertedAttrName).to.be.equal(null);
+      expect(oneTest.reflexiveDepth).to.be.equal(2);
+      expect(oneTest.reflexive).to.be.equal(true);
     });
 
     it('multi relationships attr is marked as `HAS_MANY`', () => {
-      expect(this.meta.many.type).to.be.equal(MetaAttrType.HAS_MANY);
-      expect(this.meta.many.factoryName).to.be.equal('anotherFactory');
-      expect(this.meta.many.invertedAttrName).to.be.equal('attr2');
+      const many = this.meta.many;
+      expect(many.type).to.be.equal(MetaAttrType.HAS_MANY);
+      expect(many.factoryName).to.be.equal('anotherFactory');
+      expect(many.invertedAttrName).to.be.equal('attr2');
+    });
+
+    it('multi relationships attr is marked as `HAS_MANY` with needed attributes', () => {
+      const manyTests = this.meta.manyTests;
+      expect(manyTests.type).to.be.equal(MetaAttrType.HAS_MANY);
+      expect(manyTests.factoryName).to.be.equal('test');
+      expect(manyTests.invertedAttrName).to.be.equal(null);
+      expect(manyTests.reflexiveDepth).to.be.equal(2);
+      expect(manyTests.reflexive).to.be.equal(true);
     });
 
     it('meta should not be changed after init', () => {

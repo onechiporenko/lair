@@ -42,6 +42,28 @@ function verbose(target, key, descriptor): any {
 }
 /* tslint:enable:no-console */
 
+function getLastItemsCount(list: string[], neededValue: string): number {
+  let count = 0;
+  let index = list.length - 1;
+  while (index >= 0) {
+    if (list[index] === neededValue) {
+      count++;
+      index--;
+    } else {
+      return count;
+    }
+  }
+  return count;
+}
+
+function assertLoops(factoryName: string, relatedChain: string[]) {
+  assert(`Loop is detected in the "createRelated". Chain is ${JSON.stringify(relatedChain)}. You try to create records for "${factoryName}" again.`, relatedChain.indexOf(factoryName) === -1);
+}
+
+function getNeededRelatedRecordsCount(v: any, id: string): number {
+  return v instanceof Function ? v.call(null, id) : v;
+}
+
 export interface InternalDb {
   [factoryName: string]: {
     [recordId: string]: Record;
@@ -125,7 +147,7 @@ export class Lair {
   @verbose
   public createRecords(factoryName: string, count: number): void {
     this.afterCreateQueue = [];
-    this.internalCreateRecords(factoryName, count, {}, []);
+    this.internalCreateRecords(factoryName, count);
     while (this.afterCreateQueue.length) {
       const {factoryName: fName, id} = this.afterCreateQueue.shift();
       const factory = this.factories[fName].factory;
@@ -281,9 +303,25 @@ export class Lair {
     this.db[type] = {};
   }
 
-  private internalCreateRecords(factoryName: string, count: number, extraData: any = {}, relatedChain: string[] = []): Record[] {
+  private internalCreateRecords(factoryName: string, count: number, parentData: any = {factoryName: '', attrName: ''}, relatedChain: string[] = []): Record[] {
     assert(`Factory with name "${factoryName}" is not registered`, !!this.factories[factoryName]);
-    assert(`Loop is detected in the "createRelated". Chain is ${JSON.stringify(relatedChain)}. You try to create records for "${factoryName}" again.`, relatedChain.indexOf(factoryName) === -1);
+    if (factoryName === parentData.factoryName) {
+      // try to check reflexive relationships
+      const m = this.getMetaFor(parentData.factoryName);
+      const attrMeta = m[parentData.attrName];
+      if (attrMeta.reflexive) {
+        const depth = attrMeta.reflexiveDepth;
+        const alreadyCreatedCount = getLastItemsCount(relatedChain, factoryName);
+        if (depth === alreadyCreatedCount) {
+          return [];
+        }
+      } else {
+        assertLoops(parentData.factoryName, relatedChain);
+      }
+    } else {
+      // check factories as usual
+      assertLoops(factoryName, relatedChain);
+    }
     const factoryData = this.factories[factoryName];
     const {meta, createRelated} = factoryData.factory;
     const limit = factoryData.id + count;
@@ -291,7 +329,6 @@ export class Lair {
     for (let i = factoryData.id; i < limit; i++) {
       const record = factoryData.factory.createRecord(i);
       this.relationships.addRecord(factoryName, record.id);
-      keys(extraData).forEach(k => record[k] = extraData[k]);
       this.db[factoryName][record.id] = record;
       newRecords.push(record);
       this.factories[factoryName].id = i + 1;
@@ -300,22 +337,14 @@ export class Lair {
         keys(createRelated).forEach(attrName => {
           const fName = meta[attrName].factoryName;
           const isHasMany = meta[attrName].type === MetaAttrType.HAS_MANY;
-          const relatedCount = isHasMany ? this.getNeededRelatedRecordsCount(createRelated[attrName], record.id) : 1;
-          const eData = {};
-          if (meta[attrName].invertedAttrName) {
-            eData[meta[attrName].invertedAttrName] = record.id;
-          }
-          const relatedRecords = this.internalCreateRecords(fName, relatedCount, eData, [...relatedChain, factoryName]);
+          const relatedCount = isHasMany ? getNeededRelatedRecordsCount(createRelated[attrName], record.id) : 1;
+          const relatedRecords = this.internalCreateRecords(fName, relatedCount, {factoryName, attrName}, [...relatedChain, factoryName]);
           this.db[factoryName][record.id][attrName] = isHasMany ? relatedRecords : relatedRecords[0];
         });
       }
       this.relationships.recalculateRelationshipsForRecord(factoryName, this.db[factoryName][record.id]);
     }
     return newRecords;
-  }
-
-  private getNeededRelatedRecordsCount(v: any, id: string): number {
-    return v instanceof Function ? v.call(null, id) : v;
   }
 
   private getRecordWithRelationships(factoryName: string, id: string, relatedFor: any = [], options: any = {maxDepth: Infinity, currentDepth: 1}): Record {

@@ -1,37 +1,35 @@
 import {expect} from 'chai';
 import {Factory, MetaAttrType} from '../lib/factory';
 
-class TestFactory extends Factory {
-  attrs = {
-    first: 'static',
-    second() {
-      return `dynamic ${this.id}`;
-    },
-    third() {
-      return `third is ${this.second}`;
-    },
-    rand() {
-      return Math.random();
-    },
-    r1() {
-      return this.rand;
-    },
-    r2() {
-      return this.rand;
-    },
-    one: Factory.hasOne('anotherFactory', 'attr1'),
-    many: Factory.hasMany('anotherFactory', 'attr2'),
-    oneTest: Factory.hasOne('test', null, {reflexive: true, depth: 2}),
-    manyTests: Factory.hasMany('test', null, {reflexive: true, depth: 2}),
-  };
-}
+const attrs = {
+  first: 'static',
+  second() {
+    return `dynamic ${this.id}`;
+  },
+  third() {
+    return `third is ${this.second}`;
+  },
+  rand() {
+    return Math.random();
+  },
+  r1() {
+    return this.rand;
+  },
+  r2() {
+    return this.rand;
+  },
+  one: Factory.hasOne('anotherFactory', 'attr1'),
+  many: Factory.hasMany('anotherFactory', 'attr2'),
+  oneTest: Factory.hasOne('test', null, {reflexive: true, depth: 2}),
+  manyTests: Factory.hasMany('test', null, {reflexive: true, depth: 2}),
+};
 
 describe('Factory', () => {
 
   describe('#createRecord', () => {
 
     before(() => {
-      this.factory = new TestFactory();
+      this.factory = Factory.create({attrs});
       this.factory.init();
       this.firstInstance = this.factory.createRecord(1);
       this.secondInstance = this.factory.createRecord(2);
@@ -53,10 +51,8 @@ describe('Factory', () => {
     });
 
     it('should throw error if `id` is defined in the `attrs`', () => {
-      class F extends Factory {
-        attrs = {id: '100500'};
-      }
-      expect(() => new F().createRecord(1)).to.throw(`Don't add "id" to the "attrs"`);
+      const f = Factory.create({attrs: {id: '100500'}});
+      expect(() => f.createRecord(1)).to.throw(`Don't add "id" to the "attrs"`);
     });
 
     describe('dynamic attributes may get values for other attributes', () => {
@@ -86,7 +82,7 @@ describe('Factory', () => {
   describe('#meta', () => {
 
     beforeEach(() => {
-      this.f = new TestFactory();
+      this.f = Factory.create({attrs});
       this.f.init();
       this.f.createRecord(1);
       this.meta = this.f.meta;

@@ -31,6 +31,13 @@ export interface RelationshipOptions {
   depth: number;
 }
 
+export interface CreateOptions {
+  attrs?: any;
+  createRelated?: any;
+  afterCreate?: (record: Record) => Record;
+  afterCreateRelationshipsDepth?: number;
+}
+
 function getVal(obj, key, defaultVal) {
   return obj && obj.hasOwnProperty(key) ? obj[key] : defaultVal;
 }
@@ -77,6 +84,15 @@ export class Factory {
     return {factoryName, invertedAttrName, type: MetaAttrType.HAS_MANY, reflexive, reflexiveDepth};
   }
 
+  public static create(options: CreateOptions): Factory {
+    const factory = new Factory();
+    factory.attrs = options.attrs || {};
+    factory.createRelated = options.createRelated || {};
+    factory.afterCreate = options.afterCreate || (r => r);
+    factory.afterCreateRelationshipsDepth = options.afterCreateRelationshipsDepth || Infinity;
+    return factory;
+  }
+
   public attrs = {};
   public afterCreateRelationshipsDepth = Infinity;
   public createRelated: { [attrName: string]: number | ((id: string) => number) } = {};
@@ -89,6 +105,8 @@ export class Factory {
 
   private internalMeta: Meta = null;
   private internalFactory = null;
+
+  private constructor() {}
 
   /**
    * Forget about this. It's only for Lair

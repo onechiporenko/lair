@@ -203,22 +203,15 @@ describe('Relationships', () => {
 
     describe('#updateOneToOne', () => {
 
-      class FooFactory extends Factory {
-        attrs = {
+      beforeEach(() => {
+        this.foo = Factory.create({attrs: {
           b: Factory.hasOne('bar', 'f'),
           prop: 'static',
-        };
-      }
-      class BarFactory extends Factory {
-        attrs = {
+        }});
+        this.bar = Factory.create({attrs: {
           f: Factory.hasOne('foo', 'b'),
           prop: 'static',
-        };
-      }
-
-      beforeEach(() => {
-        this.foo = new FooFactory();
-        this.bar = new BarFactory();
+        }});
         this.foo.init();
         this.bar.init();
         this.foo.createRecord(1);
@@ -274,22 +267,15 @@ describe('Relationships', () => {
 
     describe('#updateManyToOne', () => {
 
-      class FooFactory extends Factory {
-        attrs = {
+      beforeEach(() => {
+        this.foo = Factory.create({attrs: {
           b: Factory.hasMany('bar', 'f'),
           prop: 'static',
-        };
-      }
-      class BarFactory extends Factory {
-        attrs = {
+        }});
+        this.bar = Factory.create({attrs: {
           f: Factory.hasOne('foo', 'b'),
           prop: 'static',
-        };
-      }
-
-      beforeEach(() => {
-        this.foo = new FooFactory();
-        this.bar = new BarFactory();
+        }});
         this.foo.init();
         this.bar.init();
         this.foo.createRecord(1);
@@ -368,22 +354,16 @@ describe('Relationships', () => {
     });
 
     describe('#updateOneToMany', () => {
-      class FooFactory extends Factory {
-        attrs = {
-          b: Factory.hasOne('bar', 'f'),
-          prop: 'static',
-        };
-      }
-      class BarFactory extends Factory {
-        attrs = {
-          f: Factory.hasMany('foo', 'b'),
-          prop: 'static',
-        };
-      }
 
       beforeEach(() => {
-        this.foo = new FooFactory();
-        this.bar = new BarFactory();
+        this.foo = Factory.create({attrs: {
+          b: Factory.hasOne('bar', 'f'),
+          prop: 'static',
+        }});
+        this.bar = Factory.create({attrs: {
+          f: Factory.hasMany('foo', 'b'),
+          prop: 'static',
+        }});
         this.foo.init();
         this.bar.init();
         this.foo.createRecord(1);
@@ -462,22 +442,16 @@ describe('Relationships', () => {
     });
 
     describe('#updateManyToMany', () => {
-      class FooFactory extends Factory {
-        attrs = {
-          b: Factory.hasMany('bar', 'f'),
-          prop: 'static',
-        };
-      }
-      class BarFactory extends Factory {
-        attrs = {
-          f: Factory.hasMany('foo', 'b'),
-          prop: 'static',
-        };
-      }
 
       beforeEach(() => {
-        this.foo = new FooFactory();
-        this.bar = new BarFactory();
+        this.foo = Factory.create({attrs: {
+          b: Factory.hasMany('bar', 'f'),
+          prop: 'static',
+        }});
+        this.bar = Factory.create({attrs: {
+          f: Factory.hasMany('foo', 'b'),
+          prop: 'static',
+        }});
         this.foo.init();
         this.bar.init();
         this.foo.createRecord(1);
@@ -560,22 +534,16 @@ describe('Relationships', () => {
   describe('#deleteRelationshipsForRecord', () => {
 
     describe('#updateOneToOne', () => {
-      class FooFactory extends Factory {
-        attrs = {
-          b: Factory.hasOne('bar', 'f'),
-          prop: 'static',
-        };
-      }
-      class BarFactory extends Factory {
-        attrs = {
-          f: Factory.hasOne('foo', 'b'),
-          prop: 'static',
-        };
-      }
 
       beforeEach(() => {
-        this.foo = new FooFactory();
-        this.bar = new BarFactory();
+        this.foo = Factory.create({attrs: {
+          b: Factory.hasOne('bar', 'f'),
+          prop: 'static',
+        }});
+        this.bar = Factory.create({attrs: {
+          f: Factory.hasOne('foo', 'b'),
+          prop: 'static',
+        }});
         this.foo.init();
         this.bar.init();
         this.foo.createRecord(1);
@@ -602,22 +570,16 @@ describe('Relationships', () => {
     });
 
     describe('#updateOneToMany', () => {
-      class FooFactory extends Factory {
-        attrs = {
-          b: Factory.hasOne('bar', 'f'),
-          prop: 'static',
-        };
-      }
-      class BarFactory extends Factory {
-        attrs = {
-          f: Factory.hasMany('foo', 'b'),
-          prop: 'static',
-        };
-      }
 
       beforeEach(() => {
-        this.foo = new FooFactory();
-        this.bar = new BarFactory();
+        this.foo = Factory.create({attrs: {
+          b: Factory.hasOne('bar', 'f'),
+          prop: 'static',
+        }});
+        this.bar = Factory.create({attrs: {
+          f: Factory.hasMany('foo', 'b'),
+          prop: 'static',
+        }});
         this.foo.init();
         this.bar.init();
         this.foo.createRecord(1);
@@ -644,22 +606,16 @@ describe('Relationships', () => {
     });
 
     describe('#updateManyToOne', () => {
-      class FooFactory extends Factory {
-        attrs = {
-          b: Factory.hasMany('bar', 'f'),
-          prop: 'static',
-        };
-      }
-      class BarFactory extends Factory {
-        attrs = {
-          f: Factory.hasOne('foo', 'b'),
-          prop: 'static',
-        };
-      }
 
       beforeEach(() => {
-        this.foo = new FooFactory();
-        this.bar = new BarFactory();
+        this.foo = Factory.create({attrs: {
+          b: Factory.hasMany('bar', 'f'),
+          prop: 'static',
+        }});
+        this.bar = Factory.create({attrs: {
+          f: Factory.hasOne('foo', 'b'),
+          prop: 'static',
+        }});
         this.foo.init();
         this.bar.init();
         this.foo.createRecord(1);
@@ -686,22 +642,16 @@ describe('Relationships', () => {
     });
 
     describe('#updateManyToMany', () => {
-      class FooFactory extends Factory {
-        attrs = {
-          b: Factory.hasMany('bar', 'f'),
-          prop: 'static',
-        };
-      }
-      class BarFactory extends Factory {
-        attrs = {
-          f: Factory.hasMany('foo', 'b'),
-          prop: 'static',
-        };
-      }
 
       beforeEach(() => {
-        this.foo = new FooFactory();
-        this.bar = new BarFactory();
+        this.foo = Factory.create({attrs: {
+          b: Factory.hasMany('bar', 'f'),
+          prop: 'static',
+        }});
+        this.bar = Factory.create({attrs: {
+          f: Factory.hasMany('foo', 'b'),
+          prop: 'static',
+        }});
         this.foo.init();
         this.bar.init();
         this.foo.createRecord(1);

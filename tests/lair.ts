@@ -2,28 +2,6 @@ import {expect} from 'chai';
 import {Factory} from '../lib/factory';
 import {Lair} from '../lib/lair';
 
-class TestFactory extends Factory {
-  attrs = {
-    name() {
-      return `unit ${this.id}`;
-    },
-  };
-}
-class FooFactory extends Factory {
-  attrs = {
-    foo() {
-      return `foo ${this.id}`;
-    },
-  };
-}
-class BarFactory extends Factory {
-  attrs = {
-    bar() {
-      return `foo ${this.id}`;
-    },
-  };
-}
-
 function incStr(val: string): string {
   return '' + (Number(val) + 1);
 }
@@ -35,15 +13,15 @@ describe('Lair', () => {
 
   describe('#registerFactory', () => {
     it('should register factory', () => {
-      this.lair.registerFactory(new TestFactory(), 'test');
+      this.lair.registerFactory(Factory.create({}), 'test');
       expect(() => this.lair.createRecords('test', 1)).to.not.throw();
 
     });
 
     it('should throw an error if factory is already registered', () => {
-      this.lair.registerFactory(new TestFactory(), 'test');
+      this.lair.registerFactory(Factory.create({}), 'test');
       expect(() => {
-        this.lair.registerFactory(new TestFactory(), 'test');
+        this.lair.registerFactory(Factory.create({}), 'test');
       }).to.throw('Factory with name "test" is already registered');
     });
   });
@@ -58,39 +36,36 @@ describe('Lair', () => {
       });
 
       it('should create number of records', () => {
-        this.lair.registerFactory(new TestFactory(), 'test');
+        this.lair.registerFactory(Factory.create({}), 'test');
         this.lair.createRecords('test', 10);
         expect(this.lair.getAll('test')).to.have.property('length', 10);
       });
     });
 
     describe('#createRelated', () => {
-      class Foo extends Factory {
-        attrs = {
-          bar: Factory.hasMany('bar', 'foo'),
-          propFoo: 'static foo',
-        };
-        createRelated = {bar: 2};
-      }
-      class Bar extends Factory {
-        attrs = {
-          foo: Factory.hasMany('foo', 'bar'),
-          baz: Factory.hasMany('baz', 'bar'),
-          propBar: 'static bar',
-        };
-        createRelated = {baz: 2};
-      }
-      class Baz extends Factory {
-        attrs = {
-          bar: Factory.hasMany('bar', 'baz'),
-          propBaz: 'static baz',
-        };
-      }
 
       beforeEach(() => {
-        this.lair.registerFactory(new Foo(), 'foo');
-        this.lair.registerFactory(new Bar(), 'bar');
-        this.lair.registerFactory(new Baz(), 'baz');
+        this.lair.registerFactory(Factory.create({
+          attrs: {
+            bar: Factory.hasMany('bar', 'foo'),
+            propFoo: 'static foo',
+          },
+          createRelated: {bar: 2},
+        }), 'foo');
+        this.lair.registerFactory(Factory.create({
+          attrs: {
+            foo: Factory.hasMany('foo', 'bar'),
+            baz: Factory.hasMany('baz', 'bar'),
+            propBar: 'static bar',
+          },
+          createRelated: {baz: 2},
+        }), 'bar');
+        this.lair.registerFactory(Factory.create({
+          attrs: {
+            bar: Factory.hasMany('bar', 'baz'),
+            propBaz: 'static baz',
+          },
+        }), 'baz');
         this.lair.createRecords('foo', 2);
       });
 
@@ -145,27 +120,20 @@ describe('Lair', () => {
       });
 
       describe('should create related without relation', () => {
-        class A extends Factory {
-          attrs = {
-            b: Factory.hasMany('b', null),
-          };
-          createRelated = {
-            b: 2,
-          };
-        }
-        class B extends Factory {}
-        class C extends Factory {
-          attrs = {
-            b: Factory.hasOne('b', null),
-          };
-          createRelated = {
-            b: 1,
-          };
-        }
         beforeEach(() => {
-          this.lair.registerFactory(new A(), 'a');
-          this.lair.registerFactory(new B(), 'b');
-          this.lair.registerFactory(new C(), 'c');
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              b: Factory.hasMany('b', null),
+            },
+            createRelated: {b: 2},
+          }), 'a');
+          this.lair.registerFactory(Factory.create({}), 'b');
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              b: Factory.hasOne('b', null),
+            },
+            createRelated: {b: 1},
+          }), 'c');
           this.lair.createRecords('a', 1);
           this.lair.createRecords('c', 1);
         });
@@ -196,21 +164,15 @@ describe('Lair', () => {
       });
 
       describe('should not create related', () => {
-        class A extends Factory {
-          attrs = {
-            b: Factory.hasMany('b', null),
-          };
-        }
-        class B extends Factory {}
-        class C extends Factory {
-          attrs = {
-            b: Factory.hasOne('b', null),
-          };
-        }
+
         beforeEach(() => {
-          this.lair.registerFactory(new A(), 'a');
-          this.lair.registerFactory(new B(), 'b');
-          this.lair.registerFactory(new C(), 'c');
+          this.lair.registerFactory(Factory.create({attrs: {
+            b: Factory.hasMany('b', null),
+          }}), 'a');
+          this.lair.registerFactory(Factory.create({}), 'b');
+          this.lair.registerFactory(Factory.create({attrs: {
+            b: Factory.hasOne('b', null),
+          }}), 'c');
           this.lair.createRecords('a', 1);
           this.lair.createRecords('c', 1);
         });
@@ -228,25 +190,19 @@ describe('Lair', () => {
       describe('related factories chains', () => {
 
         describe('a-b-a', () => {
-          class A extends Factory {
-            attrs = {
-              b: Factory.hasMany('b', 'a'),
-            };
-            createRelated = {
-              b: 2,
-            };
-          }
-          class B extends Factory {
-            attrs = {
-              a: Factory.hasMany('a', 'b'),
-            };
-            createRelated = {
-              a: 2,
-            };
-          }
           beforeEach(() => {
-            this.lair.registerFactory(new A(), 'a');
-            this.lair.registerFactory(new B(), 'b');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                b: Factory.hasMany('b', 'a'),
+              },
+              createRelated: {b: 2},
+            }), 'a');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                a: Factory.hasMany('a', 'b'),
+              },
+              createRelated: {a: 2},
+            }), 'b');
           });
 
           it('should throw an error', () => {
@@ -255,37 +211,29 @@ describe('Lair', () => {
         });
 
         describe('a-b-c-a', () => {
-          class A extends Factory {
-            attrs = {
-              b: Factory.hasMany('b', 'a'),
-              c: Factory.hasMany('c', 'a'),
-            };
-            createRelated = {
-              b: 2,
-            };
-          }
-          class B extends Factory {
-            attrs = {
-              a: Factory.hasMany('a', 'b'),
-              c: Factory.hasMany('c', 'b'),
-            };
-            createRelated = {
-              c: 2,
-            };
-          }
-          class C extends Factory {
-            attrs = {
-              a: Factory.hasMany('a', 'c'),
-              b: Factory.hasMany('b', 'c'),
-            };
-            createRelated = {
-              a: 2,
-            };
-          }
+
           beforeEach(() => {
-            this.lair.registerFactory(new A(), 'a');
-            this.lair.registerFactory(new B(), 'b');
-            this.lair.registerFactory(new C(), 'c');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                b: Factory.hasMany('b', 'a'),
+                c: Factory.hasMany('c', 'a'),
+              },
+              createRelated: {b: 2},
+            }), 'a');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                a: Factory.hasMany('a', 'b'),
+                c: Factory.hasMany('c', 'b'),
+              },
+              createRelated: {c: 2},
+            }), 'b');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                a: Factory.hasMany('a', 'c'),
+                b: Factory.hasMany('b', 'c'),
+              },
+              createRelated: {a: 2},
+            }), 'c');
           });
 
           it('should throw an error', () => {
@@ -294,36 +242,28 @@ describe('Lair', () => {
         });
 
         describe('a-b-c-b', () => {
-          class A extends Factory {
-            attrs = {
-              b: Factory.hasMany('b', 'a'),
-              c: Factory.hasMany('c', 'a'),
-            };
-            createRelated = {
-              b: 2,
-            };
-          }
-          class B extends Factory {
-            attrs = {
-              a: Factory.hasMany('a', 'b'),
-              c: Factory.hasMany('c', 'b'),
-            };
-            createRelated = {
-              c: 2,
-            };
-          }
-          class C extends Factory {
-            attrs = {
-              b: Factory.hasMany('b', 'c'),
-            };
-            createRelated = {
-              b: 2,
-            };
-          }
+
           beforeEach(() => {
-            this.lair.registerFactory(new A(), 'a');
-            this.lair.registerFactory(new B(), 'b');
-            this.lair.registerFactory(new C(), 'c');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                b: Factory.hasMany('b', 'a'),
+                c: Factory.hasMany('c', 'a'),
+              },
+              createRelated: {b: 2},
+            }), 'a');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                a: Factory.hasMany('a', 'b'),
+                c: Factory.hasMany('c', 'b'),
+              },
+              createRelated: {c: 2},
+            }), 'b');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                b: Factory.hasMany('b', 'c'),
+              },
+              createRelated: {b: 2},
+            }), 'c');
           });
 
           it('should throw an error', () => {
@@ -335,20 +275,18 @@ describe('Lair', () => {
 
       describe('allow function for `createRelated` value', () => {
         it('record id is passed to the function', () => {
-          class A extends Factory {
-            attrs = {
+          this.lair.registerFactory(Factory.create({
+            attrs: {
               b: Factory.hasOne('b', null),
-            };
-            createRelated = {
+            },
+            createRelated: {
               b(id) {
                 expect(id).to.be.equal('1');
                 return 1;
               },
-            };
-          }
-          class B extends Factory {}
-          this.lair.registerFactory(new A(), 'a');
-          this.lair.registerFactory(new B(), 'b');
+            },
+          }), 'a');
+          this.lair.registerFactory(Factory.create({}), 'b');
           this.lair.createRecords('a', 1);
           expect(this.lair.getAll('b').map(c => c.id)).to.be.eql(['1']);
         });
@@ -358,17 +296,16 @@ describe('Lair', () => {
 
         describe('one level depth', () => {
           describe('one-to-one', () => {
-            class R extends Factory {
-              attrs = {
-                propR: Factory.hasOne('r', 'propC', {reflexive: true, depth: 2}),
-                propC: Factory.hasOne('r', 'propR'),
-              };
-              createRelated = {
-                propR: 1,
-              };
-            }
             beforeEach(() => {
-              this.lair.registerFactory(new R(), 'r');
+              this.lair.registerFactory(Factory.create({
+                attrs: {
+                  propR: Factory.hasOne('r', 'propC', {reflexive: true, depth: 2}),
+                  propC: Factory.hasOne('r', 'propR'),
+                },
+                createRelated: {
+                  propR: 1,
+                },
+              }), 'r');
               this.lair.createRecords('r', 1);
             });
             it('reflexive records are created', () => {
@@ -380,17 +317,14 @@ describe('Lair', () => {
           });
 
           describe('one-to-many', () => {
-            class R extends Factory {
-              attrs = {
-                propR: Factory.hasOne('r', 'propC', {reflexive: true, depth: 2}),
-                propC: Factory.hasMany('r', 'propR'),
-              };
-              createRelated = {
-                propR: 1,
-              };
-            }
             beforeEach(() => {
-              this.lair.registerFactory(new R(), 'r');
+              this.lair.registerFactory(Factory.create({
+                attrs: {
+                  propR: Factory.hasOne('r', 'propC', {reflexive: true, depth: 2}),
+                  propC: Factory.hasMany('r', 'propR'),
+                },
+                createRelated: {propR: 1},
+              }), 'r');
               this.lair.createRecords('r', 1);
             });
             it('reflexive records are created', () => {
@@ -402,17 +336,14 @@ describe('Lair', () => {
           });
 
           describe('many-to-one', () => {
-            class R extends Factory {
-              attrs = {
-                propR: Factory.hasMany('r', 'propC', {reflexive: true, depth: 2}),
-                propC: Factory.hasOne('r', 'propR'),
-              };
-              createRelated = {
-                propR: 1,
-              };
-            }
             beforeEach(() => {
-              this.lair.registerFactory(new R(), 'r');
+              this.lair.registerFactory(Factory.create({
+                attrs: {
+                  propR: Factory.hasMany('r', 'propC', {reflexive: true, depth: 2}),
+                  propC: Factory.hasOne('r', 'propR'),
+                },
+                createRelated: {propR: 1},
+              }), 'r');
               this.lair.createRecords('r', 1);
             });
             it('reflexive records are created', () => {
@@ -424,17 +355,14 @@ describe('Lair', () => {
           });
 
           describe('many-to-many', () => {
-            class R extends Factory {
-              attrs = {
-                propR: Factory.hasMany('r', 'propC', {reflexive: true, depth: 2}),
-                propC: Factory.hasMany('r', 'propR'),
-              };
-              createRelated = {
-                propR: 1,
-              };
-            }
             beforeEach(() => {
-              this.lair.registerFactory(new R(), 'r');
+              this.lair.registerFactory(Factory.create({
+                attrs: {
+                  propR: Factory.hasMany('r', 'propC', {reflexive: true, depth: 2}),
+                  propC: Factory.hasMany('r', 'propR'),
+                },
+                createRelated: {propR: 1},
+              }), 'r');
               this.lair.createRecords('r', 1);
             });
             it('reflexive records are created', () => {
@@ -448,17 +376,14 @@ describe('Lair', () => {
 
         describe('two levels depth', () => {
           describe('one-to-one', () => {
-            class R extends Factory {
-              attrs = {
-                propR: Factory.hasOne('r', 'propC', {reflexive: true, depth: 3}),
-                propC: Factory.hasOne('r', 'propR'),
-              };
-              createRelated = {
-                propR: 1,
-              };
-            }
             beforeEach(() => {
-              this.lair.registerFactory(new R(), 'r');
+              this.lair.registerFactory(Factory.create({
+                attrs: {
+                  propR: Factory.hasOne('r', 'propC', {reflexive: true, depth: 3}),
+                  propC: Factory.hasOne('r', 'propR'),
+                },
+                createRelated: {propR: 1},
+              }), 'r');
               this.lair.createRecords('r', 1);
             });
             it('reflexive records are created', () => {
@@ -471,17 +396,14 @@ describe('Lair', () => {
           });
 
           describe('one-to-many', () => {
-            class R extends Factory {
-              attrs = {
-                propR: Factory.hasOne('r', 'propC', {reflexive: true, depth: 3}),
-                propC: Factory.hasMany('r', 'propR'),
-              };
-              createRelated = {
-                propR: 1,
-              };
-            }
             beforeEach(() => {
-              this.lair.registerFactory(new R(), 'r');
+              this.lair.registerFactory(Factory.create({
+                attrs: {
+                  propR: Factory.hasOne('r', 'propC', {reflexive: true, depth: 3}),
+                  propC: Factory.hasMany('r', 'propR'),
+                },
+                createRelated: {propR: 1},
+              }), 'r');
               this.lair.createRecords('r', 1);
             });
             it('reflexive records are created', () => {
@@ -494,17 +416,14 @@ describe('Lair', () => {
           });
 
           describe('many-to-one', () => {
-            class R extends Factory {
-              attrs = {
-                propR: Factory.hasMany('r', 'propC', {reflexive: true, depth: 3}),
-                propC: Factory.hasOne('r', 'propR'),
-              };
-              createRelated = {
-                propR: 1,
-              };
-            }
             beforeEach(() => {
-              this.lair.registerFactory(new R(), 'r');
+              this.lair.registerFactory(Factory.create({
+                attrs: {
+                  propR: Factory.hasMany('r', 'propC', {reflexive: true, depth: 3}),
+                  propC: Factory.hasOne('r', 'propR'),
+                },
+                createRelated: {propR: 1},
+              }), 'r');
               this.lair.createRecords('r', 1);
             });
             it('reflexive records are created', () => {
@@ -517,17 +436,14 @@ describe('Lair', () => {
           });
 
           describe('many-to-many', () => {
-            class R extends Factory {
-              attrs = {
-                propR: Factory.hasMany('r', 'propC', {reflexive: true, depth: 3}),
-                propC: Factory.hasMany('r', 'propR'),
-              };
-              createRelated = {
-                propR: 1,
-              };
-            }
             beforeEach(() => {
-              this.lair.registerFactory(new R(), 'r');
+              this.lair.registerFactory(Factory.create({
+                attrs: {
+                  propR: Factory.hasMany('r', 'propC', {reflexive: true, depth: 3}),
+                  propC: Factory.hasMany('r', 'propR'),
+                },
+                createRelated: {propR: 1},
+              }), 'r');
               this.lair.createRecords('r', 1);
             });
             it('reflexive records are created', () => {
@@ -546,21 +462,20 @@ describe('Lair', () => {
     describe('#afterCreate', () => {
 
       describe('should allow update record fields', () => {
-        class A extends Factory {
-          attrs = {
-            a: '1',
-            b: '2',
-            c: '3',
-          };
-          afterCreate(record) {
-            record.a = 'a';
-            record.b = 'b';
-            record.c = 'c';
-            return record;
-          }
-        }
         beforeEach(() => {
-          this.lair.registerFactory(new A(), 'a');
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              a: '1',
+              b: '2',
+              c: '3',
+            },
+            afterCreate(record) {
+              record.a = 'a';
+              record.b = 'b';
+              record.c = 'c';
+              return record;
+            },
+          }), 'a');
           this.lair.createRecords('a', 1);
           this.r = this.lair.getOne('a', '1');
         });
@@ -573,14 +488,14 @@ describe('Lair', () => {
 
       describe('should receive record with related data', () => {
         it('record has all related data', () => {
-          class A extends Factory {
-            attrs = {
+          const A = Factory.create({
+            attrs: {
               a: 'a',
               propB: Factory.hasOne('b', 'propA'),
-            };
-            createRelated = {
+            },
+            createRelated: {
               propB: 1,
-            };
+            },
             afterCreate(record) {
               expect(record).to.be.eql({
                 id: '1',
@@ -595,17 +510,17 @@ describe('Lair', () => {
                 },
               });
               return record;
-            }
-          }
-          class B extends Factory {
-            attrs = {
+            },
+          });
+          const B = Factory.create({
+            attrs: {
               b: 'b',
               propA: Factory.hasOne('a', 'propB'),
               propC: Factory.hasMany('c', 'propB'),
-            };
-            createRelated = {
+            },
+            createRelated: {
               propC: 1,
-            };
+            },
             afterCreate(record) {
               expect(record).to.be.eql({
                 id: '1',
@@ -620,13 +535,13 @@ describe('Lair', () => {
                 ],
               });
               return record;
-            }
-          }
-          class C extends Factory {
-            attrs = {
+            },
+          });
+          const C = Factory.create({
+            attrs: {
               c: 'c',
               propB: Factory.hasOne('b', 'propC'),
-            };
+            },
             afterCreate(record) {
               expect(record).to.be.eql({
                 id: '1',
@@ -643,48 +558,46 @@ describe('Lair', () => {
                 },
               });
               return record;
-            }
-          }
-          this.lair.registerFactory(new A(), 'a');
-          this.lair.registerFactory(new B(), 'b');
-          this.lair.registerFactory(new C(), 'c');
+            },
+          });
+          this.lair.registerFactory(A, 'a');
+          this.lair.registerFactory(B, 'b');
+          this.lair.registerFactory(C, 'c');
           this.lair.createRecords('a', 1);
         });
       });
 
       describe('should ignore updating related data', () => {
-        class A extends Factory {
-          attrs = {
+        const A = Factory.create({
+          attrs: {
             a: 'a',
             propB: Factory.hasMany('b', 'propA'),
             propC: Factory.hasOne('c', 'propA'),
-          };
-          createRelated = {
+          },
+          createRelated: {
             propB: 2,
             propC: 1,
-          };
+          },
           afterCreate(record) {
             record.propC.id = '100500';
             delete record.propB;
             return record;
-          }
-        }
-        class B extends Factory {
-          attrs = {
-            b: 'b',
-            propA: Factory.hasOne('a', 'propB'),
-          };
-        }
-        class C extends Factory {
-          attrs = {
-            c: 'c',
-            propA: Factory.hasMany('a', 'propC'),
-          };
-        }
+          },
+        });
         beforeEach(() => {
-          this.lair.registerFactory(new A(), 'a');
-          this.lair.registerFactory(new B(), 'b');
-          this.lair.registerFactory(new C(), 'c');
+          this.lair.registerFactory(A, 'a');
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              b: 'b',
+              propA: Factory.hasOne('a', 'propB'),
+            },
+          }), 'b');
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              c: 'c',
+              propA: Factory.hasMany('a', 'propC'),
+            },
+          }), 'c');
           this.lair.createRecords('a', 1);
         });
         it('a1 relationships are not changed', () => {
@@ -731,8 +644,16 @@ describe('Lair', () => {
     describe('common', () => {
 
       beforeEach(() => {
-        this.lair.registerFactory(new FooFactory(), 'foo');
-        this.lair.registerFactory(new BarFactory(), 'bar');
+        this.lair.registerFactory(Factory.create({attrs: {
+          foo() {
+            return `foo ${this.id}`;
+          },
+        }}), 'foo');
+        this.lair.registerFactory(Factory.create({attrs: {
+          bar() {
+            return `foo ${this.id}`;
+          },
+        }}), 'bar');
         this.lair.createRecords('foo', 5);
         this.lair.createRecords('bar', 5);
       });
@@ -844,13 +765,12 @@ describe('Lair', () => {
       });
 
       describe('RU methods should return copies of records from the db', () => {
-        class A extends Factory {
-          attrs = {
-            propB: 'some',
-          };
-        }
         beforeEach(() => {
-          this.lair.registerFactory(new A(), 'a');
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              propB: 'some',
+            },
+          }), 'a');
           this.lair.createRecords('a', 1);
           this.r = this.lair.getOne('a', '1');
         });
@@ -1087,32 +1007,28 @@ describe('Lair', () => {
 
         describe('one-to-one', () => {
 
-          class Foo extends Factory {
-            attrs = {
-              propBar: Factory.hasOne('bar', 'propFoo'),
-              sFoo: 'static foo',
-            };
-            createRelated = {propBar: 1};
-          }
-          class Bar extends Factory {
-            attrs = {
-              propFoo: Factory.hasOne('foo', 'propBar'),
-              propBaz: Factory.hasOne('baz', 'propBar'),
-              sBar: 'static bar',
-            };
-            createRelated = {propBaz: 1};
-          }
-          class Baz extends Factory {
-            attrs = {
-              propBar: Factory.hasOne('bar', 'propBaz'),
-              sBaz: 'static baz',
-            };
-          }
-
           beforeEach(() => {
-            this.lair.registerFactory(new Foo(), 'foo');
-            this.lair.registerFactory(new Bar(), 'bar');
-            this.lair.registerFactory(new Baz(), 'baz');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                propBar: Factory.hasOne('bar', 'propFoo'),
+                sFoo: 'static foo',
+              },
+              createRelated: {propBar: 1},
+            }), 'foo');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                propFoo: Factory.hasOne('foo', 'propBar'),
+                propBaz: Factory.hasOne('baz', 'propBar'),
+                sBar: 'static bar',
+              },
+              createRelated: {propBaz: 1},
+            }), 'bar');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                propBar: Factory.hasOne('bar', 'propBaz'),
+                sBaz: 'static baz',
+              },
+            }), 'baz');
             this.lair.createRecords('foo', 2);
           });
 
@@ -1297,21 +1213,18 @@ describe('Lair', () => {
             });
 
             describe('should create relationships', () => {
-              class A extends Factory {
-                attrs = {
-                  propB: Factory.hasOne('b', 'propA'),
-                };
-                createRelated = {propB: 1};
-              }
-              class B extends Factory {
-                attrs = {
-                  propA: Factory.hasOne('a', 'propB'),
-                };
-              }
-
               beforeEach(() => {
-                this.lair.registerFactory(new A(), 'a');
-                this.lair.registerFactory(new B(), 'b');
+                this.lair.registerFactory(Factory.create({
+                  attrs: {
+                    propB: Factory.hasOne('b', 'propA'),
+                  },
+                  createRelated: {propB: 1},
+                }), 'a');
+                this.lair.registerFactory(Factory.create({
+                  attrs: {
+                    propA: Factory.hasOne('a', 'propB'),
+                  },
+                }), 'b');
                 this.lair.createRecords('a', 1);
                 this.lair.createOne('a', {propB: '1'});
               });
@@ -1334,34 +1247,30 @@ describe('Lair', () => {
 
         describe('one-to-many', () => {
 
-          class Foo extends Factory {
-            attrs = {
-              propBar: Factory.hasOne('bar', 'propFoo'),
-              propBaz: Factory.hasOne('baz', 'propFoo'),
-              sFoo: 'static foo',
-            };
-            createRelated = {
-              propBar: 1,
-              propBaz: 1,
-            };
-          }
-          class Bar extends Factory {
-            attrs = {
-              propFoo: Factory.hasMany('foo', 'propBar'),
-              sBar: 'static bar',
-            };
-          }
-          class Baz extends Factory {
-            attrs = {
-              propFoo: Factory.hasMany('foo', 'propBaz'),
-              sBaz: 'static baz',
-            };
-          }
-
           beforeEach(() => {
-            this.lair.registerFactory(new Foo(), 'foo');
-            this.lair.registerFactory(new Bar(), 'bar');
-            this.lair.registerFactory(new Baz(), 'baz');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                propBar: Factory.hasOne('bar', 'propFoo'),
+                propBaz: Factory.hasOne('baz', 'propFoo'),
+                sFoo: 'static foo',
+              },
+              createRelated: {
+                propBar: 1,
+                propBaz: 1,
+              },
+            }), 'foo');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                propFoo: Factory.hasMany('foo', 'propBar'),
+                sBar: 'static bar',
+              },
+            }), 'bar');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                propFoo: Factory.hasMany('foo', 'propBaz'),
+                sBaz: 'static baz',
+              },
+            }), 'baz');
             this.lair.createRecords('foo', 2);
           });
 
@@ -1417,21 +1326,18 @@ describe('Lair', () => {
 
             describe('should update relationships', () => {
 
-              class A extends Factory {
-                attrs = {
-                  propB: Factory.hasOne('b', 'propA'),
-                };
-              }
-              class B extends Factory {
-                attrs = {
-                  propA: Factory.hasMany('a', 'propB'),
-                };
-                createRelated = { propA: 1 };
-              }
-
               beforeEach(() => {
-                this.lair.registerFactory(new A(), 'a');
-                this.lair.registerFactory(new B(), 'b');
+                this.lair.registerFactory(Factory.create({
+                  attrs: {
+                    propB: Factory.hasOne('b', 'propA'),
+                  },
+                }), 'a');
+                this.lair.registerFactory(Factory.create({
+                  attrs: {
+                    propA: Factory.hasMany('a', 'propB'),
+                  },
+                  createRelated: {propA: 1},
+                }), 'b');
                 this.lair.createRecords('b', 1);
                 this.lair.createRecords('a', 1);
               });
@@ -1463,23 +1369,18 @@ describe('Lair', () => {
 
             describe('should update cross-relationships', () => {
 
-              class A extends Factory {
-                attrs = {
-                  propB: Factory.hasOne('b', 'propA'),
-                };
-              }
-              class B extends Factory {
-                attrs = {
-                  propA: Factory.hasMany('a', 'propB'),
-                };
-                createRelated = {
-                  propA: 2,
-                };
-              }
-
               beforeEach(() => {
-                this.lair.registerFactory(new A(), 'a');
-                this.lair.registerFactory(new B(), 'b');
+                this.lair.registerFactory(Factory.create({
+                  attrs: {
+                    propB: Factory.hasOne('b', 'propA'),
+                  },
+                }), 'a');
+                this.lair.registerFactory(Factory.create({
+                  attrs: {
+                    propA: Factory.hasMany('a', 'propB'),
+                  },
+                  createRelated: {propA: 2},
+                }), 'b');
                 this.lair.createRecords('b', 2);
               });
 
@@ -1558,23 +1459,19 @@ describe('Lair', () => {
             });
 
             describe('should create relationships', () => {
-              class A extends Factory {
-                attrs = {
-                  propB: Factory.hasOne('b', 'propA'),
-                };
-                createRelated = {
-                  propB: 1,
-                };
-              }
-              class B extends Factory {
-                attrs = {
-                  propA: Factory.hasMany('a', 'propB'),
-                };
-              }
 
               beforeEach(() => {
-                this.lair.registerFactory(new A(), 'a');
-                this.lair.registerFactory(new B(), 'b');
+                this.lair.registerFactory(Factory.create({
+                  attrs: {
+                    propB: Factory.hasOne('b', 'propA'),
+                  },
+                  createRelated: {propB: 1},
+                }), 'a');
+                this.lair.registerFactory(Factory.create({
+                  attrs: {
+                    propA: Factory.hasMany('a', 'propB'),
+                  },
+                }), 'b');
                 this.lair.createRecords('a', 1);
               });
 
@@ -1607,34 +1504,31 @@ describe('Lair', () => {
         });
 
         describe('many-to-one', () => {
-          class Foo extends Factory {
-            attrs = {
-              sFoo: 'static foo',
-              propBar: Factory.hasMany('bar', 'propFoo'),
-              propBaz: Factory.hasMany('baz', 'propFoo'),
-            };
-            createRelated = {
-              propBar: 2,
-              propBaz: 2,
-            };
-          }
-          class Bar extends Factory {
-            attrs = {
-              propFoo: Factory.hasOne('foo', 'propBar'),
-              sBar: 'static bar',
-            };
-          }
-          class Baz extends Factory {
-            attrs = {
-              propFoo: Factory.hasOne('foo', 'propBaz'),
-              sBaz: 'static baz',
-            };
-          }
 
           beforeEach(() => {
-            this.lair.registerFactory(new Foo(), 'foo');
-            this.lair.registerFactory(new Bar(), 'bar');
-            this.lair.registerFactory(new Baz(), 'baz');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                sFoo: 'static foo',
+                propBar: Factory.hasMany('bar', 'propFoo'),
+                propBaz: Factory.hasMany('baz', 'propFoo'),
+              },
+              createRelated: {
+                propBar: 2,
+                propBaz: 2,
+              },
+            }), 'foo');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                propFoo: Factory.hasOne('foo', 'propBar'),
+                sBar: 'static bar',
+              },
+            }), 'bar');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                propFoo: Factory.hasOne('foo', 'propBaz'),
+                sBaz: 'static baz',
+              },
+            }), 'baz');
             this.lair.createRecords('foo', 1);
           });
 
@@ -1691,23 +1585,20 @@ describe('Lair', () => {
 
             describe('should update cross-relationships', () => {
 
-              class A extends Factory {
-                attrs = {
-                  propB: Factory.hasMany('b', 'propA'),
-                };
-                createRelated = {
-                  propB: 2,
-                };
-              }
-              class B extends Factory {
-                attrs = {
-                  propA: Factory.hasOne('a', 'propB'),
-                };
-              }
-
               beforeEach(() => {
-                this.lair.registerFactory(new A(), 'a');
-                this.lair.registerFactory(new B(), 'b');
+                this.lair.registerFactory(Factory.create({
+                  attrs: {
+                    propB: Factory.hasMany('b', 'propA'),
+                  },
+                  createRelated: {
+                    propB: 2,
+                  },
+                }), 'a');
+                this.lair.registerFactory(Factory.create({
+                  attrs: {
+                    propA: Factory.hasOne('a', 'propB'),
+                  },
+                }), 'b');
                 this.lair.createRecords('a', 1);
                 this.lair.createRecords('b', 1);
               });
@@ -1770,23 +1661,20 @@ describe('Lair', () => {
 
             describe('should create relationships', () => {
 
-              class A extends Factory {
-                attrs = {
-                  propB: Factory.hasMany('b', 'propA'),
-                };
-                createRelated = {
-                  propB: 2,
-                };
-              }
-              class B extends Factory {
-                attrs = {
-                  propA: Factory.hasOne('a', 'propB'),
-                };
-              }
-
               beforeEach(() => {
-                this.lair.registerFactory(new A(), 'a');
-                this.lair.registerFactory(new B(), 'b');
+                this.lair.registerFactory(Factory.create({
+                  attrs: {
+                    propB: Factory.hasMany('b', 'propA'),
+                  },
+                  createRelated: {
+                    propB: 2,
+                  },
+                }), 'a');
+                this.lair.registerFactory(Factory.create({
+                  attrs: {
+                    propA: Factory.hasOne('a', 'propB'),
+                  },
+                }), 'b');
                 this.lair.createRecords('a', 1);
                 this.lair.createRecords('b', 1);
               });
@@ -1847,33 +1735,30 @@ describe('Lair', () => {
         });
 
         describe('many-to-many', () => {
-          class Foo extends Factory {
-            attrs = {
-              sFoo: 'static foo',
-              propBar: Factory.hasMany('bar', 'propFoo'),
-              propBaz: Factory.hasMany('baz', 'propFoo'),
-            };
-            createRelated = {
-              propBar: 2,
-              propBaz: 2,
-            };
-          }
-          class Bar extends Factory {
-            attrs = {
-              propFoo: Factory.hasMany('foo', 'propBar'),
-              sBar: 'static bar',
-            };
-          }
-          class Baz extends Factory {
-            attrs = {
-              propFoo: Factory.hasMany('foo', 'propBaz'),
-              sBaz: 'static baz',
-            };
-          }
           beforeEach(() => {
-            this.lair.registerFactory(new Foo(), 'foo');
-            this.lair.registerFactory(new Bar(), 'bar');
-            this.lair.registerFactory(new Baz(), 'baz');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                sFoo: 'static foo',
+                propBar: Factory.hasMany('bar', 'propFoo'),
+                propBaz: Factory.hasMany('baz', 'propFoo'),
+              },
+              createRelated: {
+                propBar: 2,
+                propBaz: 2,
+              },
+            }), 'foo');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                propFoo: Factory.hasMany('foo', 'propBar'),
+                sBar: 'static bar',
+              },
+            }), 'bar');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                propFoo: Factory.hasMany('foo', 'propBaz'),
+                sBaz: 'static baz',
+              },
+            }), 'baz');
             this.lair.createRecords('foo', 2);
           });
 
@@ -1929,23 +1814,20 @@ describe('Lair', () => {
 
             describe('should update cross-relationships', () => {
 
-              class A extends Factory {
-                attrs = {
-                  propB: Factory.hasMany('b', 'propA'),
-                };
-                createRelated = {
-                  propB: 2,
-                };
-              }
-              class B extends Factory {
-                attrs = {
-                  propA: Factory.hasMany('a', 'propB'),
-                };
-              }
-
               beforeEach(() => {
-                this.lair.registerFactory(new A(), 'a');
-                this.lair.registerFactory(new B(), 'b');
+                this.lair.registerFactory(Factory.create({
+                  attrs: {
+                    propB: Factory.hasMany('b', 'propA'),
+                  },
+                  createRelated: {
+                    propB: 2,
+                  },
+                }), 'a');
+                this.lair.registerFactory(Factory.create({
+                  attrs: {
+                    propA: Factory.hasMany('a', 'propB'),
+                  },
+                }), 'b');
                 this.lair.createRecords('a', 2);
               });
 
@@ -2032,23 +1914,20 @@ describe('Lair', () => {
 
             describe('should create relationships', () => {
 
-              class A extends Factory {
-                attrs = {
-                  propB: Factory.hasMany('b', 'propA'),
-                };
-                createRelated = {
-                  propB: 2,
-                };
-              }
-              class B extends Factory {
-                attrs = {
-                  propA: Factory.hasMany('a', 'propB'),
-                };
-              }
-
               beforeEach(() => {
-                this.lair.registerFactory(new A(), 'a');
-                this.lair.registerFactory(new B(), 'b');
+                this.lair.registerFactory(Factory.create({
+                  attrs: {
+                    propB: Factory.hasMany('b', 'propA'),
+                  },
+                  createRelated: {
+                    propB: 2,
+                  },
+                }), 'a');
+                this.lair.registerFactory(Factory.create({
+                  attrs: {
+                    propA: Factory.hasMany('a', 'propB'),
+                  },
+                }), 'b');
                 this.lair.createRecords('a', 2);
                 this.lair.createRecords('b', 1);
               });
@@ -2144,50 +2023,39 @@ describe('Lair', () => {
 
         describe('not-cross relationships', () => {
 
-          class A extends Factory {
-            attrs = {
-              propB: Factory.hasOne('b', null),
-            };
-          }
-          class B extends Factory {
-            attrs = {};
-          }
-          class C extends Factory {
-            attrs = {
-              propB: Factory.hasMany('b', null),
-            };
-          }
-
           beforeEach(() => {
-            this.lair.registerFactory(new A(), 'a');
-            this.lair.registerFactory(new B(), 'b');
-            this.lair.registerFactory(new C(), 'c');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                propB: Factory.hasOne('b', null),
+              },
+            }), 'a');
+            this.lair.registerFactory(Factory.create({}), 'b');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                propB: Factory.hasMany('b', null),
+              },
+            }), 'c');
           });
 
           describe('#getOne', () => {
-            class AFactory extends Factory {
-              attrs = {
-                propB: Factory.hasOne('bFactory', null),
-              };
-              createRelated = {
-                propB: 1,
-              };
-            }
-            class BFactory extends Factory {
-              attrs = {};
-            }
-            class CFactory extends Factory {
-              attrs = {
-                propB: Factory.hasMany('bFactory', null),
-              };
-              createRelated = {
-                propB: 2,
-              };
-            }
             beforeEach(() => {
-              this.lair.registerFactory(new AFactory(), 'aFactory');
-              this.lair.registerFactory(new BFactory(), 'bFactory');
-              this.lair.registerFactory(new CFactory(), 'cFactory');
+              this.lair.registerFactory(Factory.create({
+                attrs: {
+                  propB: Factory.hasOne('bFactory', null),
+                },
+                createRelated: {
+                  propB: 1,
+                },
+              }), 'aFactory');
+              this.lair.registerFactory(Factory.create({}), 'bFactory');
+              this.lair.registerFactory(Factory.create({
+                attrs: {
+                  propB: Factory.hasMany('bFactory', null),
+                },
+                createRelated: {
+                  propB: 2,
+                },
+              }), 'cFactory');
               this.lair.createRecords('aFactory', 1);
               this.lair.createRecords('cFactory', 1);
             });
@@ -2210,29 +2078,24 @@ describe('Lair', () => {
           });
 
           describe('#queryOne', () => {
-            class AFactory extends Factory {
-              attrs = {
-                propB: Factory.hasOne('bFactory', null),
-              };
-              createRelated = {
-                propB: 1,
-              };
-            }
-            class BFactory extends Factory {
-              attrs = {};
-            }
-            class CFactory extends Factory {
-              attrs = {
-                propB: Factory.hasMany('bFactory', null),
-              };
-              createRelated = {
-                propB: 2,
-              };
-            }
             beforeEach(() => {
-              this.lair.registerFactory(new AFactory(), 'aFactory');
-              this.lair.registerFactory(new BFactory(), 'bFactory');
-              this.lair.registerFactory(new CFactory(), 'cFactory');
+              this.lair.registerFactory(Factory.create({
+                attrs: {
+                  propB: Factory.hasOne('bFactory', null),
+                },
+                createRelated: {
+                  propB: 1,
+                },
+              }), 'aFactory');
+              this.lair.registerFactory(Factory.create({}), 'bFactory');
+              this.lair.registerFactory(Factory.create({
+                attrs: {
+                  propB: Factory.hasMany('bFactory', null),
+                },
+                createRelated: {
+                  propB: 2,
+                },
+              }), 'cFactory');
               this.lair.createRecords('aFactory', 1);
               this.lair.createRecords('cFactory', 1);
             });
@@ -2319,32 +2182,33 @@ describe('Lair', () => {
       describe('multiple records', () => {
 
         describe('one-to-one', () => {
-          class Foo extends Factory {
-            attrs = {
-              propBar: Factory.hasOne('bar', 'propFoo'),
-              sFoo: 'static foo',
-            };
-            createRelated = {propBar: 1};
-          }
-          class Bar extends Factory {
-            attrs = {
-              propFoo: Factory.hasOne('foo', 'propBar'),
-              propBaz: Factory.hasOne('baz', 'propBar'),
-              sBar: 'static bar',
-            };
-            createRelated = {propBaz: 1};
-          }
-          class Baz extends Factory {
-            attrs = {
-              propBar: Factory.hasOne('bar', 'propBaz'),
-              sBaz: 'static baz',
-            };
-          }
 
           beforeEach(() => {
-            this.lair.registerFactory(new Foo(), 'foo');
-            this.lair.registerFactory(new Bar(), 'bar');
-            this.lair.registerFactory(new Baz(), 'baz');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                propBar: Factory.hasOne('bar', 'propFoo'),
+                sFoo: 'static foo',
+              },
+              createRelated: {
+                propBar: 1,
+              },
+            }), 'foo');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                propFoo: Factory.hasOne('foo', 'propBar'),
+                propBaz: Factory.hasOne('baz', 'propBar'),
+                sBar: 'static bar',
+              },
+              createRelated: {
+                propBaz: 1,
+              },
+            }), 'bar');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                propBar: Factory.hasOne('bar', 'propBaz'),
+                sBaz: 'static baz',
+              },
+            }), 'baz');
             this.lair.createRecords('foo', 2);
           });
 
@@ -2379,34 +2243,30 @@ describe('Lair', () => {
 
         describe('one-to-many', () => {
 
-          class Foo extends Factory {
-            attrs = {
-              propBar: Factory.hasOne('bar', 'propFoo'),
-              propBaz: Factory.hasOne('baz', 'propFoo'),
-              sFoo: 'static foo',
-            };
-            createRelated = {
-              propBar: 1,
-              propBaz: 1,
-            };
-          }
-          class Bar extends Factory {
-            attrs = {
-              propFoo: Factory.hasMany('foo', 'propBar'),
-              sBar: 'static bar',
-            };
-          }
-          class Baz extends Factory {
-            attrs = {
-              propFoo: Factory.hasMany('foo', 'propBaz'),
-              sBaz: 'static baz',
-            };
-          }
-
           beforeEach(() => {
-            this.lair.registerFactory(new Foo(), 'foo');
-            this.lair.registerFactory(new Bar(), 'bar');
-            this.lair.registerFactory(new Baz(), 'baz');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                propBar: Factory.hasOne('bar', 'propFoo'),
+                propBaz: Factory.hasOne('baz', 'propFoo'),
+                sFoo: 'static foo',
+              },
+              createRelated: {
+                propBar: 1,
+                propBaz: 1,
+              },
+            }), 'foo');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                propFoo: Factory.hasMany('foo', 'propBar'),
+                sBar: 'static bar',
+              },
+            }), 'bar');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                propFoo: Factory.hasMany('foo', 'propBaz'),
+                sBaz: 'static baz',
+              },
+            }), 'baz');
             this.lair.createRecords('foo', 2);
           });
 
@@ -2441,34 +2301,31 @@ describe('Lair', () => {
         });
 
         describe('many-to-one', () => {
-          class Foo extends Factory {
-            attrs = {
-              sFoo: 'static foo',
-              propBar: Factory.hasMany('bar', 'propFoo'),
-              propBaz: Factory.hasMany('baz', 'propFoo'),
-            };
-            createRelated = {
-              propBar: 2,
-              propBaz: 2,
-            };
-          }
-          class Bar extends Factory {
-            attrs = {
-              propFoo: Factory.hasOne('foo', 'propBar'),
-              sBar: 'static bar',
-            };
-          }
-          class Baz extends Factory {
-            attrs = {
-              propFoo: Factory.hasOne('foo', 'propBaz'),
-              sBaz: 'static baz',
-            };
-          }
 
           beforeEach(() => {
-            this.lair.registerFactory(new Foo(), 'foo');
-            this.lair.registerFactory(new Bar(), 'bar');
-            this.lair.registerFactory(new Baz(), 'baz');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                sFoo: 'static foo',
+                propBar: Factory.hasMany('bar', 'propFoo'),
+                propBaz: Factory.hasMany('baz', 'propFoo'),
+              },
+              createRelated: {
+                propBar: 2,
+                propBaz: 2,
+              },
+            }), 'foo');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                propFoo: Factory.hasOne('foo', 'propBar'),
+                sBar: 'static bar',
+              },
+            }), 'bar');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                propFoo: Factory.hasOne('foo', 'propBaz'),
+                sBaz: 'static baz',
+              },
+            }), 'baz');
             this.lair.createRecords('foo', 1);
           });
 
@@ -2502,33 +2359,31 @@ describe('Lair', () => {
         });
 
         describe('many-to-many', () => {
-          class Foo extends Factory {
-            attrs = {
-              sFoo: 'static foo',
-              propBar: Factory.hasMany('bar', 'propFoo'),
-              propBaz: Factory.hasMany('baz', 'propFoo'),
-            };
-            createRelated = {
-              propBar: 2,
-              propBaz: 2,
-            };
-          }
-          class Bar extends Factory {
-            attrs = {
-              propFoo: Factory.hasMany('foo', 'propBar'),
-              sBar: 'static bar',
-            };
-          }
-          class Baz extends Factory {
-            attrs = {
-              propFoo: Factory.hasMany('foo', 'propBaz'),
-              sBaz: 'static baz',
-            };
-          }
+
           beforeEach(() => {
-            this.lair.registerFactory(new Foo(), 'foo');
-            this.lair.registerFactory(new Bar(), 'bar');
-            this.lair.registerFactory(new Baz(), 'baz');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                sFoo: 'static foo',
+                propBar: Factory.hasMany('bar', 'propFoo'),
+                propBaz: Factory.hasMany('baz', 'propFoo'),
+              },
+              createRelated: {
+                propBar: 2,
+                propBaz: 2,
+              },
+            }), 'foo');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                propFoo: Factory.hasMany('foo', 'propBar'),
+                sBar: 'static bar',
+              },
+            }), 'bar');
+            this.lair.registerFactory(Factory.create({
+              attrs: {
+                propFoo: Factory.hasMany('foo', 'propBaz'),
+                sBaz: 'static baz',
+              },
+            }), 'baz');
             this.lair.createRecords('foo', 2);
           });
 
@@ -2581,29 +2436,25 @@ describe('Lair', () => {
         describe('non-cross relationships', () => {
 
           describe('#getAll', () => {
-            class AFactory extends Factory {
-              attrs = {
-                propB: Factory.hasOne('bFactory', null),
-              };
-              createRelated = {
-                propB: 1,
-              };
-            }
-            class BFactory extends Factory {
-              attrs = {};
-            }
-            class CFactory extends Factory {
-              attrs = {
-                propB: Factory.hasMany('bFactory', null),
-              };
-              createRelated = {
-                propB: 2,
-              };
-            }
+
             beforeEach(() => {
-              this.lair.registerFactory(new AFactory(), 'aFactory');
-              this.lair.registerFactory(new BFactory(), 'bFactory');
-              this.lair.registerFactory(new CFactory(), 'cFactory');
+              this.lair.registerFactory(Factory.create({
+                attrs: {
+                  propB: Factory.hasOne('bFactory', null),
+                },
+                createRelated: {
+                  propB: 1,
+                },
+              }), 'aFactory');
+              this.lair.registerFactory(Factory.create({}), 'bFactory');
+              this.lair.registerFactory(Factory.create({
+                attrs: {
+                  propB: Factory.hasMany('bFactory', null),
+                },
+                createRelated: {
+                  propB: 2,
+                },
+              }), 'cFactory');
               this.lair.createRecords('aFactory', 1);
               this.lair.createRecords('cFactory', 1);
             });
@@ -2626,29 +2477,25 @@ describe('Lair', () => {
           });
 
           describe('#queryMany', () => {
-            class AFactory extends Factory {
-              attrs = {
-                propB: Factory.hasOne('bFactory', null),
-              };
-              createRelated = {
-                propB: 1,
-              };
-            }
-            class BFactory extends Factory {
-              attrs = {};
-            }
-            class CFactory extends Factory {
-              attrs = {
-                propB: Factory.hasMany('bFactory', null),
-              };
-              createRelated = {
-                propB: 2,
-              };
-            }
+
             beforeEach(() => {
-              this.lair.registerFactory(new AFactory(), 'aFactory');
-              this.lair.registerFactory(new BFactory(), 'bFactory');
-              this.lair.registerFactory(new CFactory(), 'cFactory');
+              this.lair.registerFactory(Factory.create({
+                attrs: {
+                  propB: Factory.hasOne('bFactory', null),
+                },
+                createRelated: {
+                  propB: 1,
+                },
+              }), 'aFactory');
+              this.lair.registerFactory(Factory.create({}), 'bFactory');
+              this.lair.registerFactory(Factory.create({
+                attrs: {
+                  propB: Factory.hasMany('bFactory', null),
+                },
+                createRelated: {
+                  propB: 2,
+                },
+              }), 'cFactory');
               this.lair.createRecords('aFactory', 1);
               this.lair.createRecords('cFactory', 1);
             });
@@ -2675,22 +2522,21 @@ describe('Lair', () => {
       });
 
       describe('RU methods should return copies of records from the db', () => {
-        class A extends Factory {
-          attrs = {
-            propB: Factory.hasOne('b', 'propA'),
-          };
-          createRelated = {
-            propB: 1,
-          };
-        }
-        class B extends Factory {
-          attrs = {
-            propA: Factory.hasOne('a', 'propB'),
-          };
-        }
+
         beforeEach(() => {
-          this.lair.registerFactory(new A(), 'a');
-          this.lair.registerFactory(new B(), 'b');
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              propB: Factory.hasOne('b', 'propA'),
+            },
+            createRelated: {
+              propB: 1,
+            },
+          }), 'a');
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              propA: Factory.hasOne('a', 'propB'),
+            },
+          }), 'b');
           this.lair.createRecords('a', 1);
           this.r = this.lair.getOne('a', '1');
           this.originA1 = {id: '1', propB: {id: '1', propA: '1'}};
@@ -2727,46 +2573,7 @@ describe('Lair', () => {
       });
 
       describe('RU method should allow to set depth of relationships to be included in their response', () => {
-        class A extends Factory {
-          attrs = {
-            propB: Factory.hasMany('b', 'propA'),
-          };
-          createRelated = {
-            propB: 1,
-          };
-        }
-        class B extends Factory {
-          attrs = {
-            propA: Factory.hasOne('a', 'propB'),
-            propC: Factory.hasMany('c', 'propB'),
-          };
-          createRelated = {
-            propC: 1,
-          };
-        }
-        class C extends Factory {
-          attrs = {
-            propB: Factory.hasOne('b', 'propC'),
-            propD: Factory.hasMany('d', 'propC'),
-          };
-          createRelated = {
-            propD: 1,
-          };
-        }
-        class D extends Factory {
-          attrs = {
-            propC: Factory.hasOne('c', 'propD'),
-            propE: Factory.hasMany('e', 'propD'),
-          };
-          createRelated = {
-            propE: 1,
-          };
-        }
-        class E extends Factory {
-          attrs = {
-            propD: Factory.hasOne('d', 'propE'),
-          };
-        }
+
         beforeEach(() => {
           this.a1 = {
             id: '1',
@@ -2952,11 +2759,46 @@ describe('Lair', () => {
               propC: '1',
             },
           };
-          this.lair.registerFactory(new A(), 'a');
-          this.lair.registerFactory(new B(), 'b');
-          this.lair.registerFactory(new C(), 'c');
-          this.lair.registerFactory(new D(), 'd');
-          this.lair.registerFactory(new E(), 'e');
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              propB: Factory.hasMany('b', 'propA'),
+            },
+            createRelated: {
+              propB: 1,
+            },
+          }), 'a');
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              propA: Factory.hasOne('a', 'propB'),
+              propC: Factory.hasMany('c', 'propB'),
+            },
+            createRelated: {
+              propC: 1,
+            },
+          }), 'b');
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              propB: Factory.hasOne('b', 'propC'),
+              propD: Factory.hasMany('d', 'propC'),
+            },
+            createRelated: {
+              propD: 1,
+            },
+          }), 'c');
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              propC: Factory.hasOne('c', 'propD'),
+              propE: Factory.hasMany('e', 'propD'),
+            },
+            createRelated: {
+              propE: 1,
+            },
+          }), 'd');
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              propD: Factory.hasOne('d', 'propE'),
+            },
+          }), 'e');
           this.lair.createRecords('a', 1);
         });
 

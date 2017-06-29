@@ -4,6 +4,7 @@
   "description": "JS database",
   "main": "./dist/index.js",
   "scripts": {
+    "build": "rm -rf dist && tsc",
     "test": "mocha -r ts-node/register tests/**/*.ts",
     "lint": "tslint -c tslint.json lib/**/*.ts && tslint -c tests/tslint.json tests/**/*.ts",
     "test-cov": "istanbul cover --dir ./dist/coverage ./node_modules/mocha/bin/_mocha -- dist/tests/**/*.js --report lcovonly -R spec --bail -- && cat ./dist/coverage/lcov.info | coveralls && rm -rf ./coverage"

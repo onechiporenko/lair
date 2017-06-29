@@ -1,12 +1,15 @@
 {
   "compilerOptions": {
-    "target": "ES5",
-    "outDir": "dist",
+    "module": "commonjs",
+    "target": "es5",
+    "noImplicitAny": false,
+    "sourceMap": true,
+    "moduleResolution": "node",
+    "experimentalDecorators": true,
     "declaration": true,
-    "experimentalDecorators": true
+    "outDir": "dist"
   },
   "exclude": [
-    "node_modules",
-    "tests"
+    "node_modules"
   ]
 }

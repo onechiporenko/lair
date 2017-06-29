@@ -8,7 +8,8 @@
     "build-publish": "npm run build && rm -rf dist/tests && rm -rf dist/lib/*.js.map",
     "test": "mocha -r ts-node/register tests/**/*.ts",
     "lint": "tslint -c tslint.json lib/**/*.ts && tslint -c tests/tslint.json tests/**/*.ts",
-    "test-cov": "istanbul cover --dir ./dist/coverage ./node_modules/mocha/bin/_mocha -- dist/tests/**/*.js --report lcovonly -R spec --bail -- && cat ./dist/coverage/lcov.info | coveralls && rm -rf ./coverage"
+    "test-remap": "remap-istanbul -i dist/coverage/coverage.json -o ./dist/coverage/coverage -t lcovonly",
+    "test-cov": "istanbul cover --dir ./dist/coverage ./node_modules/mocha/bin/_mocha -- dist/tests/**/*.js --report lcovonly -R spec --bail -- && npm run test-remap && cat ./dist/coverage/coverage | coveralls && rm -rf ./coverage"
   },
   "keywords": [
     "js",

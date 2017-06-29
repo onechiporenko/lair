@@ -19,3 +19,7 @@ export function uniq(list: any[]): any[] {
 export function copy(val: any): any {
   return JSON.parse(JSON.stringify(val));
 }
+
+export function getOrCalcValue(v: any, ...args): any {
+  return v instanceof Function ? v.apply(null, args) : v;
+}

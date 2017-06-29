@@ -54,7 +54,7 @@ export class Relationships {
   public recalculateRelationshipForAttr(factoryName: string, record: Record, attrName: string): void {
     const sourceMeta = this.meta[factoryName];
     const attrMeta = sourceMeta[attrName];
-    if (attrMeta.type === MetaAttrType.FIELD) {
+    if (attrMeta.type !== MetaAttrType.HAS_ONE && attrMeta.type !== MetaAttrType.HAS_MANY) {
       return;
     }
     const distMeta = this.meta[attrMeta.factoryName][attrMeta.invertedAttrName];
@@ -99,7 +99,7 @@ export class Relationships {
   public deleteRelationshipForAttr(factoryName: string, id: string, attrName: string): void {
     const meta = this.meta[factoryName];
     const attrMeta = meta[attrName];
-    if (attrMeta.type === MetaAttrType.FIELD) {
+    if (attrMeta.type !== MetaAttrType.HAS_ONE && attrMeta.type !== MetaAttrType.HAS_MANY) {
       return;
     }
     const distMeta = this.meta[attrMeta.factoryName][attrMeta.invertedAttrName];

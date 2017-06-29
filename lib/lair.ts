@@ -1,7 +1,7 @@
 import {Factory, FactoryData, Meta, MetaAttrType} from './factory';
 import {Record} from './record';
 import {Relationships} from './relationships';
-import {assert, copy, isId} from './utils';
+import {assert, copy, getOrCalcValue, isId} from './utils';
 
 const {keys} = Object;
 const {isArray} = Array;
@@ -58,10 +58,6 @@ function getLastItemsCount(list: string[], neededValue: string): number {
 
 function assertLoops(factoryName: string, relatedChain: string[]) {
   assert(`Loop is detected in the "createRelated". Chain is ${JSON.stringify(relatedChain)}. You try to create records for "${factoryName}" again.`, relatedChain.indexOf(factoryName) === -1);
-}
-
-function getNeededRelatedRecordsCount(v: any, id: string): number {
-  return v instanceof Function ? v.call(null, id) : v;
 }
 
 export interface InternalDb {
@@ -128,13 +124,12 @@ export class Lair {
    * @param {string} factoryName
    */
   public registerFactory(factory: Factory, factoryName: string): void {
-    const fName = factoryName || factory.constructor['name'].toLowerCase();
-    assert(`Factory with name "${fName}" is already registered`, !this.factories[fName]);
-    this.factories[fName] = {factory, id: 1} as FactoryData;
+    assert(`Factory with name "${factoryName}" is already registered`, !this.factories[factoryName]);
+    this.factories[factoryName] = {factory, id: 1} as FactoryData;
     this.meta[factoryName] = factory.meta;
-    this.relationships.addFactory(fName);
+    this.relationships.addFactory(factoryName);
     this.relationships.updateMeta(this.meta);
-    this.addType(fName);
+    this.addType(factoryName);
     factory.init();
   }
 
@@ -337,7 +332,7 @@ export class Lair {
         keys(createRelated).forEach(attrName => {
           const fName = meta[attrName].factoryName;
           const isHasMany = meta[attrName].type === MetaAttrType.HAS_MANY;
-          const relatedCount = isHasMany ? getNeededRelatedRecordsCount(createRelated[attrName], record.id) : 1;
+          const relatedCount = isHasMany ? getOrCalcValue(createRelated[attrName], record.id) : 1;
           const relatedRecords = this.internalCreateRecords(fName, relatedCount, {factoryName, attrName}, [...relatedChain, factoryName]);
           this.db[factoryName][record.id][attrName] = isHasMany ? relatedRecords : relatedRecords[0];
         });

@@ -22,6 +22,7 @@ const attrs = {
   many: Factory.hasMany('anotherFactory', 'attr2'),
   oneTest: Factory.hasOne('test', null, {reflexive: true, depth: 2}),
   manyTests: Factory.hasMany('test', null, {reflexive: true, depth: 2}),
+  sequenceItem: Factory.sequenceItem(1, prevItems => prevItems.reduce((a, b) => a + b, 0)),
 };
 
 describe('Factory', () => {
@@ -33,6 +34,8 @@ describe('Factory', () => {
       this.factory.init();
       this.firstInstance = this.factory.createRecord(1);
       this.secondInstance = this.factory.createRecord(2);
+      this.thirdInstance = this.factory.createRecord(3);
+      this.fourthInstance = this.factory.createRecord(4);
     });
 
     it('`id` is auto incremented', () => {
@@ -48,6 +51,13 @@ describe('Factory', () => {
     it('`second`-field is not equal for created records', () => {
       expect(this.firstInstance.second).to.be.equal('dynamic 1');
       expect(this.secondInstance.second).to.be.equal('dynamic 2');
+    });
+
+    it('sequence items are calculated basing on previous values', () => {
+      expect(this.firstInstance.sequenceItem).to.be.equal(1);
+      expect(this.secondInstance.sequenceItem).to.be.equal(1);
+      expect(this.thirdInstance.sequenceItem).to.be.equal(2);
+      expect(this.fourthInstance.sequenceItem).to.be.equal(4);
     });
 
     it('should throw error if `id` is defined in the `attrs`', () => {
@@ -94,6 +104,13 @@ describe('Factory', () => {
 
     it('dynamic attr is marked as `FIELD`', () => {
       expect(this.meta.second.type).to.be.equal(MetaAttrType.FIELD);
+    });
+
+    it('sequence item is marked as `SEQUENCE_ITEM`', () => {
+      const sequenceItem = this.meta.sequenceItem;
+      expect(sequenceItem.type).to.be.equal(MetaAttrType.SEQUENCE_ITEM);
+      expect(sequenceItem.initialValue).to.be.equal(1);
+      expect(sequenceItem.getNextValue).to.be.a('function');
     });
 
     it('single relationship attr is marked as `HAS_ONE`', () => {

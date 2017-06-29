@@ -1,5 +1,5 @@
 import {Record} from './record';
-import {assert} from './utils';
+import {assert, copy, getOrCalcValue} from './utils';
 
 const {keys, defineProperty} = Object;
 
@@ -7,6 +7,7 @@ export enum MetaAttrType {
   FIELD,
   HAS_ONE,
   HAS_MANY,
+  SEQUENCE_ITEM,
 }
 export interface FactoryData {
   factory: Factory;
@@ -19,12 +20,16 @@ export interface MetaAttr {
   type: MetaAttrType;
   [prop: string]: any;
 }
+export interface SequenceMetaAttr extends MetaAttr {
+  initialValue: any;
+  getNextValue: (prevItems: any[]) => any;
+  prevValues: any[];
+}
 export interface RelationshipMetaAttr extends MetaAttr {
   factoryName: string;
   invertedAttrName: string;
   reflexive: boolean;
   reflexiveDepth: number;
-  type: MetaAttrType;
 }
 export interface RelationshipOptions {
   reflexive: boolean;
@@ -84,6 +89,16 @@ export class Factory {
     return {factoryName, invertedAttrName, type: MetaAttrType.HAS_MANY, reflexive, reflexiveDepth};
   }
 
+  /**
+   * Use `Factory.sequenceItem` for fields that depends on previously generated values
+   * @param {*|Function} initialValue
+   * @param {Function} getNextValue
+   * @returns {SequenceMetaAttr}
+   */
+  public static sequenceItem(initialValue: any, getNextValue: (prevValues: any[]) => any): SequenceMetaAttr {
+    return {type: MetaAttrType.SEQUENCE_ITEM, initialValue: getOrCalcValue(initialValue), getNextValue, prevValues: []};
+  }
+
   public static create(options: CreateOptions): Factory {
     const factory = new Factory();
     factory.attrs = options.attrs || {};
@@ -127,8 +142,8 @@ export class Factory {
   }
 
   public init(): void {
-    this.getMeta();
     this.checkAttrs();
+    this.getMeta();
     this.initInternalFactory();
   }
 
@@ -145,6 +160,16 @@ export class Factory {
         }
         if (attr.type === MetaAttrType.HAS_MANY) {
           options.value = [];
+        }
+        if (attr.type === MetaAttrType.SEQUENCE_ITEM) {
+          const self = this;
+          options.get = function() {
+            if (!self.cache.hasOwnProperty(attrName)) {
+              self.cache[attrName] = id === 1 ? attr.initialValue : attr.getNextValue.call(this, copy(attr.prevValues));
+              attr.prevValues.push(self.cache[attrName]);
+            }
+            return self.cache[attrName];
+          };
         }
         if (!attr.type) {
           if (attr instanceof Function) {
@@ -173,12 +198,7 @@ export class Factory {
     const attrs = this.attrs;
     keys(attrs).forEach(attrName => {
       const val = attrs[attrName];
-      // dummy way to check that val is relation declaration
-      if (val.type && val.factoryName) {
-        this.internalMeta[attrName] = val;
-      } else {
-        this.internalMeta[attrName] = {type: MetaAttrType.FIELD};
-      }
+      this.internalMeta[attrName] = val.type ? val : {type: MetaAttrType.FIELD};
     });
   }
 

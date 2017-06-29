@@ -637,6 +637,70 @@ describe('Lair', () => {
 
     });
 
+    describe('create sequences', () => {
+      it('getNextValue should receive a list with previous values', () => {
+        const expected = [
+          ['initial'],
+          ['initial', 2],
+          ['initial', 2, 3],
+          ['initial', 2, 3, 4],
+        ];
+        let i = 0;
+        const A = Factory.create({
+          attrs: {
+            propA: Factory.sequenceItem('initial', prevValues => {
+              expect(prevValues).to.be.eql(expected[i++]);
+              return prevValues.length + 1;
+            }),
+          },
+        });
+        this.lair.registerFactory(A, 'a');
+        this.lair.createRecords('a', 4);
+        expect(this.lair.getOne('a', 4).propA).to.be.equal(4);
+      });
+
+      it('sequence items should not be recalculated', () => {
+        const A = Factory.create({
+          attrs: {
+            propA: Factory.sequenceItem(new Date().getTime(), prevItems => prevItems[prevItems.length - 1] - Math.round(Math.random() * 100)),
+            propB() {
+              return this.propA;
+            },
+            propC() {
+              return this.propA;
+            },
+          },
+        });
+        this.lair.registerFactory(A, 'a');
+        this.lair.createRecords('a', 1);
+        const r = this.lair.getOne('a', '1');
+        expect(r.propB).to.be.equal(r.propC);
+      });
+
+      it('getNextValue should not be able to change list of previous values', () => {
+        const expected = [
+          [1],
+          [1, 1],
+          [1, 1, 1],
+          [1, 1, 1, 1],
+        ];
+        let i = 0;
+        const A = Factory.create({
+          attrs: {
+            propA: Factory.sequenceItem(1, prevValues => {
+              expect(prevValues).to.be.eql(expected[i++]);
+              const ret = prevValues.pop();
+              prevValues = null;
+              return ret;
+            }),
+          },
+        });
+        this.lair.registerFactory(A, 'a');
+        this.lair.createRecords('a', 4);
+        expect(this.lair.getOne('a', 4).propA).to.be.equal(1);
+      });
+    });
+
   });
 
   describe('DB CRUD', () => {

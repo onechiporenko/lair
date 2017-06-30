@@ -5,7 +5,7 @@
   "main": "./dist/index.js",
   "scripts": {
     "build": "rm -rf dist && tsc",
-    "build-publish": "npm run build && rm -rf dist/tests && rm -rf dist/lib/*.js.map",
+    "build-publish": "npm run build && rm -rf dist/tests && rm -rf dist/lib/*.js.map && cp dist/lib/* dist/. && rm -rf dist/lib",
     "test": "mocha -r ts-node/register tests/**/*.ts",
     "lint": "tslint -c tslint.json lib/**/*.ts && tslint -c tests/tslint.json tests/**/*.ts",
     "test-remap": "remap-istanbul -i dist/coverage/coverage.json -o ./dist/coverage/coverage -t lcovonly",

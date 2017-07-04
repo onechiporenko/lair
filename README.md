@@ -386,4 +386,23 @@ const timeLine = Factory.create({
 
 Every created record for this factory will have `timestamp`-property greater to 5 seconds than previous. It's useful for graphs and metrics.
 
-`Factory.sequenceItem` takes two arguments - initial value (it will be set to record with id `1`) and function that calculates value for next record. This callback will get list with all previously generated values for this field. 
+`Factory.sequenceItem` takes two mandatory arguments - initial value (it will be set to record with id `1`) and function that calculates value for next record. This callback will get list with all previously generated values for this field. 
+
+Third arguments is a POJO with options for sequence. Currently only one option is available. It's called `lastValuesCount`. It values determines how many items will be passed to the callback:
+
+```javascript
+const timeLine = Factory.create({
+  attrs: {
+    timestamp: Factory.sequenceItem(
+      new Date().getTime() - 24 * 3600 * 1000, 
+      prevValues => prevValues.pop() + 5000, // prevValues will have two values (for id '2' it will have one value)
+      {lastValuesCount: 2} // <----
+    ),
+    value() {
+      return faker.random.number({min: 1, max: 100});
+    }
+  }
+});
+```
+
+Use option `lastValuesCount` if you sequence items depends of limited number of previous values.

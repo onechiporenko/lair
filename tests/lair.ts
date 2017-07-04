@@ -643,7 +643,6 @@ describe('Lair', () => {
           ['initial'],
           ['initial', 2],
           ['initial', 2, 3],
-          ['initial', 2, 3, 4],
         ];
         let i = 0;
         const A = Factory.create({
@@ -656,7 +655,27 @@ describe('Lair', () => {
         });
         this.lair.registerFactory(A, 'a');
         this.lair.createRecords('a', 4);
-        expect(this.lair.getOne('a', 4).propA).to.be.equal(4);
+        expect(this.lair.getOne('a', '4').propA).to.be.equal(4);
+      });
+
+      it('getNextValue should receive only part of the previous values', () => {
+        const expected = [
+          [1],
+          [1, 1],
+          [1, 2],
+        ];
+        let i = 0;
+        const A = Factory.create({
+          attrs: {
+            propA: Factory.sequenceItem(1, v => {
+              expect(v).to.be.eql(expected[i++]);
+              return v.reduce((a, b) => a + b, 0);
+            }, {lastValuesCount: 2}),
+          },
+        });
+        this.lair.registerFactory(A, 'a');
+        this.lair.createRecords('a', 4);
+        expect(this.lair.getOne('a', '4').propA).to.be.equal(3);
       });
 
       it('sequence items should not be recalculated', () => {

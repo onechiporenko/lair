@@ -24,6 +24,7 @@ export interface SequenceMetaAttr extends MetaAttr {
   initialValue: any;
   getNextValue: (prevItems: any[]) => any;
   prevValues: any[];
+  lastValuesCount: number;
 }
 export interface RelationshipMetaAttr extends MetaAttr {
   factoryName: string;
@@ -34,6 +35,10 @@ export interface RelationshipMetaAttr extends MetaAttr {
 export interface RelationshipOptions {
   reflexive: boolean;
   depth: number;
+}
+
+export interface SequenceItemOptions {
+  lastValuesCount: number;
 }
 
 export interface CreateOptions {
@@ -93,10 +98,17 @@ export class Factory {
    * Use `Factory.sequenceItem` for fields that depends on previously generated values
    * @param {*|Function} initialValue
    * @param {Function} getNextValue
+   * @param {SequenceItemOptions} options
    * @returns {SequenceMetaAttr}
    */
-  public static sequenceItem(initialValue: any, getNextValue: (prevValues: any[]) => any): SequenceMetaAttr {
-    return {type: MetaAttrType.SEQUENCE_ITEM, initialValue: getOrCalcValue(initialValue), getNextValue, prevValues: []};
+  public static sequenceItem(initialValue: any, getNextValue: (prevValues: any[]) => any, options?: SequenceItemOptions): SequenceMetaAttr {
+    return {
+      getNextValue,
+      initialValue: getOrCalcValue(initialValue),
+      lastValuesCount: options && options.hasOwnProperty('lastValuesCount') ? options.lastValuesCount : Infinity,
+      prevValues: [],
+      type: MetaAttrType.SEQUENCE_ITEM,
+    };
   }
 
   public static create(options: CreateOptions): Factory {
@@ -165,7 +177,9 @@ export class Factory {
           const self = this;
           options.get = function() {
             if (!self.cache.hasOwnProperty(attrName)) {
-              self.cache[attrName] = id === 1 ? attr.initialValue : attr.getNextValue.call(this, copy(attr.prevValues));
+              self.cache[attrName] = id === 1 ?
+                attr.initialValue :
+                attr.getNextValue.call(this, copy(attr.prevValues.slice(-attr.lastValuesCount)));
               attr.prevValues.push(self.cache[attrName]);
             }
             return self.cache[attrName];

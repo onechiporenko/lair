@@ -77,6 +77,7 @@ interface AfterCreateItem {
 
 export interface CRUDOptions {
   depth: number;
+  handleNotAttrs?: boolean;
 }
 
 export interface DevInfoItem {
@@ -250,9 +251,13 @@ export class Lair {
     const id = String(this.factories[factoryName].id);
     this.relationships.addRecord(factoryName, id);
     const newRecord = {id};
-    keys(meta).forEach(attrName => {
-      if (data.hasOwnProperty(attrName)) {
+    keys(data).forEach(attrName => {
+      if (meta.hasOwnProperty(attrName)) {
         newRecord[attrName] = this.createAttrValue(factoryName, id, attrName, data[attrName]);
+      } else {
+        if (options.handleNotAttrs) {
+          newRecord[attrName] = data[attrName];
+        }
       }
     });
     this.db[factoryName][id] = newRecord;
@@ -278,9 +283,13 @@ export class Lair {
     const record = this.getOne(factoryName, id);
     assert(`Record of "${factoryName}" with id "${id}" doesn't exist`, !!record);
     const meta = this.getMetaFor(factoryName);
-    keys(meta).forEach(attrName => {
-      if (data.hasOwnProperty(attrName)) {
+    keys(data).forEach(attrName => {
+      if (meta.hasOwnProperty(attrName)) {
         record[attrName] = this.createAttrValue(factoryName, id, attrName, data[attrName]);
+      } else {
+        if (options.handleNotAttrs) {
+          record[attrName] = data[attrName];
+        }
       }
     });
     this.db[factoryName][id] = record;

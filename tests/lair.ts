@@ -876,6 +876,15 @@ describe('Lair', () => {
         it('should throw an error for unknown type', () => {
           expect(() => this.lair.createOne('fake', {})).to.throw('"fake"-type doesn\'t exist in the database');
         });
+
+        it('should process not defined attributes if `handleNotAttrs`-option is set', () => {
+          const record = this.lair.createOne('foo', {foo: 'foo', fake: 'fake'}, {handleNotAttrs: true});
+          expect(record).to.be.eql({
+            id: '6',
+            foo: 'foo',
+            fake: 'fake',
+          });
+        });
       });
 
       describe('#updateOne', () => {
@@ -903,6 +912,15 @@ describe('Lair', () => {
           const record = this.lair.updateOne('foo', '1', {foo: 'updated foo', id: '6'});
           expect(record.id).to.be.equal('1');
           expect(this.lair.getAll('foo')).to.have.property('length', 5);
+        });
+
+        it('should process not defined attributes if `handleNotAttrs`-option is set', () => {
+          this.lair.updateOne('foo', '1', {foo: 'foo', fake: 'fake'}, {handleNotAttrs: true});
+          expect(this.lair.getOne('foo', '1')).to.be.eql({
+            id: '1',
+            foo: 'foo',
+            fake: 'fake',
+          });
         });
       });
 

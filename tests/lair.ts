@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {Factory} from '../lib/factory';
+import {Factory, MetaAttrType} from '../lib/factory';
 import {Lair} from '../lib/lair';
 
 function incStr(val: string): string {
@@ -24,6 +24,49 @@ describe('Lair', () => {
         this.lair.registerFactory(Factory.create({}), 'test');
       }).to.throw('Factory with name "test" is already registered');
     });
+  });
+
+  describe('#getDevInfo', () => {
+
+    beforeEach(() => {
+      const A = Factory.create({
+        attrs: {
+          a: 'a',
+        },
+      });
+      const B = Factory.create({
+        attrs: {
+          b: 'b',
+        },
+      });
+      this.lair.registerFactory(A, 'a');
+      this.lair.registerFactory(B, 'b');
+      this.lair.createRecords('a', 5);
+    });
+
+    it('should return valid info', () => {
+      expect(this.lair.getDevInfo()).to.be.eql({
+        a: {
+          count: 5,
+          id: 6,
+          meta: {
+            a: {
+              type: MetaAttrType.FIELD,
+            },
+          },
+        },
+        b: {
+          count: 0,
+          id: 1,
+          meta: {
+            b: {
+              type: MetaAttrType.FIELD,
+            },
+          },
+        },
+      });
+    });
+
   });
 
   describe('#createRecords', () => {
@@ -711,6 +754,22 @@ describe('Lair', () => {
               const ret = prevValues.pop();
               prevValues = null;
               return ret;
+            }),
+          },
+        });
+        this.lair.registerFactory(A, 'a');
+        this.lair.createRecords('a', 4);
+        expect(this.lair.getOne('a', 4).propA).to.be.equal(1);
+      });
+
+      it('getNextValue (not arrow) should be called in the new record context', () => {
+        const expected = ['2', '3', '4'];
+        let i = 0;
+        const A = Factory.create({
+          attrs: {
+            propA: Factory.sequenceItem(1, function(prevValues) {
+              expect(this.id).to.be.equal(expected[i++]);
+              return prevValues.pop();
             }),
           },
         });

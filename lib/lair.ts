@@ -66,7 +66,7 @@ export interface InternalDb {
   };
 }
 
-interface InternalMetaStore {
+export interface InternalMetaStore {
   [factoryName: string]: Meta;
 }
 
@@ -77,6 +77,16 @@ interface AfterCreateItem {
 
 export interface CRUDOptions {
   depth: number;
+}
+
+export interface DevInfoItem {
+  count: number;
+  id: number;
+  meta: InternalMetaStore;
+}
+
+export interface DevInfo {
+  [factoryName: string]: DevInfoItem;
 }
 
 /**
@@ -288,6 +298,26 @@ export class Lair {
   public deleteOne(factoryName: string, id: string): void {
     delete this.db[factoryName][id];
     this.relationships.deleteRelationshipsForRecord(factoryName, id);
+  }
+
+  /**
+   * Get info about current Lair state:
+   *  - Registered factories
+   *  - ID-value for each factory
+   *  - Records count for each factory
+   *  - Meta-info for each factory
+   * @returns {DevInfo}
+   */
+  public getDevInfo(): DevInfo {
+    const ret = {};
+    Object.keys(this.factories).forEach(factoryName => {
+      ret[factoryName] = {
+        count: Object.keys(this.db[factoryName]).length,
+        id: this.factories[factoryName].id,
+        meta: copy(this.getMetaFor(factoryName)),
+      };
+    });
+    return ret;
   }
 
   private hasType(type: string): boolean {

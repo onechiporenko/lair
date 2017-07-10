@@ -405,4 +405,43 @@ const timeLine = Factory.create({
 });
 ```
 
-Use option `lastValuesCount` if you sequence items depends of limited number of previous values.
+Use option `lastValuesCount` if you sequence items depends on limited number of previous values.
+
+### Extending Factories
+
+New Factory may be created based on another Factory. `attrs`, `createRelated`, `afterCreate` and `afterCreateRelationsDepth` will be put in the child Factory and overridden if needed:
+
+```javascript
+const Parent1 = Factory.create({
+  attrs: {
+    children: Factory.hasMany('child', 'parent'),    
+  },
+  createRelated: {
+    children: 5
+  },
+  afterCreate(record) {
+    console.log('parent 1');
+    return record;
+  }
+});
+
+const Parent2 = Factory.extend(Parent1, { // <----
+  attrs: {
+    children: Factory.hasOne('child', 'parent')
+  },
+  createRelated: {
+    children: 1
+  },
+  afterCreate(record) {
+    console.log('parent 2');
+    return record;
+  }
+});
+
+const Child = Factory.create({});
+```
+
+Extending Factories has a few restrictions:
+
+* No `super` anywhere. You don't have access to "parent" (basically, "parent" doesn't exist)
+* Be aware with inverted fields in the relationships

@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import {Factory} from '../../../../lib/factory';
-import {Lair} from '../../../../lib/lair';
+import {Factory} from '../lib/factory';
+import {Lair} from '../lib/lair';
 
 import {
   oneToOneFoo,
@@ -15,7 +15,7 @@ import {
   manyToManyFoo,
   manyToManyBar,
   manyToManyBaz,
-} from '../../expects';
+} from './expects';
 
 describe('multiple records', () => {
 

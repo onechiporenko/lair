@@ -1,6 +1,6 @@
 import {expect} from 'chai';
-import {Factory} from '../../lib/factory';
-import {Lair} from '../../lib/lair';
+import {Factory} from '../lib/factory';
+import {Lair} from '../lib/lair';
 
 describe('Lair create records', () => {
 

@@ -1,5 +1,5 @@
 import {Record} from './record';
-import {assert, copy, getOrCalcValue} from './utils';
+import {assert, copy, getOrCalcValue, getVal} from './utils';
 
 const {keys, defineProperty} = Object;
 
@@ -9,29 +9,35 @@ export enum MetaAttrType {
   HAS_MANY,
   SEQUENCE_ITEM,
 }
+
 export interface FactoryData {
   factory: Factory;
   id: number;
 }
+
 export interface Meta {
   [p: string]: MetaAttr;
 }
+
 export interface MetaAttr {
   type: MetaAttrType;
   [prop: string]: any;
 }
+
 export interface SequenceMetaAttr extends MetaAttr {
   initialValue: any;
   getNextValue: (prevItems: any[]) => any;
   prevValues: any[];
   lastValuesCount: number;
 }
+
 export interface RelationshipMetaAttr extends MetaAttr {
   factoryName: string;
   invertedAttrName: string;
   reflexive: boolean;
   reflexiveDepth: number;
 }
+
 export interface RelationshipOptions {
   reflexive: boolean;
   depth: number;
@@ -48,10 +54,6 @@ export interface CreateOptions {
   afterCreateRelationshipsDepth?: number;
 }
 
-function getVal(obj, key, defaultVal) {
-  return obj && obj.hasOwnProperty(key) ? obj[key] : defaultVal;
-}
-
 /**
  * Factories are used for data-generation. Each generated data-item is called 'record'.
  * First you need to create a child-class of Factory with filled `attrs`-property.
@@ -62,6 +64,7 @@ function getVal(obj, key, defaultVal) {
  *  - Dynamic field is recalculated for every generated record
  *  - Relationship field is used to show that value is a record of the another factory.
  *    Relationship may be "has_one" (single record) and "has_many" (array of records)
+ *  - Sequence item which value is based on previously generated values (for older records)
  * @class Factory
  */
 export class Factory {
@@ -111,18 +114,53 @@ export class Factory {
     };
   }
 
+  /**
+   *
+   * @param {CreateOptions} options
+   * @returns {Factory}
+   */
   public static create(options: CreateOptions): Factory {
     const factory = new Factory();
     factory.attrs = options.attrs || {};
     factory.createRelated = options.createRelated || {};
     factory.afterCreate = options.afterCreate || (r => r);
-    factory.afterCreateRelationshipsDepth = options.afterCreateRelationshipsDepth || Infinity;
+    factory.afterCreateRelationshipsDepth = getVal(options, 'afterCreateRelationshipsDepth', Infinity);
+    return factory;
+  }
+
+  /**
+   *
+   * @param {Factory} source
+   * @param {CreateOptions} options
+   * @returns {Factory}
+   */
+  public static extend(source: Factory, options: CreateOptions): Factory {
+    const factory = new Factory();
+    factory.attrs = {...source.attrs, ...(options.attrs || {})};
+    // drop prevValues for all sequence attrs
+    keys(factory.attrs).forEach(attrName => {
+      if (factory.attrs[attrName].type === MetaAttrType.SEQUENCE_ITEM) {
+        factory.attrs[attrName].prevValues = [];
+      }
+    });
+    factory.createRelated = {...source.createRelated, ...(options.createRelated || {})};
+    // check if some attrs were relations in the source-factory and become not-relations in the new factory
+    // such attrs should be removed from `createRelated`
+    keys(factory.createRelated).forEach(attrName => {
+      const type = factory.attrs[attrName].type;
+      if (type !== MetaAttrType.HAS_MANY && type !== MetaAttrType.HAS_ONE) {
+        delete factory.createRelated[attrName];
+      }
+    });
+    factory.afterCreate = options.afterCreate || source.afterCreate;
+    factory.afterCreateRelationshipsDepth = getVal(options, 'afterCreateRelationshipsDepth', source.afterCreateRelationshipsDepth);
     return factory;
   }
 
   public attrs = {};
   public afterCreateRelationshipsDepth = Infinity;
   public createRelated: { [attrName: string]: number | ((id: string) => number) } = {};
+
   get meta() {
     if (!this.internalMeta) {
       this.getMeta();
@@ -133,7 +171,8 @@ export class Factory {
   private internalMeta: Meta = null;
   private internalFactory = null;
 
-  private constructor() {}
+  private constructor() {
+  }
 
   /**
    * Forget about this. It's only for Lair
@@ -161,6 +200,7 @@ export class Factory {
 
   protected initInternalFactory(): void {
     const attrs = this.attrs;
+
     function internalFactory(id) {
       this.id = String(id);
       this.cache = {};
@@ -195,12 +235,13 @@ export class Factory {
               return self.cache[attrName];
             };
           } else {
-            options.value = attr;
+            options.value = copy(attr);
           }
         }
         defineProperty(this, attrName, options);
       });
     }
+
     this.internalFactory = internalFactory;
   }
 

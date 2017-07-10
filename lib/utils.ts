@@ -23,3 +23,7 @@ export function copy(val: any): any {
 export function getOrCalcValue(v: any, ...args): any {
   return v instanceof Function ? v.apply(null, args) : v;
 }
+
+export function getVal(obj, key, defaultVal) {
+  return obj && obj.hasOwnProperty(key) ? obj[key] : defaultVal;
+}

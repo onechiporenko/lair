@@ -32,7 +32,7 @@ describe('Lair create records', () => {
             },
             oneB: Factory.hasOne('b', 'oneA'),
             manyB: Factory.hasMany('b', 'manyA'),
-            sequenceItem: Factory.sequenceItem(1, prevItems => prevItems.reduce((a, b) => a + b, 0)),
+            sequenceItem: Factory.sequenceItem(1, prevItems => prevItems.reduce((x, y) => x + y, 0)),
           },
           createRelated: {
             oneB: 1,

@@ -371,7 +371,7 @@ export class Lair {
         keys(createRelated).forEach(attrName => {
           const fName = meta[attrName].factoryName;
           const isHasMany = meta[attrName].type === MetaAttrType.HAS_MANY;
-          const relatedCount = isHasMany ? getOrCalcValue(createRelated[attrName], record.id) : 1;
+          const relatedCount = isHasMany ? getOrCalcValue(createRelated[attrName], record, record.id) : 1;
           const relatedRecords = this.internalCreateRecords(fName, relatedCount, {factoryName, attrName}, [...relatedChain, factoryName]);
           this.db[factoryName][record.id][attrName] = isHasMany ? relatedRecords : relatedRecords[0];
         });

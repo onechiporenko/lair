@@ -317,7 +317,7 @@ describe('Lair', () => {
       });
 
       describe('allow function for `createRelated` value', () => {
-        it('record id is passed to the function', () => {
+        it('record id is passed to the function [backward compatibility]', () => {
           this.lair.registerFactory(Factory.create({
             attrs: {
               b: Factory.hasOne('b', null),
@@ -332,6 +332,24 @@ describe('Lair', () => {
           this.lair.registerFactory(Factory.create({}), 'b');
           this.lair.createRecords('a', 1);
           expect(this.lair.getAll('b').map(c => c.id)).to.be.eql(['1']);
+        });
+        it('record is used as context for the function', () => {
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              b: Factory.hasOne('b', null),
+              c: 'some val',
+            },
+            createRelated: {
+              b() {
+                expect(this.id).to.be.equal('1');
+                expect(this.c).to.be.equal('some val');
+                return 1;
+              },
+            },
+          }), 'a');
+          this.lair.registerFactory(Factory.create({}), 'b');
+          this.lair.createRecords('a', 1);
+          expect(this.lair.getAll('b').map(r => r.id)).to.be.eql(['1']);
         });
       });
 

@@ -20,8 +20,8 @@ export function copy(val: any): any {
   return JSON.parse(JSON.stringify(val));
 }
 
-export function getOrCalcValue(v: any, ...args): any {
-  return v instanceof Function ? v.apply(null, args) : v;
+export function getOrCalcValue(v: any, context = {}, ...args): any {
+  return v instanceof Function ? v.apply(context, args) : v;
 }
 
 export function getVal(obj, key, defaultVal) {

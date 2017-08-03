@@ -551,6 +551,40 @@ describe('Lair', () => {
         });
       });
 
+      describe('should pass info about "createRelated" into child factory', () => {
+
+        it('related info is correct', () => {
+          let parent = 1;
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              children: Factory.hasMany('child', 'parent'),
+              field() {
+                expect(this.extraData).to.be.eql({relatedTo: {}});
+              },
+            },
+            createRelated: {
+              children: 3,
+            },
+          }), 'parent');
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              parent: Factory.hasOne('parent', 'children'),
+              field() {
+                expect(this.extraData).to.be.eql({
+                  relatedTo: {
+                    factoryName: 'parent',
+                    recordsCount: 3,
+                    currentRecordNumber: parent++,
+                  },
+                });
+              },
+            },
+          }), 'child');
+          this.lair.createRecords('parent', 1);
+        });
+
+      });
+
     });
 
     describe('#afterCreate', () => {

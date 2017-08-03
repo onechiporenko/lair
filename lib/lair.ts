@@ -1,4 +1,4 @@
-import {Factory, FactoryData, Meta, MetaAttrType} from './factory';
+import {CreateRecordExtraData, Factory, FactoryData, Meta, MetaAttrType} from './factory';
 import {Record} from './record';
 import {Relationships} from './relationships';
 import {assert, copy, getOrCalcValue, isId} from './utils';
@@ -361,8 +361,14 @@ export class Lair {
     const {meta, createRelated} = factoryData.factory;
     const limit = factoryData.id + count;
     const newRecords = [];
+    let counter = 1;
     for (let i = factoryData.id; i < limit; i++) {
-      const record = factoryData.factory.createRecord(i);
+      const relatedTo = relatedChain.length ? {
+        currentRecordNumber: counter,
+        factoryName: relatedChain[relatedChain.length - 1],
+        recordsCount: count,
+      } : {};
+      const record = factoryData.factory.createRecord(i, {relatedTo} as CreateRecordExtraData);
       this.relationships.addRecord(factoryName, record.id);
       this.db[factoryName][record.id] = record;
       newRecords.push(record);
@@ -378,6 +384,7 @@ export class Lair {
         });
       }
       this.relationships.recalculateRelationshipsForRecord(factoryName, this.db[factoryName][record.id]);
+      counter++;
     }
     return newRecords;
   }

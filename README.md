@@ -323,6 +323,67 @@ const squad = Factory.create({
 
 Now every created `squad` will have 1 - 10 related units.
 
+### Check if Factory creates records in the scope of "createRelated" for another Factory
+
+```javascript
+lair.registerFactory(Factory.create({
+  attrs: {
+    children: Factory.hasMany('child', 'parent'),
+  },
+  createRelated: {
+    children: 2,
+  },
+}), 'parent');
+
+lair.registerFactory(Factory.create({
+  attrs: {
+    parent: Factory.hasOne('parent', 'children'),
+    field() {
+      console.log(this.extraData); // <--- check this out
+    },
+  },
+}), 'child');
+
+lair.createRecords('parent', 1);
+lair.createRecords('child', 2);
+```
+
+Field `extraData` is available in the dynamic fields and contains information about a parent factory that forces Lair to create some records of the child factory.
+
+In the example above `console.log` (in the `field` attribute) will be called 4 times. First two times it will output:
+
+```json
+{
+  "relatedTo": {
+    "factoryName": "parent",
+    "recordsCount": 2,
+    "currentRecordNumber": 1
+  }
+}
+```
+
+```json
+{
+  "relatedTo": {
+    "factoryName": "parent",
+    "recordsCount": 2,
+    "currentRecordNumber": 2
+  }
+}
+```
+
+Here `relatedTo` contains name of the parent-factory, records count of child factory that will be created and number of creating child-record. `currentRecordNumber` isn't new record identifier and it's just a sequence number. It will be dropped to `1` for each parent-record.
+
+Last two times `console.log` from the `field`-attribute will out:
+
+```json
+{
+  "relatedTo": {}
+}
+```
+
+Field `relatedTo` is empty because child-records are created standalone and not in the scope of the parent factory. 
+
 ### One way relationships
 
 Methods `Factory.hasOne` and `Factory.hasMany` takes two arguments. However you may set `null` as second parameters. In this case records will be related in one way:

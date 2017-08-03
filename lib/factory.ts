@@ -65,6 +65,17 @@ export interface CreateOptions {
   afterCreateRelationshipsDepth?: number;
 }
 
+export interface CreateRecordExtraData {
+  relatedTo?: RelatedToData;
+  [key: string]: any;
+}
+
+export interface RelatedToData {
+  currentRecordNumber: number;
+  factoryName: string;
+  recordsCount: number;
+}
+
 function _attrsToFields(attrs: Meta): Meta {
   keys(attrs).forEach(attrName => {
     if (!attrs[attrName].type) {
@@ -214,13 +225,14 @@ export class Factory {
   /**
    * Forget about this. It's only for Lair
    * @param {string} id
+   * @param {CreateRecordExtraData} [extraData]
    * @returns {Record}
    */
-  public createRecord(id: number): Record {
+  public createRecord(id: number, extraData: CreateRecordExtraData = {}): Record {
     this.checkAttrs();
     const attrs = this.attrs;
     const newRecord = {id: String(id)} as Record;
-    const n = new this.internalFactory(id);
+    const n = new this.internalFactory(id, extraData);
     keys(attrs).forEach(attrName => newRecord[attrName] = n[attrName]);
     return newRecord;
   }
@@ -253,9 +265,10 @@ export class Factory {
   protected initInternalFactory(): void {
     const attrs = this.attrs;
 
-    function internalFactory(id) {
+    function internalFactory(id, extraData: CreateRecordExtraData = {}) {
       this.id = String(id);
-      this.cache = {};
+      this.extraData = extraData;
+      this.cache = {}; // you can get it from the dynamic attributes but I hope you will only read it
       keys(attrs).forEach(attrName => {
         const attr = attrs[attrName];
         const options: PropertyDescriptor = {enumerable: true};

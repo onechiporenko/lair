@@ -249,8 +249,9 @@ export class Lair {
     const opts = {maxDepth: options.depth, currentDepth: 1};
     const meta = this.getMetaFor(factoryName);
     const id = String(this.factories[factoryName].id);
+    const factory = this.factories[factoryName].factory;
     this.relationships.addRecord(factoryName, id);
-    const newRecord = {id};
+    const newRecord = {id, ...factory.getDefaults()};
     keys(data).forEach(attrName => {
       if (meta.hasOwnProperty(attrName)) {
         newRecord[attrName] = this.createAttrValue(factoryName, id, attrName, data[attrName]);

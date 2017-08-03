@@ -9,6 +9,15 @@ const attrs = {
   third() {
     return `third is ${this.second}`;
   },
+  fourth: Factory.field({
+    value: 'fourth',
+    defaultValue: 'default value for fourth',
+  }),
+  fifth: Factory.field({
+    value() {
+      return `fifth ${this.id}`;
+    },
+  }),
   rand() {
     return Math.random();
   },
@@ -60,6 +69,16 @@ describe('Factory', () => {
       expect(this.fourthInstance.sequenceItem).to.be.equal(4);
     });
 
+    it('`fourth`-field is equal for all created records', () => {
+      expect(this.firstInstance.fourth).to.be.equal('fourth');
+      expect(this.firstInstance.fourth).to.be.equal(this.secondInstance.fourth);
+    });
+
+    it('`fifth`-field is equal for all created records', () => {
+      expect(this.firstInstance.fifth).to.be.equal('fifth 1');
+      expect(this.secondInstance.fifth).to.be.equal('fifth 2');
+    });
+
     it('should throw error if `id` is defined in the `attrs`', () => {
       const f = Factory.create({attrs: {id: '100500'}});
       expect(() => f.createRecord(1)).to.throw(`Don't add "id" to the "attrs"`);
@@ -106,6 +125,15 @@ describe('Factory', () => {
       expect(this.meta.second.type).to.be.equal(MetaAttrType.FIELD);
     });
 
+    it('static field attr is marked as `FIELD`', () => {
+      expect(this.meta.fourth.type).to.be.equal(MetaAttrType.FIELD);
+      expect(this.meta.fourth.defaultValue).to.be.equal('default value for fourth');
+    });
+
+    it('dynamic field attr is marked as `FIELD`', () => {
+      expect(this.meta.fifth.type).to.be.equal(MetaAttrType.FIELD);
+    });
+
     it('sequence item is marked as `SEQUENCE_ITEM`', () => {
       const sequenceItem = this.meta.sequenceItem;
       expect(sequenceItem.type).to.be.equal(MetaAttrType.SEQUENCE_ITEM);
@@ -150,6 +178,32 @@ describe('Factory', () => {
       this.f.createRecord(2);
       expect(this.f.meta).to.not.have.property('newAttr');
       expect(this.meta).to.not.have.property('newAttr');
+    });
+  });
+
+  describe('#getDefaults', () => {
+    const A = Factory.create({
+      attrs: {
+        a: Factory.field({
+          value: '1',
+          defaultValue: '1',
+        }),
+        b: Factory.field({
+          value: 2,
+          defaultValue: 2,
+        }),
+        c: Factory.field({
+          value: false,
+          defaultValue: false,
+        }),
+        d: 'd',
+        e: Factory.hasOne('b', null),
+        f: Factory.hasMany('b', null),
+        g: Factory.sequenceItem('1', () => '2'),
+      },
+    });
+    it('should return object with default values for attributes', () => {
+      expect(A.getDefaults()).to.be.eql({a: '1', b: 2, c: false});
     });
   });
 

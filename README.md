@@ -184,6 +184,39 @@ There are few important moments here. Firstly, we don't include `id`. Lair will 
 
 Newly created `unit` will be automatically added to the `squad` with id `1`.
 
+#### Default values for attributes
+
+Factory allows to declare attributes as fields with default values. Method `Factory.Field` is used for this. It takes hash with two properties `value` and `defaultValue`. First one is same as usual "old" field-declaration. Second one is a value (**not** Function) that will be used in the `createOne` if nothing will be provided for field. 
+
+```javascript
+const Log = Factory.create({
+  attrs: {
+    type: Factory.Field({
+      /**
+       * Same as:
+       * ```javascript
+       * attrs: {
+       *   type() {
+       *      return faker.random.arrayElement(['warn', 'info', 'error']);
+       *   }
+       * }
+       * ```
+       */
+      value() {
+        return faker.random.arrayElement(['warn', 'info', 'error']);
+      },
+      // 'info' will be used as value for 'type'-field if it's not provided in the `createOne`
+      defaultValue: 'info'
+    }),
+    message: ''
+  }
+});
+
+lair.registerFactory('log', Log);
+const newLog = lair.createOne('log', {message: 'msg'}); // no `type` provided
+console.log(newLog); // {message: 'msg', type: 'info'} 'info' - default value for `type` was used
+```
+
 ### `updateOne`
 
 Method `updateOne` is used to update some record in the Lair. It takes three arguments - record type, record id and new data:

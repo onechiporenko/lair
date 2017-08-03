@@ -4,6 +4,7 @@ import {assert, copy, getOrCalcValue, getVal} from './utils';
 const {keys, defineProperty} = Object;
 
 export enum MetaAttrType {
+  NONE,
   FIELD,
   HAS_ONE,
   HAS_MANY,
@@ -38,6 +39,11 @@ export interface RelationshipMetaAttr extends MetaAttr {
   reflexiveDepth: number;
 }
 
+export interface FieldMetaAttr extends MetaAttr {
+  defaultValue?: any;
+  value: any;
+}
+
 export interface RelationshipOptions {
   reflexive: boolean;
   depth: number;
@@ -47,11 +53,28 @@ export interface SequenceItemOptions {
   lastValuesCount: number;
 }
 
+export interface FieldOptions {
+  defaultValue?: any;
+  value: any;
+}
+
 export interface CreateOptions {
   attrs?: any;
   createRelated?: any;
   afterCreate?: (record: Record) => Record;
   afterCreateRelationshipsDepth?: number;
+}
+
+function _attrsToFields(attrs: Meta): Meta {
+  keys(attrs).forEach(attrName => {
+    if (!attrs[attrName].type) {
+      attrs[attrName] = {
+        type: MetaAttrType.FIELD,
+        value: attrs[attrName],
+      };
+    }
+  });
+  return attrs;
 }
 
 /**
@@ -116,12 +139,26 @@ export class Factory {
 
   /**
    *
+   * @param {FieldOptions} fieldOptions
+   * @returns {FieldMetaAttr}
+   */
+  public static field(fieldOptions: FieldOptions): FieldMetaAttr {
+    assert(`"defaultValue" can't be a function`, !(fieldOptions.defaultValue instanceof Function));
+    return {
+      defaultValue: fieldOptions.defaultValue,
+      type: MetaAttrType.FIELD,
+      value: fieldOptions.value,
+    };
+  }
+
+  /**
+   *
    * @param {CreateOptions} options
    * @returns {Factory}
    */
   public static create(options: CreateOptions): Factory {
     const factory = new Factory();
-    factory.attrs = options.attrs || {};
+    factory.attrs = _attrsToFields(options.attrs || {});
     factory.createRelated = options.createRelated || {};
     factory.afterCreate = options.afterCreate || (r => r);
     factory.afterCreateRelationshipsDepth = getVal(options, 'afterCreateRelationshipsDepth', Infinity);
@@ -136,7 +173,7 @@ export class Factory {
    */
   public static extend(source: Factory, options: CreateOptions): Factory {
     const factory = new Factory();
-    factory.attrs = {...source.attrs, ...(options.attrs || {})};
+    factory.attrs = _attrsToFields({...source.attrs, ...(options.attrs || {})});
     // drop prevValues for all sequence attrs
     keys(factory.attrs).forEach(attrName => {
       if (factory.attrs[attrName].type === MetaAttrType.SEQUENCE_ITEM) {
@@ -192,6 +229,21 @@ export class Factory {
     return record;
   }
 
+  /**
+   * Return object with default values for attributes
+   * Only attributes with type `FIELD` and provided `defaultValue` are affected
+   * @returns {Object}
+   */
+  public getDefaults(): any {
+    return keys(this.meta).reduce((defaults, attrName) => {
+      const attrMeta = this.meta[attrName];
+      if (attrMeta.hasOwnProperty('defaultValue')) {
+        defaults[attrName] = copy(attrMeta.defaultValue);
+      }
+      return defaults;
+    }, {});
+  }
+
   public init(): void {
     this.checkAttrs();
     this.getMeta();
@@ -225,17 +277,18 @@ export class Factory {
             return self.cache[attrName];
           };
         }
-        if (!attr.type) {
-          if (attr instanceof Function) {
+        if (attr.type === MetaAttrType.FIELD) {
+          const v = attr.value;
+          if (v instanceof Function) {
             const self = this;
             options.get = function() {
               if (!self.cache.hasOwnProperty(attrName)) {
-                self.cache[attrName] = attr.call(this);
+                self.cache[attrName] = v.call(this, attr.defaultValue);
               }
               return self.cache[attrName];
             };
           } else {
-            options.value = copy(attr);
+            options.value = copy(v);
           }
         }
         defineProperty(this, attrName, options);

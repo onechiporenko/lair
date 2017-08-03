@@ -48,6 +48,7 @@ describe('Lair', () => {
           meta: {
             a: {
               type: MetaAttrType.FIELD,
+              value: 'a',
             },
           },
         },
@@ -57,6 +58,7 @@ describe('Lair', () => {
           meta: {
             b: {
               type: MetaAttrType.FIELD,
+              value: 'b',
             },
           },
         },
@@ -348,6 +350,37 @@ describe('Lair', () => {
             },
           }), 'a');
           this.lair.registerFactory(Factory.create({}), 'b');
+          this.lair.createRecords('a', 1);
+          expect(this.lair.getAll('b').map(r => r.id)).to.be.eql(['1']);
+        });
+
+        it('parent-related records are available in the context', () => {
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              b: Factory.hasOne('b', 'a'),
+              c: 'some val',
+            },
+            createRelated: {
+              b() {
+                expect(this.id).to.be.equal('1');
+                expect(this.c).to.be.equal('some val');
+                return 1;
+              },
+            },
+          }), 'a');
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              a: Factory.hasOne('a', 'b'),
+              c: Factory.hasOne('c', null),
+            },
+            createRelated: {
+              c() {
+                expect(this.a.id).to.be.equal('1');
+                return 1;
+              },
+            },
+          }), 'b');
+          this.lair.registerFactory(Factory.create({}), 'c');
           this.lair.createRecords('a', 1);
           expect(this.lair.getAll('b').map(r => r.id)).to.be.eql(['1']);
         });
@@ -910,6 +943,18 @@ describe('Lair', () => {
             foo: 'foo',
             fake: 'fake',
           });
+        });
+
+        it('should create record with default values', () => {
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              a: Factory.field({
+                value: 'a',
+                defaultValue: 'b',
+              }),
+            },
+          }), 'baz');
+          expect(this.lair.createOne('baz', {})).to.have.property('a', 'b');
         });
       });
 

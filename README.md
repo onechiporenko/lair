@@ -186,12 +186,12 @@ Newly created `unit` will be automatically added to the `squad` with id `1`.
 
 #### Default values for attributes
 
-Factory allows to declare attributes as fields with default values. Method `Factory.Field` is used for this. It takes hash with two properties `value` and `defaultValue`. First one is same as usual "old" field-declaration. Second one is a value (**not** Function) that will be used in the `createOne` if nothing will be provided for field. 
+`Lair` uses attributes `value` as a default value for `createOne` if it's not provided. Method `Factory.field` allows to override `defaultValue`. It takes hash with two properties `value` and `defaultValue`. First one is same as usual "old" field-declaration. Second one is a value (**not** Function) that will be used in the `createOne` if nothing will be provided for field.
 
 ```javascript
 const Log = Factory.create({
   attrs: {
-    type: Factory.Field({
+    type: Factory.field({
       /**
        * Same as:
        * ```javascript

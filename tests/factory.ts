@@ -36,6 +36,39 @@ const attrs = {
 
 describe('Factory', () => {
 
+  describe('#18 Use `value` as `defaultValue` when `value` is not a function', () => {
+    beforeEach(() => {
+      this.factory = Factory.create({
+        attrs: {
+          a: Factory.field({
+            value: '1',
+          }),
+          b: Factory.field({
+            value() {
+              return '1';
+            },
+          }),
+          c: Factory.field({
+            value: '2',
+            defaultValue: '1',
+          }),
+        },
+      });
+    });
+
+    it('`defaultValue` is generated', () => {
+      expect(this.factory.meta.a.defaultValue).to.be.equal('1');
+    });
+
+    it('`defaultValue` is not generated', () => {
+      expect(this.factory.meta.b.defaultValue).to.not.exist;
+    });
+
+    it('`defaultValue` is not overridden', () => {
+      expect(this.factory.meta.c.defaultValue).to.be.equal('1');
+    });
+  });
+
   describe('#createRecord', () => {
 
     before(() => {

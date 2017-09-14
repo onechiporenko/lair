@@ -155,6 +155,9 @@ export class Factory {
    */
   public static field(fieldOptions: FieldOptions): FieldMetaAttr {
     assert(`"defaultValue" can't be a function`, !(fieldOptions.defaultValue instanceof Function));
+    if (!fieldOptions.hasOwnProperty('defaultValue') && !(fieldOptions.value instanceof Function)) {
+      fieldOptions.defaultValue = copy(fieldOptions.value);
+    }
     return {
       defaultValue: fieldOptions.defaultValue,
       type: MetaAttrType.FIELD,

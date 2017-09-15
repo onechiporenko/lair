@@ -539,3 +539,25 @@ Extending Factories has a few restrictions:
 
 * No `super` anywhere. You don't have access to "parent" (basically, "parent" doesn't exist)
 * Be aware with inverted fields in the relationships
+
+### Ignore related factories
+
+There are some cases when you don't need to get all related to the record data. Let's go back to the example with `squad` and `units` (one `squad` has many `units` and one `unit` belongs to only one `squad`). We consider the cases:
+
+Squad info is needed with units ids and not whole units data:
+
+```javascript
+lair.getOne('squad', '1', {depth: 1});
+// {id: '1', name: 'Ravens', units: ['1', '2', '3', '4']}
+```
+
+Squad info is needed without units at all:
+
+```javascript
+lair.getOne('squad', '1', {ignoreRelated: ['unit']}); 
+// {id: '1', name: 'Ravens'}
+```
+
+Here we have two options called `depth` and `ignoreRelared`. First one determines how deeply Lair should go to get data for needed record. Second one determines what factories should be ignored while Lair combines data for needed record. **Important** `ignoreRelated` contains a list for factory names and not attribute names! Both `depth` and `ignoreRelated` may be used together.
+
+This options are very useful for cases with a lot of related records that may cause performance issues when Lair will collect them from internal store.

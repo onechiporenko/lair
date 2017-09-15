@@ -275,7 +275,7 @@ describe('Lair create records', () => {
 
     });
 
-    describe('afterCreate && afterCreateRelationshipsDepth', () => {
+    describe('afterCreate && afterCreateRelationshipsDepth && afterCreateIgnoreRelated', () => {
 
       beforeEach(() => {
         this.A = Factory.create({
@@ -326,16 +326,11 @@ describe('Lair create records', () => {
       it('should be correctly overridden', () => {
         const B = Factory.extend(this.A, {
           afterCreateRelationshipsDepth: 2,
+          afterCreateIgnoreRelated: ['a2'],
           afterCreate(record) {
             expect(record).to.be.eql({
               id: '1',
-              a1: {
-                id: '1',
-                a2: {
-                  id: '1',
-                  a3: '1',
-                },
-              },
+              a1: {id: '1'},
             });
             return record;
           },

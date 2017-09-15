@@ -695,6 +695,69 @@ describe('Lair', () => {
         });
       });
 
+      describe('should not receive ignored related data', () => {
+        it('record does not have ignored related data', () => {
+          const A = Factory.create({
+            attrs: {
+              a: 'a',
+              propB: Factory.hasOne('b', 'propA'),
+            },
+            createRelated: {
+              propB: 1,
+            },
+            afterCreateIgnoreRelated: ['b'],
+            afterCreate(record) {
+              expect(record).to.be.eql({
+                id: '1',
+                a: 'a',
+              });
+              return record;
+            },
+          });
+          const B = Factory.create({
+            attrs: {
+              b: 'b',
+              propA: Factory.hasOne('a', 'propB'),
+              propC: Factory.hasMany('c', 'propB'),
+            },
+            afterCreateIgnoreRelated: ['c'],
+            createRelated: {
+              propC: 1,
+            },
+            afterCreate(record) {
+              expect(record).to.be.eql({
+                id: '1',
+                b: 'b',
+                propA: {
+                  id: '1',
+                  a: 'a',
+                  propB: '1',
+                },
+              });
+              return record;
+            },
+          });
+          const C = Factory.create({
+            attrs: {
+              c: 'c',
+              propB: Factory.hasOne('b', 'propC'),
+            },
+            afterCreateIgnoreRelated: ['b'],
+            afterCreate(record) {
+              expect(record).to.be.eql({
+                id: '1',
+                c: 'c',
+              });
+              return record;
+            },
+          });
+          this.lair.registerFactory(A, 'a');
+          this.lair.registerFactory(B, 'b');
+          this.lair.registerFactory(C, 'c');
+          this.lair.createRecords('a', 1);
+        });
+      });
+
       describe('should ignore updating related data', () => {
         const A = Factory.create({
           attrs: {
@@ -1125,7 +1188,7 @@ describe('Lair', () => {
         });
       });
 
-      describe('RU method should allow to set depth of relationships to be included in their response', () => {
+      describe('RU methods should allow to set depth of relationships to be included in their response', () => {
 
         beforeEach(() => {
           this.a1 = {
@@ -1406,6 +1469,142 @@ describe('Lair', () => {
           });
         });
 
+      });
+
+      describe('RU methods should allow to ignore some related data', () => {
+        beforeEach(() => {
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              propB: Factory.hasMany('b', 'propA'),
+            },
+            createRelated: {
+              propB: 1,
+            },
+          }), 'a');
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              propA: Factory.hasOne('a', 'propB'),
+              propC: Factory.hasMany('c', 'propB'),
+            },
+            createRelated: {
+              propC: 1,
+            },
+          }), 'b');
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              propB: Factory.hasOne('b', 'propC'),
+            },
+          }), 'c');
+          this.lair.createRecords('a', 1);
+        });
+
+        describe('#getOne', () => {
+          it('throw an error if ignored factory does not exist', () => {
+            expect(() => this.lair.getOne('a', '1', {ignoreRelated: ['fake']})).to.throw(`"ignoreRelated" contains type "fake" which doesn't exist in the database`);
+          });
+
+          it('get `a` and ignore related `b`', () => {
+            expect(this.lair.getOne('a', '1', {ignoreRelated: ['b']})).to.be.eql({id: '1'});
+          });
+
+          it('get `b` and ignore related `a`', () => {
+            expect(this.lair.getOne('b', '1', {ignoreRelated: ['a']})).to.be.eql({id: '1', propC: [{id: '1', propB: '1'}]});
+          });
+
+          it('get `c` and ignore related `b`', () => {
+            expect(this.lair.getOne('c', '1', {ignoreRelated: ['b']})).to.be.eql({id: '1'});
+          });
+        });
+
+        describe('#getAll', () => {
+          it('throw an error if ignored factory does not exist', () => {
+            expect(() => this.lair.getAll('a', {ignoreRelated: ['fake']})).to.throw(`"ignoreRelated" contains type "fake" which doesn't exist in the database`);
+          });
+
+          it('get `a` and ignore related `b`', () => {
+            expect(this.lair.getAll('a', {ignoreRelated: ['b']})).to.be.eql([{id: '1'}]);
+          });
+
+          it('get `b` and ignore related `a`', () => {
+            expect(this.lair.getAll('b', {ignoreRelated: ['a']})).to.be.eql([{id: '1', propC: [{id: '1', propB: '1'}]}]);
+          });
+
+          it('get `c` and ignore related `b`', () => {
+            expect(this.lair.getAll('c', {ignoreRelated: ['b']})).to.be.eql([{id: '1'}]);
+          });
+        });
+
+        describe('#queryOne', () => {
+          it('throw an error if ignored factory does not exist', () => {
+            expect(() => this.lair.queryOne('a', r => r.id === '1', {ignoreRelated: ['fake']})).to.throw(`"ignoreRelated" contains type "fake" which doesn't exist in the database`);
+          });
+
+          it('get `a` and ignore related `b`', () => {
+            expect(this.lair.queryOne('a', r => r.id === '1', {ignoreRelated: ['b']})).to.be.eql({id: '1'});
+          });
+
+          it('get `b` and ignore related `a`', () => {
+            expect(this.lair.queryOne('b', r => r.id === '1', {ignoreRelated: ['a']})).to.be.eql({id: '1', propC: [{id: '1', propB: '1'}]});
+          });
+
+          it('get `c` and ignore related `b`', () => {
+            expect(this.lair.queryOne('c', r => r.id === '1', {ignoreRelated: ['b']})).to.be.eql({id: '1'});
+          });
+        });
+
+        describe('#queryMany', () => {
+          it('throw an error if ignored factory does not exist', () => {
+            expect(() => this.lair.queryMany('a', r => r.id === '1', {ignoreRelated: ['fake']})).to.throw(`"ignoreRelated" contains type "fake" which doesn't exist in the database`);
+          });
+
+          it('get `a` and ignore related `b`', () => {
+            expect(this.lair.queryMany('a', r => r.id === '1', {ignoreRelated: ['b']})).to.be.eql([{id: '1'}]);
+          });
+
+          it('get `b` and ignore related `a`', () => {
+            expect(this.lair.queryMany('b', r => r.id === '1', {ignoreRelated: ['a']})).to.be.eql([{id: '1', propC: [{id: '1', propB: '1'}]}]);
+          });
+
+          it('get `c` and ignore related `b`', () => {
+            expect(this.lair.queryMany('c', r => r.id === '1', {ignoreRelated: ['b']})).to.be.eql([{id: '1'}]);
+          });
+        });
+
+        describe('#updateOne', () => {
+          it('throw an error if ignored factory does not exist', () => {
+            expect(() => this.lair.updateOne('a', '1', {}, {ignoreRelated: ['fake']})).to.throw(`"ignoreRelated" contains type "fake" which doesn't exist in the database`);
+          });
+
+          it('get `a` and ignore related `b`', () => {
+            expect(this.lair.updateOne('a', '1', {}, {ignoreRelated: ['b']})).to.be.eql({id: '1'});
+          });
+
+          it('get `b` and ignore related `a`', () => {
+            expect(this.lair.updateOne('b', '1', {}, {ignoreRelated: ['a']})).to.be.eql({id: '1', propC: [{id: '1', propB: '1'}]});
+          });
+
+          it('get `c` and ignore related `b`', () => {
+            expect(this.lair.updateOne('c', '1', {}, {ignoreRelated: ['b']})).to.be.eql({id: '1'});
+          });
+        });
+
+        describe('#createOne', () => {
+          it('throw an error if ignored factory does not exist', () => {
+            expect(() => this.lair.createOne('a', {}, {ignoreRelated: ['fake']})).to.throw(`"ignoreRelated" contains type "fake" which doesn't exist in the database`);
+          });
+
+          it('get `a` and ignore related `b`', () => {
+            expect(this.lair.createOne('a', {}, {ignoreRelated: ['b']})).to.be.eql({id: '2'});
+          });
+
+          it('get `b` and ignore related `a`', () => {
+            expect(this.lair.createOne('b', {}, {ignoreRelated: ['a']})).to.be.eql({id: '2', propC: []});
+          });
+
+          it('get `c` and ignore related `b`', () => {
+            expect(this.lair.createOne('c', {}, {ignoreRelated: ['b']})).to.be.eql({id: '2'});
+          });
+        });
       });
 
     });

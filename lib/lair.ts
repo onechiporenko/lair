@@ -19,6 +19,21 @@ function assertHasType(target, key, descriptor): any {
   return descriptor;
 }
 
+function assertCrudOptions(target, key, descriptor): any {
+  if (descriptor === undefined) {
+    descriptor = Object.getOwnPropertyDescriptor(target, key);
+  }
+  const originalMethod = descriptor.value;
+  descriptor.value = function(...args) {
+    const crudOptions = args[args.length - 1];
+    if (crudOptions && crudOptions.ignoreRelated) {
+      crudOptions.ignoreRelated.forEach(type => assert(`"ignoreRelated" contains type "${type}" which doesn't exist in the database`, this.hasType(type)));
+    }
+    return originalMethod.apply(this, args);
+  };
+  return descriptor;
+}
+
 /* tslint:disable:no-console */
 function verbose(target, key, descriptor): any {
   if (descriptor === undefined) {
@@ -77,6 +92,7 @@ interface AfterCreateItem {
 
 export interface CRUDOptions {
   depth: number;
+  ignoreRelated?: string[];
   handleNotAttrs?: boolean;
 }
 
@@ -157,7 +173,7 @@ export class Lair {
     while (this.afterCreateQueue.length) {
       const {factoryName: fName, id} = this.afterCreateQueue.shift();
       const factory = this.factories[fName].factory;
-      const newData = factory.afterCreate.call(null, this.getRecordWithRelationships(fName, id, [], {maxDepth: factory.afterCreateRelationshipsDepth, currentDepth: 1}));
+      const newData = factory.afterCreate.call(null, this.getRecordWithRelationships(fName, id, [], {maxDepth: factory.afterCreateRelationshipsDepth, currentDepth: 1, ignoreRelated: factory.afterCreateIgnoreRelated || []}));
       keys(factory.meta).forEach(attrName => {
         if (newData.hasOwnProperty(attrName) && factory.meta[attrName].type === MetaAttrType.FIELD) {
           this.db[fName][id][attrName] = newData[attrName];
@@ -176,8 +192,9 @@ export class Lair {
    */
   @verbose
   @assertHasType
-  public queryMany(factoryName: string, clb: (record: Record) => boolean, options: CRUDOptions = {depth: Infinity}): Record[] {
-    const opts = {maxDepth: options.depth, currentDepth: 1};
+  @assertCrudOptions
+  public queryMany(factoryName: string, clb: (record: Record) => boolean, options: CRUDOptions = {depth: Infinity, ignoreRelated: []}): Record[] {
+    const opts = {maxDepth: options.depth, currentDepth: 1, ignoreRelated: options.ignoreRelated};
     return keys(this.db[factoryName])
       .filter(id => clb.call(null, this.db[factoryName][id]))
       .map(id => this.getRecordWithRelationships(factoryName, id, [], opts));
@@ -191,8 +208,9 @@ export class Lair {
    */
   @verbose
   @assertHasType
-  public getAll(factoryName: string, options: CRUDOptions = {depth: Infinity}): Record[] {
-    const opts = {maxDepth: options.depth, currentDepth: 1};
+  @assertCrudOptions
+  public getAll(factoryName: string, options: CRUDOptions = {depth: Infinity, ignoreRelated: []}): Record[] {
+    const opts = {maxDepth: options.depth, currentDepth: 1, ignoreRelated: options.ignoreRelated};
     return keys(this.db[factoryName]).map(id => this.getRecordWithRelationships(factoryName, id, [], opts));
   }
 
@@ -205,8 +223,9 @@ export class Lair {
    */
   @verbose
   @assertHasType
-  public getOne(factoryName: string, id: string, options: CRUDOptions = {depth: Infinity}): Record {
-    const opts = {maxDepth: options.depth, currentDepth: 1};
+  @assertCrudOptions
+  public getOne(factoryName: string, id: string, options: CRUDOptions = {depth: Infinity, ignoreRelated: []}): Record {
+    const opts = {maxDepth: options.depth || Infinity, currentDepth: 1, ignoreRelated: options.ignoreRelated || []};
     return this.getRecordWithRelationships(factoryName, id, [], opts);
   }
 
@@ -220,8 +239,9 @@ export class Lair {
    */
   @verbose
   @assertHasType
-  public queryOne(factoryName: string, clb: (record: Record) => boolean, options: CRUDOptions = {depth: Infinity}): Record {
-    const opts = {maxDepth: options.depth, currentDepth: 1};
+  @assertCrudOptions
+  public queryOne(factoryName: string, clb: (record: Record) => boolean, options: CRUDOptions = {depth: Infinity, ignoreRelated: []}): Record {
+    const opts = {maxDepth: options.depth, currentDepth: 1, ignoreRelated: options.ignoreRelated};
     const records = this.db[factoryName];
     const ids = keys(records);
     for (const id of ids) {
@@ -245,8 +265,9 @@ export class Lair {
    */
   @verbose
   @assertHasType
-  public createOne(factoryName: string, data: any, options: CRUDOptions = {depth: Infinity}): Record {
-    const opts = {maxDepth: options.depth, currentDepth: 1};
+  @assertCrudOptions
+  public createOne(factoryName: string, data: any, options: CRUDOptions = {depth: Infinity, ignoreRelated: []}): Record {
+    const opts = {maxDepth: options.depth, currentDepth: 1, ignoreRelated: options.ignoreRelated};
     const meta = this.getMetaFor(factoryName);
     const id = String(this.factories[factoryName].id);
     const factory = this.factories[factoryName].factory;
@@ -279,8 +300,9 @@ export class Lair {
    */
   @verbose
   @assertHasType
-  public updateOne(factoryName: string, id: string, data: any, options: CRUDOptions = {depth: Infinity}): Record {
-    const opts = {maxDepth: options.depth, currentDepth: 1};
+  @assertCrudOptions
+  public updateOne(factoryName: string, id: string, data: any, options: CRUDOptions = {depth: Infinity, ignoreRelated: []}): Record {
+    const opts = {maxDepth: options.depth, currentDepth: 1, ignoreRelated: options.ignoreRelated};
     const record = this.getOne(factoryName, id);
     assert(`Record of "${factoryName}" with id "${id}" doesn't exist`, !!record);
     const meta = this.getMetaFor(factoryName);
@@ -389,7 +411,7 @@ export class Lair {
     return newRecords;
   }
 
-  private getRecordWithRelationships(factoryName: string, id: string, relatedFor: any = [], options: any = {maxDepth: Infinity, currentDepth: 1}): Record {
+  private getRecordWithRelationships(factoryName: string, id: string, relatedFor: any = [], options: any = {maxDepth: Infinity, currentDepth: 1, ignoreRelated: []}): Record {
     const recordRelationships = this.relationships.getRelationshipsForRecord(factoryName, id);
     const meta = this.getMetaFor(factoryName);
     let record = this.db[factoryName][id];
@@ -404,6 +426,10 @@ export class Lair {
       keys(recordRelationships).forEach(attrName => {
         const relatedIds = recordRelationships[attrName];
         const relatedFactoryName = meta[attrName].factoryName;
+        if ((options.ignoreRelated || []).indexOf(relatedFactoryName) !== -1) {
+          delete record[attrName];
+          return;
+        }
         if (this.isRelated(factoryName, attrName, relatedFor)) {
           record[attrName] = relatedIds;
         } else {

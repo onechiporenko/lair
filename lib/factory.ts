@@ -63,6 +63,7 @@ export interface CreateOptions {
   createRelated?: any;
   afterCreate?: (record: Record) => Record;
   afterCreateRelationshipsDepth?: number;
+  afterCreateIgnoreRelated?: string[];
 }
 
 export interface CreateRecordExtraData {
@@ -176,6 +177,7 @@ export class Factory {
     factory.createRelated = options.createRelated || {};
     factory.afterCreate = options.afterCreate || (r => r);
     factory.afterCreateRelationshipsDepth = getVal(options, 'afterCreateRelationshipsDepth', Infinity);
+    factory.afterCreateIgnoreRelated = getVal(options, 'afterCreateIgnoreRelated', []);
     return factory;
   }
 
@@ -205,11 +207,13 @@ export class Factory {
     });
     factory.afterCreate = options.afterCreate || source.afterCreate;
     factory.afterCreateRelationshipsDepth = getVal(options, 'afterCreateRelationshipsDepth', source.afterCreateRelationshipsDepth);
+    factory.afterCreateIgnoreRelated = getVal(options, 'afterCreateIgnoreRelated', source.afterCreateIgnoreRelated);
     return factory;
   }
 
   public attrs = {};
-  public afterCreateRelationshipsDepth = Infinity;
+  public afterCreateRelationshipsDepth: number = Infinity;
+  public afterCreateIgnoreRelated: string[] = [];
   public createRelated: { [attrName: string]: number | ((id: string) => number) } = {};
 
   get meta() {

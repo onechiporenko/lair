@@ -91,7 +91,7 @@ interface AfterCreateItem {
 }
 
 export interface CRUDOptions {
-  depth: number;
+  depth?: number;
   ignoreRelated?: string[];
   handleNotAttrs?: boolean;
 }

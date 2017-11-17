@@ -36,6 +36,17 @@ const attrs = {
 
 describe('Factory', () => {
 
+  describe('#field', () => {
+    describe('should throw an error if `defaultValue` is function', () => {
+      expect(() => Factory.field({
+        value: '',
+        defaultValue() {
+          return Math.random();
+        },
+      })).to.throw(`"defaultValue" can't be a function`);
+    });
+  });
+
   describe('#18 Use `value` as `defaultValue` when `value` is not a function', () => {
     beforeEach(() => {
       this.factory = Factory.create({

@@ -8,8 +8,9 @@
     "build-publish": "npm run build && rm -rf dist/tests && rm -rf dist/lib/*.js.map && cp dist/lib/* dist/. && rm -rf dist/lib",
     "test": "mocha -r ts-node/register tests/**/*.ts",
     "lint": "tslint -c tslint.json lib/**/*.ts && tslint -c tests/tslint.json tests/**/*.ts",
-    "test-remap": "remap-istanbul -i dist/coverage/coverage.json -o ./dist/coverage/coverage -t lcovonly",
-    "test-cov": "istanbul cover --dir ./dist/coverage ./node_modules/mocha/bin/_mocha -- dist/tests/**/*.js --report lcovonly -R spec --bail -- && npm run test-remap && cat ./dist/coverage/coverage | coveralls && rm -rf ./coverage"
+    "test:remap": "remap-istanbul -i dist/coverage/coverage.json -o ./dist/coverage/coverage -t lcovonly",
+    "test:cov": "istanbul cover --dir ./dist/coverage ./node_modules/mocha/bin/_mocha -- dist/tests/**/*.js --report lcovonly -R spec --bail -- && npm run test:remap && cat ./dist/coverage/coverage | coveralls && rm -rf ./coverage",
+    "test:mut": "stryker run"
   },
   "keywords": [
     "js",
@@ -28,8 +29,16 @@
     "mocha": "^3.4.2",
     "mocha-lcov-reporter": "^1.3.0",
     "remap-istanbul": "^0.9.5",
+    "stryker": "^0.13.0",
+    "stryker-api": "^0.11.0",
+    "stryker-html-reporter": "^0.11.1",
+    "stryker-jest-runner": "^0.3.0",
+    "stryker-mocha-framework": "^0.6.1",
+    "stryker-mocha-runner": "^0.9.1",
+    "stryker-typescript": "^0.6.0",
     "ts-node": "^3.0.6",
     "tslint": "^5.4.3",
+    "typescript": "^2.6.1",
     "typings": "^2.1.1"
   }
 }

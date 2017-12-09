@@ -9,6 +9,7 @@ module.exports = function(config) {
     testFramework: "mocha",
     coverageAnalysis: "off",
     // logLevel: "trace",
-    mutate: ["lib/**/*.ts", "!lib/decorators.ts"]
+    mutate: ["lib/**/*.ts", "!lib/decorators.ts"],
+    thresholds: {break: 50, high: 80, low: 60}
   });
 };

@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {Factory, MetaAttrType} from '../lib/factory';
 import {Lair} from '../lib/lair';
+import {copy} from '../lib/utils';
 
 describe('Lair', () => {
 
@@ -933,6 +934,127 @@ describe('Lair', () => {
 
   });
 
+  describe('#loadRecords', () => {
+
+    beforeEach(() => {
+      this.clusters = [
+        {
+          id: 'c1',
+          name: 'cluster1',
+          hosts: [
+            {id: 'h1', name: 'host1'},
+            {id: 'h2', name: 'host2'},
+          ],
+        },
+        {
+          id: 'c2',
+          name: 'cluster2',
+          hosts: [
+            {id: 'h3', name: 'host3'},
+            {id: 'h4', name: 'host4'},
+          ],
+        },
+      ];
+      this.cl = {
+        attrs: {
+          name: Factory.field({value: ''}),
+          hosts: Factory.hasMany('host', 'cluster'),
+        },
+      };
+      this.hs = {
+        attrs: {
+          name: Factory.field({value: ''}),
+          cluster: Factory.hasOne('cluster', 'hosts'),
+        },
+      };
+    });
+
+    describe('Invalid factories', () => {
+      beforeEach(() => {
+        this.lair.registerFactory(Factory.create(this.cl), 'cluster');
+        this.lair.registerFactory(Factory.create(this.hs), 'host');
+      });
+      it('should throw an error if `allowCustomIds`-attr is not set', () => {
+        expect(() => this.lair.loadRecords('cluster', [])).to.throw('"cluster" must have "allowCustomIds" set to "true"');
+      });
+    });
+
+    describe('Valid factories', () => {
+
+      beforeEach(() => {
+        this.cl.allowCustomIds = true;
+        this.hs.allowCustomIds = true;
+        this.lair.registerFactory(Factory.create(this.cl), 'cluster');
+        this.lair.registerFactory(Factory.create(this.hs), 'host');
+      });
+
+      describe('should load records to the db', () => {
+        beforeEach(() => {
+          this.lair.loadRecords('host', this.clusters[0].hosts);
+          this.lair.loadRecords('host', this.clusters[1].hosts);
+          const clustersData = this.clusters.map(c => {
+            return {
+              id: c.id,
+              name: c.name,
+              hosts: c.hosts.map(h => h.id),
+            };
+          });
+          this.lair.loadRecords('cluster', clustersData);
+        });
+        it('2 clusters are loaded', () => {
+          const expected = this.clusters.map(c => {
+            c.hosts = c.hosts.map(h => {
+              h.cluster = c.id;
+              return h;
+            });
+            return c;
+          });
+          expect(this.lair.getAll('cluster')).to.be.eql(expected);
+        });
+        it('4 hosts are loaded', () => {
+          const mapHost = (cId, hId) => ({...this.clusters[cId].hosts[hId], cluster: {...this.clusters[cId], hosts: this.clusters[cId].hosts.map(h => h.id)}});
+          const expected = [
+            mapHost(0, 0),
+            mapHost(0, 1),
+            mapHost(1, 0),
+            mapHost(1, 1),
+          ];
+          expect(this.lair.getAll('host')).to.be.eql(expected);
+        });
+      });
+
+      describe('should ignore not attrs', () => {
+        beforeEach(() => {
+          const host = this.clusters[0].hosts[0];
+          host.extraField = 'azaza';
+          this.lair.loadRecords('host', [host]);
+        });
+        it('`extraField` is not mapped', () => {
+          expect(this.lair.getOne('host', 'h1')).to.not.have.property('extraField');
+        });
+      });
+
+      describe('relations errors', () => {
+        describe('related record not exist [one-to-many]', () => {
+          it('error thrown', () => {
+            expect(() => {
+              this.lair.loadRecords('host', [{...this.clusters[0].hosts[0], cluster: 'c1'}]);
+            }).to.throw('Record of "cluster" with id "c1" doesn\'t exist. Create it first [one-to-many relationship]');
+          });
+        });
+        describe('related record not exist [many-to-one]', () => {
+          it('error thrown', () => {
+            expect(() => {
+              this.lair.loadRecords('cluster', [{...this.clusters[0], hosts: ['h1']}]);
+            }).to.throw('Record of "host" with id "h1" doesn\'t exist. Create it first [many-to-one relationship]');
+          });
+        });
+      });
+
+    });
+
+  });
+
   describe('DB CRUD', () => {
 
     describe('common', () => {
@@ -1053,6 +1175,11 @@ describe('Lair', () => {
           }), 'baz');
           expect(this.lair.createOne('baz', {})).to.have.property('a', 'b');
         });
+
+        it('should create record with custom id if `allowCustomIds` is `true`', () => {
+          this.lair.registerFactory(Factory.create({attrs: {}, allowCustomIds: true}), 'baz');
+          expect(this.lair.createOne('baz', {id: 'custom_id'})).to.have.property('id', 'custom_id');
+        });
       });
 
       describe('#updateOne', () => {
@@ -1089,6 +1216,9 @@ describe('Lair', () => {
             foo: 'foo',
             fake: 'fake',
           });
+        });
+        it('should not process `id`  if `handleNotAttrs`-option is set', () => {
+          expect(this.lair.updateOne('foo', '1', {id: 'new_id'}, {handleNotAttrs: true})).to.have.property('id', '1');
         });
       });
 

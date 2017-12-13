@@ -386,6 +386,32 @@ describe('Lair create records', () => {
 
     });
 
+    describe('allowCustomIds', () => {
+      it('field is mapped from parent', () => {
+        const Parent = Factory.create({
+          attrs: {},
+          allowCustomIds: true,
+        });
+        const Child = Factory.extend(Parent, {
+          attrs: {},
+        });
+        expect(Parent.allowCustomIds).to.be.true;
+        expect(Child.allowCustomIds).to.be.true;
+      });
+      it('field is overridden', () => {
+        const Parent = Factory.create({
+          attrs: {},
+          allowCustomIds: false,
+        });
+        const Child = Factory.extend(Parent, {
+          attrs: {},
+          allowCustomIds: true,
+        });
+        expect(Parent.allowCustomIds).to.be.false;
+        expect(Child.allowCustomIds).to.be.true;
+      });
+    });
+
   });
 
 });

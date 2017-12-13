@@ -61,6 +61,7 @@ export interface FieldOptions {
 export interface CreateOptions {
   attrs?: any;
   createRelated?: any;
+  allowCustomIds?: boolean;
   afterCreate?: (record: Record) => Record;
   afterCreateRelationshipsDepth?: number;
   afterCreateIgnoreRelated?: string[];
@@ -176,6 +177,7 @@ export class Factory {
     factory.attrs = _attrsToFields(options.attrs || {});
     factory.createRelated = options.createRelated || {};
     factory.afterCreate = options.afterCreate || (r => r);
+    factory.allowCustomIds = options.allowCustomIds || false;
     factory.afterCreateRelationshipsDepth = getVal(options, 'afterCreateRelationshipsDepth', Infinity);
     factory.afterCreateIgnoreRelated = getVal(options, 'afterCreateIgnoreRelated', []);
     return factory;
@@ -205,6 +207,7 @@ export class Factory {
         delete factory.createRelated[attrName];
       }
     });
+    factory.allowCustomIds = options.allowCustomIds || source.allowCustomIds;
     factory.afterCreate = options.afterCreate || source.afterCreate;
     factory.afterCreateRelationshipsDepth = getVal(options, 'afterCreateRelationshipsDepth', source.afterCreateRelationshipsDepth);
     factory.afterCreateIgnoreRelated = getVal(options, 'afterCreateIgnoreRelated', source.afterCreateIgnoreRelated);
@@ -214,6 +217,7 @@ export class Factory {
   public attrs = {};
   public afterCreateRelationshipsDepth: number = Infinity;
   public afterCreateIgnoreRelated: string[] = [];
+  public allowCustomIds: boolean = false;
   public createRelated: { [attrName: string]: number | ((id: string) => number) } = {};
 
   get meta() {

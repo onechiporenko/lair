@@ -159,7 +159,24 @@ const unit = Factory.create({
 });
 ```
 
-Here we update unit's property `squadName` with real `squad.name`. Method `afterCreate` takes record with all related records. You may update any own `unit` property in the `afterCreate`, but you can't update related records and `unit` relationships. This means, that you can't do `delete record.squad` or `record.squad.name = '1234'`. 
+Here we update unit's property `squadName` with real `squad.name`. Method `afterCreate` takes record with all related records created before it. You may update any own `unit` property in the `afterCreate`, but you can't update related records and `unit` relationships. This means, that you can't do `delete record.squad` or `record.squad.name = '1234'`. 
+
+### Using fixtures
+
+Lair allows to load predefined data. Method `loadRecords` can be used for this. It takes two arguments - factory name and data-array itself:
+
+```javascript
+lair.loadRecords('unit', [/* data */]);
+```
+
+This method has several requirements:
+
+* Factory `unit` must be registered
+* Factory `unit` must have declared `attrs`, otherwise new records will be almost empty
+* Factory `unit` must have attribute `allowCustomIds` to be `true`
+* Loaded records must have unique identifiers (`id`-field)
+* Related factories must be registered too
+* Related records must be already loaded
 
 Once all Factories are created and registered and Lair is filled with records you are ready to mock your back-end.
 
@@ -558,6 +575,6 @@ lair.getOne('squad', '1', {ignoreRelated: ['unit']});
 // {id: '1', name: 'Ravens'}
 ```
 
-Here we have two options called `depth` and `ignoreRelared`. First one determines how deeply Lair should go to get data for needed record. Second one determines what factories should be ignored while Lair combines data for needed record. **Important** `ignoreRelated` contains a list for factory names and not attribute names! Both `depth` and `ignoreRelated` may be used together.
+Here we have two options called `depth` and `ignoreRelared`. First one determines how deeply Lair should go to get data for needed record. Second one determines what factories should be ignored while Lair combines data for needed record. **Important** `ignoreRelated` contains a list of factory names and not attribute names! Both `depth` and `ignoreRelated` may be used together.
 
 This options are very useful for cases with a lot of related records that may cause performance issues when Lair will collect them from internal store.

@@ -5,6 +5,10 @@ import {assert, copy, getOrCalcValue, isId} from './utils';
 
 import {assertCrudOptions, assertHasType, assertLoops, getLastItemsCount, verbose} from './decorators';
 
+function getDefaultCrudOptions(options) {
+  return {maxDepth: options.depth || Infinity, currentDepth: 1, ignoreRelated: options.ignoreRelated || []};
+}
+
 const {keys} = Object;
 const {isArray} = Array;
 
@@ -95,7 +99,7 @@ export class Lair {
 
   /**
    * Create number of records for needed factory and put then to the db
-   * This method should be used only for initial db filling
+   * This method can be used only for initial db filling
    * @param {string} factoryName
    * @param {number} count
    */
@@ -116,6 +120,21 @@ export class Lair {
   }
 
   /**
+   * Load records data from the predefined JSON's to the db
+   * This method can be used only for initial db filling
+   * @param {string} factoryName
+   * @param {object[]} data
+   */
+  @verbose
+  @assertHasType
+  public loadRecords(factoryName: string, data: object[]): void {
+    assert(`"${factoryName}" must have "allowCustomIds" set to "true"`, this.factories[factoryName].factory.allowCustomIds);
+    data.forEach(item => {
+      this.createOne(factoryName, item);
+    });
+  }
+
+  /**
    * Filter records of needed factory
    * Callback is called with one parameter - record
    * @param {string} factoryName
@@ -126,8 +145,8 @@ export class Lair {
   @verbose
   @assertHasType
   @assertCrudOptions
-  public queryMany(factoryName: string, clb: (record: Record) => boolean, options: CRUDOptions = {depth: Infinity, ignoreRelated: []}): Record[] {
-    const opts = {maxDepth: options.depth, currentDepth: 1, ignoreRelated: options.ignoreRelated};
+  public queryMany(factoryName: string, clb: (record: Record) => boolean, options: CRUDOptions = {}): Record[] {
+    const opts = getDefaultCrudOptions(options);
     return keys(this.db[factoryName])
       .filter(id => clb.call(null, this.db[factoryName][id]))
       .map(id => this.getRecordWithRelationships(factoryName, id, [], opts));
@@ -142,8 +161,8 @@ export class Lair {
   @verbose
   @assertHasType
   @assertCrudOptions
-  public getAll(factoryName: string, options: CRUDOptions = {depth: Infinity, ignoreRelated: []}): Record[] {
-    const opts = {maxDepth: options.depth, currentDepth: 1, ignoreRelated: options.ignoreRelated};
+  public getAll(factoryName: string, options: CRUDOptions = {}): Record[] {
+    const opts = getDefaultCrudOptions(options);
     return keys(this.db[factoryName]).map(id => this.getRecordWithRelationships(factoryName, id, [], opts));
   }
 
@@ -157,8 +176,8 @@ export class Lair {
   @verbose
   @assertHasType
   @assertCrudOptions
-  public getOne(factoryName: string, id: string, options: CRUDOptions = {depth: Infinity, ignoreRelated: []}): Record {
-    const opts = {maxDepth: options.depth || Infinity, currentDepth: 1, ignoreRelated: options.ignoreRelated || []};
+  public getOne(factoryName: string, id: string, options: CRUDOptions = {}): Record {
+    const opts = getDefaultCrudOptions(options);
     return this.getRecordWithRelationships(factoryName, id, [], opts);
   }
 
@@ -173,8 +192,8 @@ export class Lair {
   @verbose
   @assertHasType
   @assertCrudOptions
-  public queryOne(factoryName: string, clb: (record: Record) => boolean, options: CRUDOptions = {depth: Infinity, ignoreRelated: []}): Record {
-    const opts = {maxDepth: options.depth, currentDepth: 1, ignoreRelated: options.ignoreRelated};
+  public queryOne(factoryName: string, clb: (record: Record) => boolean, options: CRUDOptions = {}): Record {
+    const opts = getDefaultCrudOptions(options);
     const records = this.db[factoryName];
     const ids = keys(records);
     for (const id of ids) {
@@ -199,10 +218,10 @@ export class Lair {
   @verbose
   @assertHasType
   @assertCrudOptions
-  public createOne(factoryName: string, data: any, options: CRUDOptions = {depth: Infinity, ignoreRelated: []}): Record {
-    const opts = {maxDepth: options.depth, currentDepth: 1, ignoreRelated: options.ignoreRelated};
+  public createOne(factoryName: string, data: any, options: CRUDOptions = {}): Record {
+    const opts = getDefaultCrudOptions(options);
     const meta = this.getMetaFor(factoryName);
-    const id = String(this.factories[factoryName].id);
+    const id = this.factories[factoryName].factory.allowCustomIds ? data.id : String(this.factories[factoryName].id);
     const factory = this.factories[factoryName].factory;
     this.relationships.addRecord(factoryName, id);
     const newRecord = {id, ...factory.getDefaults()};
@@ -210,7 +229,7 @@ export class Lair {
       if (meta.hasOwnProperty(attrName)) {
         newRecord[attrName] = this.createAttrValue(factoryName, id, attrName, data[attrName]);
       } else {
-        if (options.handleNotAttrs) {
+        if (options.handleNotAttrs && attrName !== 'id') {
           newRecord[attrName] = data[attrName];
         }
       }
@@ -234,8 +253,8 @@ export class Lair {
   @verbose
   @assertHasType
   @assertCrudOptions
-  public updateOne(factoryName: string, id: string, data: any, options: CRUDOptions = {depth: Infinity, ignoreRelated: []}): Record {
-    const opts = {maxDepth: options.depth, currentDepth: 1, ignoreRelated: options.ignoreRelated};
+  public updateOne(factoryName: string, id: string, data: any, options: CRUDOptions = {}): Record {
+    const opts = getDefaultCrudOptions(options);
     const record = this.getOne(factoryName, id);
     assert(`Record of "${factoryName}" with id "${id}" doesn't exist`, !!record);
     const meta = this.getMetaFor(factoryName);
@@ -243,7 +262,7 @@ export class Lair {
       if (meta.hasOwnProperty(attrName)) {
         record[attrName] = this.createAttrValue(factoryName, id, attrName, data[attrName]);
       } else {
-        if (options.handleNotAttrs) {
+        if (options.handleNotAttrs && attrName !== 'id') {
           record[attrName] = data[attrName];
         }
       }
@@ -421,7 +440,7 @@ export class Lair {
       this.relationships.deleteRelationshipForAttr(factoryName, id, attrName);
       return null;
     }
-    assert(`"${newDistId}" is invalid identifier for record of "${distFactoryName}" [one-to-one relationship]`, isId(newDistId));
+    assert(`"${newDistId}" is invalid identifier for record of "${distFactoryName}" [one-to-one relationship]`, isId(newDistId) || this.factories[factoryName].factory.allowCustomIds);
     assert(`Record of "${distFactoryName}" with id "${newDistId}" doesn't exist. Create it first [one-to-one relationship]`, !!this.db[distFactoryName][newDistId]);
     this.relationships.createOneToOne(factoryName, id, attrName, newDistId, distFactoryName, distAttrName);
     return newDistId;
@@ -434,7 +453,7 @@ export class Lair {
       return [];
     }
     newDistIds.map(newDistId => {
-      assert(`"${newDistId}" is invalid identifier for record of "${distFactoryName}" [many-to-one relationship]`, isId(newDistId));
+      assert(`"${newDistId}" is invalid identifier for record of "${distFactoryName}" [many-to-one relationship]`, isId(newDistId) || this.factories[factoryName].factory.allowCustomIds);
       assert(`Record of "${distFactoryName}" with id "${newDistId}" doesn't exist. Create it first [many-to-one relationship]`, !!this.db[distFactoryName][newDistId]);
     });
     this.relationships.createManyToOne(factoryName, id, attrName, newDistIds, distFactoryName, distAttrName);
@@ -446,7 +465,7 @@ export class Lair {
       this.relationships.deleteRelationshipForAttr(factoryName, id, attrName);
       return null;
     }
-    assert(`"${newDistId}" is invalid identifier for record of "${distFactoryName}" [one-to-many relationship]`, isId(newDistId));
+    assert(`"${newDistId}" is invalid identifier for record of "${distFactoryName}" [one-to-many relationship]`, isId(newDistId) || this.factories[factoryName].factory.allowCustomIds);
     assert(`Record of "${distFactoryName}" with id "${newDistId}" doesn't exist. Create it first [one-to-many relationship]`, !!this.db[distFactoryName][newDistId]);
     this.relationships.createOneToMany(factoryName, id, attrName, newDistId, distFactoryName, distAttrName);
     return newDistId;
@@ -459,7 +478,7 @@ export class Lair {
       return [];
     }
     newDistIds.map(newDistId => {
-      assert(`"${newDistId}" is invalid identifier for record of "${distFactoryName}" [many-to-many relationship]`, isId(newDistId));
+      assert(`"${newDistId}" is invalid identifier for record of "${distFactoryName}" [many-to-many relationship]`, isId(newDistId) || this.factories[factoryName].factory.allowCustomIds);
       assert(`Record of "${distFactoryName}" with id "${newDistId}" doesn't exist. Create it first [many-to-many relationship]`, !!this.db[distFactoryName][newDistId]);
     });
     this.relationships.createManyToMany(factoryName, id, attrName, newDistIds, distFactoryName, distAttrName);

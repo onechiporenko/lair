@@ -103,6 +103,10 @@ export class Relationships {
       return;
     }
     const distMeta = this.meta[attrMeta.factoryName][attrMeta.invertedAttrName];
+    if (!distMeta) {
+      // relation looks like `Factory.hasOne('bar1', null)` or Factory.hasMany('bar1', null)
+      return;
+    }
     if (attrMeta.type === MetaAttrType.HAS_ONE) {
       if (distMeta.type === MetaAttrType.HAS_ONE) {
         // ONE TO ONE

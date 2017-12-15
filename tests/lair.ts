@@ -1,7 +1,6 @@
 import {expect} from 'chai';
 import {Factory, MetaAttrType} from '../lib/factory';
 import {Lair} from '../lib/lair';
-import {copy} from '../lib/utils';
 
 describe('Lair', () => {
 
@@ -1123,10 +1122,110 @@ describe('Lair', () => {
       });
 
       describe('#deleteOne', () => {
-        it('should delete record with provided id', () => {
+        it('should delete record with provided id (no relations)', () => {
           expect(this.lair.getOne('foo', '1')).to.have.property('id', '1');
           this.lair.deleteOne('foo', '1');
           expect(this.lair.getOne('foo', '1')).to.be.null;
+        });
+
+        it('should delete record with provided id (with two-ways relations)', () => {
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              bar1: Factory.hasOne('bar1', 'foo1'),
+            },
+            createRelated: {
+              bar1: 1,
+            },
+          }), 'foo1');
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              foo1: Factory.hasOne('foo1', 'bar1'),
+            },
+          }), 'bar1');
+          this.lair.createRecords('foo1', 1);
+          expect(this.lair.getOne('foo1', '1')).to.have.property('id', '1');
+          this.lair.deleteOne('foo1', '1');
+          expect(this.lair.getOne('foo1', '1')).to.be.null;
+        });
+
+        it('should delete record with provided id (with one-way relations) [hasOne]', () => {
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              bar1: Factory.hasOne('bar1', null),
+            },
+            createRelated: {
+              bar1: 1,
+            },
+          }), 'foo1');
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              foo1: Factory.hasOne('foo1', 'bar1'),
+            },
+          }), 'bar1');
+          this.lair.createRecords('foo1', 1);
+          expect(this.lair.getOne('foo1', '1')).to.have.property('id', '1');
+          this.lair.deleteOne('foo1', '1');
+          expect(this.lair.getOne('foo1', '1')).to.be.null;
+        });
+
+        it('should delete record with provided id (with one-way relations) [hasOne] [2]', () => {
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              bar1: Factory.hasOne('bar1', 'foo1'),
+            },
+            createRelated: {
+              bar1: 1,
+            },
+          }), 'foo1');
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              foo1: Factory.hasOne('foo1', null),
+            },
+          }), 'bar1');
+          this.lair.createRecords('foo1', 1);
+          expect(this.lair.getOne('foo1', '1')).to.have.property('id', '1');
+          this.lair.deleteOne('foo1', '1');
+          expect(this.lair.getOne('foo1', '1')).to.be.null;
+        });
+
+        it('should delete record with provided id (with one-way relations) [hasMany]', () => {
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              bar1: Factory.hasMany('bar1', null),
+            },
+            createRelated: {
+              bar1: 1,
+            },
+          }), 'foo1');
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              foo1: Factory.hasOne('foo1', 'bar1'),
+            },
+          }), 'bar1');
+          this.lair.createRecords('foo1', 1);
+          expect(this.lair.getOne('foo1', '1')).to.have.property('id', '1');
+          this.lair.deleteOne('foo1', '1');
+          expect(this.lair.getOne('foo1', '1')).to.be.null;
+        });
+
+        it('should delete record with provided id (with one-way relations) [hasMany] [2]', () => {
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              bar1: Factory.hasMany('bar1', 'foo1'),
+            },
+            createRelated: {
+              bar1: 1,
+            },
+          }), 'foo1');
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              foo1: Factory.hasOne('foo1', null),
+            },
+          }), 'bar1');
+          this.lair.createRecords('foo1', 1);
+          expect(this.lair.getOne('foo1', '1')).to.have.property('id', '1');
+          this.lair.deleteOne('foo1', '1');
+          expect(this.lair.getOne('foo1', '1')).to.be.null;
         });
 
         it('should throw an error for unknown type', () => {

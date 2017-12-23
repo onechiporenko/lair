@@ -403,7 +403,7 @@ Field `relatedTo` is empty because child-records are created standalone and not 
 
 ### One way relationships
 
-Methods `Factory.hasOne` and `Factory.hasMany` takes two arguments. However you may set `null` as second parameters. In this case records will be related in one way:
+Methods `Factory.hasOne` and `Factory.hasMany` take two arguments. However you may set `null` as second parameter. In this case records will be related in one way:
  
 ```javascript
 const squad = Factory.create({
@@ -419,7 +419,7 @@ const unit = Factory.create({
 });
 ```
 
-Here `squad` records has some related units. When some unit will be added to the squad its `squad`-field won't be updated.
+Here `squad` records have some related units. When some unit will be added to the squad its `squad`-field won't be updated.
 
 ### Reflexive relationships
 
@@ -499,7 +499,7 @@ Every created record for this factory will have `timestamp`-property greater to 
 
 `Factory.sequenceItem` takes two mandatory arguments - initial value (it will be set to record with id `1`) and function that calculates value for next record. This callback will get list with all previously generated values for this field. 
 
-Third arguments is a POJO with options for sequence. Currently only one option is available. It's called `lastValuesCount`. It values determines how many items will be passed to the callback:
+Third argument is a POJO with options for sequence. Currently only one option is available. It's called `lastValuesCount`. Its value determines how many items will be passed to the callback:
 
 ```javascript
 const timeLine = Factory.create({
@@ -516,11 +516,11 @@ const timeLine = Factory.create({
 });
 ```
 
-Use option `lastValuesCount` if you sequence items depends on limited number of previous values.
+Use option `lastValuesCount` if your sequence items depends on limited number of previous values.
 
 ### Extending Factories
 
-New Factory may be created based on another Factory. `attrs`, `createRelated`, `afterCreate` and `afterCreateRelationsDepth` will be put in the child Factory and overridden if needed:
+New Factory may be created based on another Factory. `attrs`, `createRelated`, `afterCreate` and all other fields will be put in the child Factory and overridden if needed:
 
 ```javascript
 const Parent1 = Factory.create({

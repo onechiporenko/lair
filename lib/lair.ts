@@ -333,20 +333,19 @@ export class Lair {
     }
     const factoryData = this.factories[factoryName];
     const {meta, createRelated} = factoryData.factory;
-    const limit = factoryData.id + count;
     const newRecords = [];
     let counter = 1;
-    for (let i = factoryData.id; i < limit; i++) {
+    for (let i = 0; i < count; i++) {
       const relatedTo = relatedChain.length ? {
         currentRecordNumber: counter,
         factoryName: relatedChain[relatedChain.length - 1],
         recordsCount: count,
       } : {};
-      const record = factoryData.factory.createRecord(i, {relatedTo} as CreateRecordExtraData);
+      const record = factoryData.factory.createRecord(this.factories[factoryName].id, {relatedTo} as CreateRecordExtraData);
       this.relationships.addRecord(factoryName, record.id);
       this.db[factoryName][record.id] = record;
       newRecords.push(record);
-      this.factories[factoryName].id = i + 1;
+      this.factories[factoryName].id++;
       this.afterCreateQueue.push({factoryName, id: record.id});
       if (createRelated) {
         keys(createRelated).forEach(attrName => {

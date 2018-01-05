@@ -10,7 +10,8 @@
     "lint": "tslint -c tslint.json lib/**/*.ts && tslint -c tests/tslint.json tests/**/*.ts",
     "test:remap": "remap-istanbul -i dist/coverage/coverage.json -o ./dist/coverage/coverage -t lcovonly",
     "test:cov": "istanbul cover --dir ./dist/coverage ./node_modules/mocha/bin/_mocha -- dist/tests/**/*.js --report lcovonly -R spec --bail -- && npm run test:remap && cat ./dist/coverage/coverage | coveralls && rm -rf ./coverage",
-    "test:mut": "stryker run"
+    "test:mut": "stryker run",
+    "docs": "typedoc --out ./docs lib"
   },
   "keywords": [
     "js",
@@ -38,6 +39,7 @@
     "stryker-typescript": "^0.6.0",
     "ts-node": "^3.0.6",
     "tslint": "^5.4.3",
+    "typedoc": "^0.9.0",
     "typescript": "^2.6.1",
     "typings": "^2.1.1"
   }

@@ -436,15 +436,94 @@ describe('Lair', () => {
                   propR: Factory.hasMany('r', 'propC', {reflexive: true, depth: 2}),
                   propC: Factory.hasOne('r', 'propR'),
                 },
-                createRelated: {propR: 1},
+                createRelated: {propR: 2},
               }), 'r');
-              this.lair.createRecords('r', 1);
+              this.lair.createRecords('r', 2);
             });
-            it('reflexive records are created', () => {
-              expect(this.lair.getAll('r')).to.be.eql([
-                {id: '1', propC: null, propR: [{id: '2', propC: '1', propR: []}]},
-                {id: '2', propC: {id: '1', propC: null, propR: ['2']}, propR: []},
-              ]);
+            describe('reflexive records are created', () => {
+              it('6 records are created', () => {
+                expect(this.lair.getAll('r')).to.have.property('length', 6);
+              });
+              it('r1', () => {
+                expect(this.lair.getOne('r', '1')).to.be.eql({
+                  id: '1',
+                  propC: null,
+                  propR: [
+                    {
+                      id: '2',
+                      propC: '1',
+                      propR: [],
+                    },
+                    {
+                      id: '3',
+                      propC: '1',
+                      propR: [],
+                    },
+                  ],
+                });
+              });
+              it('r2', () => {
+                expect(this.lair.getOne('r', '2')).to.be.eql({
+                  id: '2',
+                  propC: {
+                    id: '1',
+                    propC: null,
+                    propR: ['2', '3'],
+                  },
+                  propR: [],
+                });
+              });
+              it('r3', () => {
+                expect(this.lair.getOne('r', '3')).to.be.eql({
+                  id: '3',
+                  propC: {
+                    id: '1',
+                    propC: null,
+                    propR: ['2', '3'],
+                  },
+                  propR: [],
+                });
+              });
+              it('r4', () => {
+                expect(this.lair.getOne('r', '4')).to.be.eql({
+                  id: '4',
+                  propC: null,
+                  propR: [
+                    {
+                      id: '5',
+                      propC: '4',
+                      propR: [],
+                    },
+                    {
+                      id: '6',
+                      propC: '4',
+                      propR: [],
+                    },
+                  ],
+                });
+              });
+              it('r5', () => {
+                expect(this.lair.getOne('r', '5')).to.be.eql({
+                  id: '5',
+                  propC: {
+                    id: '4',
+                    propC: null,
+                    propR: ['5', '6'],
+                  },
+                  propR: [],
+                });
+              });
+              it('r6', () => {
+                expect(this.lair.getOne('r', '6')).to.be.eql({
+                  id: '6',
+                  propC: {
+                    id: '4',
+                    propC: null,
+                    propR: ['5', '6'],
+                  },
+                  propR: [],
+                });
+              });
             });
           });
 

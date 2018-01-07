@@ -21,16 +21,26 @@ export class Relationships {
   private relationships: InternalRelationships = {};
   private meta = {};
 
+  /**
+   * @param newMeta
+   */
   public updateMeta(newMeta): void {
     this.meta = newMeta;
   }
 
+  /**
+   * @param factoryName
+   */
   public addFactory(factoryName: string): void {
     if (!this.relationships[factoryName]) {
       this.relationships[factoryName] = {};
     }
   }
 
+  /**
+   * @param factoryName
+   * @param id
+   */
   public addRecord(factoryName: string, id: string): void {
     this.addFactory(factoryName);
     if (!this.relationships[factoryName][id]) {
@@ -47,10 +57,19 @@ export class Relationships {
     }
   }
 
+  /**
+   * @param factoryName
+   * @param record
+   */
   public recalculateRelationshipsForRecord(factoryName: string, record: Record): void {
     keys(this.meta[factoryName]).forEach(attrName => this.recalculateRelationshipForAttr(factoryName, record, attrName));
   }
 
+  /**
+   * @param factoryName
+   * @param record
+   * @param attrName
+   */
   public recalculateRelationshipForAttr(factoryName: string, record: Record, attrName: string): void {
     const sourceMeta = this.meta[factoryName];
     const attrMeta = sourceMeta[attrName];
@@ -91,11 +110,20 @@ export class Relationships {
     }
   }
 
+  /**
+   * @param factoryName
+   * @param id
+   */
   public deleteRelationshipsForRecord(factoryName: string, id: string): void {
     keys(this.meta[factoryName]).forEach(attrName => this.deleteRelationshipForAttr(factoryName, id, attrName));
     delete this.relationships[factoryName][id];
   }
 
+  /**
+   * @param factoryName
+   * @param id
+   * @param attrName
+   */
   public deleteRelationshipForAttr(factoryName: string, id: string, attrName: string): void {
     const meta = this.meta[factoryName];
     const attrMeta = meta[attrName];
@@ -129,6 +157,12 @@ export class Relationships {
     }
   }
 
+  /**
+   * @param factoryName
+   * @param id
+   * @param attrName
+   * @returns {any}
+   */
   public getOne(factoryName: string, id: string, attrName: string): string {
     if (!this.recordRelationshipsExist(factoryName, id)) {
       return null;
@@ -137,6 +171,12 @@ export class Relationships {
     return !isArray(val) ? val : null;
   }
 
+  /**
+   * @param factoryName
+   * @param id
+   * @param attrName
+   * @returns {any}
+   */
   public getMany(factoryName: string, id: string, attrName: string): string[] {
     if (!this.recordRelationshipsExist(factoryName, id)) {
       return [];
@@ -145,6 +185,12 @@ export class Relationships {
     return isArray(val) ? val : [];
   }
 
+  /**
+   * @param factoryName
+   * @param id
+   * @param attrName
+   * @param valueToRemove
+   */
   public removeFromMany(factoryName: string, id: string, attrName: string, valueToRemove: string): void {
     assert(`"removeFromMany" should be used only for HAS_MANY relationships. You try to use for "${factoryName}.${attrName}"`, this.meta[factoryName][attrName].type === MetaAttrType.HAS_MANY);
     const oldDistRelationships = this.getMany(factoryName, id, attrName) || [];
@@ -153,6 +199,12 @@ export class Relationships {
     this.setMany(factoryName, id, attrName, newValue);
   }
 
+  /**
+   * @param factoryName
+   * @param id
+   * @param attrName
+   * @param valueToAdd
+   */
   public addToMany(factoryName: string, id: string, attrName: string, valueToAdd: string): void {
     assert(`"addToMany" should be used only for HAS_MANY relationships. You try to use for "${factoryName}.${attrName}"`, this.meta[factoryName][attrName].type === MetaAttrType.HAS_MANY);
     const newDistRelationships = this.getMany(factoryName, id, attrName) || [];
@@ -163,6 +215,12 @@ export class Relationships {
     this.setMany(factoryName, id, attrName, newDistRelationships);
   }
 
+  /**
+   * @param factoryName
+   * @param id
+   * @param attrName
+   * @param valueToSet
+   */
   public setOne(factoryName: string, id: string, attrName: string, valueToSet: string): void {
     assert(`"setOne" should be used only for HAS_ONE relationships. You try to use for "${factoryName}.${attrName}"`, this.meta[factoryName][attrName].type === MetaAttrType.HAS_ONE);
     if (!this.recordRelationshipsExist(factoryName, id)) {
@@ -171,6 +229,12 @@ export class Relationships {
     this.relationships[factoryName][id][attrName] = valueToSet;
   }
 
+  /**
+   * @param factoryName
+   * @param id
+   * @param attrName
+   * @param valueToSet
+   */
   public setMany(factoryName: string, id: string, attrName: string, valueToSet: string[]): void {
     assert(`"setMany" should be used only for HAS_MANY relationships. You try to use for "${factoryName}.${attrName}"`, this.meta[factoryName][attrName].type === MetaAttrType.HAS_MANY);
     if (!this.recordRelationshipsExist(factoryName, id)) {
@@ -179,10 +243,23 @@ export class Relationships {
     this.relationships[factoryName][id][attrName] = uniq(valueToSet.sort());
   }
 
+  /**
+   * @param factoryName
+   * @param id
+   * @returns {{[p: string]: string|string[]|null}}
+   */
   public getRelationshipsForRecord(factoryName: string, id: string) {
     return this.relationships[factoryName][id];
   }
 
+  /**
+   * @param factoryName
+   * @param id
+   * @param attrName
+   * @param newDistId
+   * @param distFactoryName
+   * @param distAttrName
+   */
   public createOneToOne(factoryName: string, id: string, attrName: string, newDistId: string, distFactoryName: string, distAttrName: string): void {
     const oldDistId = this.getOne(factoryName, id, attrName);
     if (oldDistId) {
@@ -198,6 +275,14 @@ export class Relationships {
     this.setOne(distFactoryName, newDistId, distAttrName, id);
   }
 
+  /**
+   * @param factoryName
+   * @param id
+   * @param attrName
+   * @param newDistIds
+   * @param distFactoryName
+   * @param distAttrName
+   */
   public createManyToOne(factoryName: string, id: string, attrName: string, newDistIds: string[], distFactoryName: string, distAttrName: string): void {
     const currentIds = this.getMany(factoryName, id, attrName);
     const toAdd = currentIds ? arrayDiff(newDistIds, currentIds) : [];
@@ -213,6 +298,14 @@ export class Relationships {
     this.setMany(factoryName, id, attrName, newDistIds);
   }
 
+  /**
+   * @param factoryName
+   * @param id
+   * @param attrName
+   * @param newDistId
+   * @param distFactoryName
+   * @param distAttrName
+   */
   public createOneToMany(factoryName: string, id: string, attrName: string, newDistId: string, distFactoryName: string, distAttrName: string): void {
     const oldDistId = this.getOne(factoryName, id, attrName);
     if (oldDistId) {
@@ -222,6 +315,14 @@ export class Relationships {
     this.setOne(factoryName, id, attrName, newDistId);
   }
 
+  /**
+   * @param factoryName
+   * @param id
+   * @param attrName
+   * @param newDistIds
+   * @param distFactoryName
+   * @param distAttrName
+   */
   public createManyToMany(factoryName: string, id: string, attrName: string, newDistIds: string[], distFactoryName: string, distAttrName: string): void {
     const currentIds = this.getMany(factoryName, id, attrName);
     const toAdd = currentIds ? arrayDiff(newDistIds, currentIds) : [];
@@ -231,6 +332,11 @@ export class Relationships {
     this.setMany(factoryName, id, attrName, newDistIds);
   }
 
+  /**
+   * @param factoryName
+   * @param id
+   * @returns {boolean}
+   */
   protected recordRelationshipsExist(factoryName: string, id: string): boolean {
     const f = this.relationships[factoryName];
     if (!f) {
@@ -239,6 +345,14 @@ export class Relationships {
     return !!f[id];
   }
 
+  /**
+   * @param sourceFactoryName
+   * @param sourceRecordId
+   * @param sourceAttrName
+   * @param distFactoryName
+   * @param distRecordId
+   * @param distAttrName
+   */
   protected updateOneToOne(sourceFactoryName: string, sourceRecordId: string, sourceAttrName: string, distFactoryName: string, distRecordId: string, distAttrName: string): void {
     this.addRecord(sourceFactoryName, sourceRecordId);
     this.setOne(sourceFactoryName, sourceRecordId, sourceAttrName, distRecordId);
@@ -250,6 +364,14 @@ export class Relationships {
     }
   }
 
+  /**
+   * @param sourceFactoryName
+   * @param sourceRecordId
+   * @param sourceAttrName
+   * @param distFactoryName
+   * @param distRecordIds
+   * @param distAttrName
+   */
   protected updateManyToOne(sourceFactoryName: string, sourceRecordId: string, sourceAttrName: string, distFactoryName: string, distRecordIds: string[], distAttrName: string): void {
     distRecordIds = distRecordIds || [];
     this.addRecord(sourceFactoryName, sourceRecordId);
@@ -264,6 +386,14 @@ export class Relationships {
     this.setMany(sourceFactoryName, sourceRecordId, sourceAttrName, distRecordIds);
   }
 
+  /**
+   * @param sourceFactoryName
+   * @param sourceRecordId
+   * @param sourceAttrName
+   * @param distFactoryName
+   * @param distRecordId
+   * @param distAttrName
+   */
   protected updateOneToMany(sourceFactoryName: string, sourceRecordId: string, sourceAttrName: string, distFactoryName: string, distRecordId: string, distAttrName: string): void {
     if (sourceRecordId) {
       this.addRecord(sourceFactoryName, sourceRecordId);
@@ -285,6 +415,14 @@ export class Relationships {
     }
   }
 
+  /**
+   * @param sourceFactoryName
+   * @param sourceRecordId
+   * @param sourceAttrName
+   * @param distFactoryName
+   * @param distRecordIds
+   * @param distAttrName
+   */
   protected updateManyToMany(sourceFactoryName: string, sourceRecordId: string, sourceAttrName: string, distFactoryName: string, distRecordIds: string[], distAttrName: string): void {
     distRecordIds = distRecordIds || [];
     this.addRecord(sourceFactoryName, sourceRecordId);
@@ -303,6 +441,11 @@ export class Relationships {
     this.setMany(sourceFactoryName, sourceRecordId, sourceAttrName, isArray(distRecordIds) ? distRecordIds : []);
   }
 
+  /**
+   * @param distFactoryName
+   * @param distAttrName
+   * @param sourceRecordId
+   */
   protected dropRelationship(distFactoryName: string, distAttrName: string, sourceRecordId: string): void {
     keys(this.relationships[distFactoryName]).forEach(rId => {
       if (this.relationships[distFactoryName][rId][distAttrName] === sourceRecordId) {

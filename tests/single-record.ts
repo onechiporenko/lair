@@ -100,7 +100,7 @@ describe('single record', () => {
         expect(() => this.lair.updateOne('foo', '1', {propBar: '100500'})).to.throw(`Record of "bar" with id "100500" doesn't exist. Create it first [one-to-one relationship]`);
       });
 
-      describe('should update relationships', () => {
+      describe('should update relationships (id passed)', () => {
 
         beforeEach(() => {
           this.lair.updateOne('bar', '2', {fooProp: null});
@@ -152,7 +152,59 @@ describe('single record', () => {
         });
       });
 
-      describe('should update cross-relationships', () => {
+      describe('should update relationships (object passed)', () => {
+
+        beforeEach(() => {
+          this.lair.updateOne('bar', '2', {fooProp: null});
+          this.updatedFoo1 = this.lair.updateOne('foo', '1', {propBar: {id: '2'}});
+        });
+
+        it('foo1 is updated', () => {
+          const expectedFoo1 = oneToOneFoo('1');
+          expectedFoo1.propBar = {
+            id: '2',
+            propFoo: '1',
+            sBar: 'static bar',
+            propBaz: {
+              id: '2',
+              propBar: '2',
+              sBaz: 'static baz',
+            },
+          };
+          expect(this.updatedFoo1).to.be.eql(expectedFoo1);
+        });
+
+        it('foo2 is updated', () => {
+          const expectedFoo2 = oneToOneFoo('2');
+          expectedFoo2.propBar = null;
+          expect(this.lair.getOne('foo', '2')).to.be.eql(expectedFoo2);
+        });
+
+        it('bar1 is updated', () => {
+          const expectedBar1 = oneToOneBar('1');
+          expectedBar1.propFoo = null;
+          expect(this.lair.getOne('bar', '1')).to.be.eql(expectedBar1);
+        });
+
+        it('bar2 is updated', () => {
+          expect(this.lair.getOne('bar', '2')).to.be.eql({
+            id: '2',
+            sBar: 'static bar',
+            propFoo: {
+              id: '1',
+              sFoo: 'static foo',
+              propBar: '2',
+            },
+            propBaz: {
+              id: '2',
+              propBar: '2',
+              sBaz: 'static baz',
+            },
+          });
+        });
+      });
+
+      describe('should update cross-relationships (id passed)', () => {
 
         beforeEach(() => {
           // initial state:
@@ -163,6 +215,65 @@ describe('single record', () => {
           // foo1 -> bar2, bar1 -> null
           // foo2 -> null, bar2 -> foo1
           this.updatedFoo1 = this.lair.updateOne('foo', '1', {propBar: '2'});
+        });
+
+        it('foo1 is updated', () => {
+          const expectedFoo1 = oneToOneFoo('1');
+          expectedFoo1.propBar = {
+            id: '2',
+            propFoo: '1',
+            sBar: 'static bar',
+            propBaz: {
+              id: '2',
+              propBar: '2',
+              sBaz: 'static baz',
+            },
+          };
+          expect(this.updatedFoo1).to.be.eql(expectedFoo1);
+        });
+
+        it('foo2 is updated', () => {
+          const expectedFoo2 = oneToOneFoo('2');
+          expectedFoo2.propBar = null;
+          expect(this.lair.getOne('foo', '2')).to.be.eql(expectedFoo2);
+        });
+
+        it('bar1 is updated', () => {
+          const expectedBar1 = oneToOneBar('1');
+          expectedBar1.propFoo = null;
+          expect(this.lair.getOne('bar', '1')).to.be.eql(expectedBar1);
+        });
+
+        it('bar2 is updated', () => {
+          expect(this.lair.getOne('bar', '2')).to.be.eql({
+            id: '2',
+            sBar: 'static bar',
+            propFoo: {
+              id: '1',
+              sFoo: 'static foo',
+              propBar: '2',
+            },
+            propBaz: {
+              id: '2',
+              propBar: '2',
+              sBaz: 'static baz',
+            },
+          });
+        });
+
+      });
+
+      describe('should update cross-relationships (object passed)', () => {
+
+        beforeEach(() => {
+          // initial state:
+          // foo1 -> bar1, bar1 -> foo1
+          // foo2 -> bar2, bar2 -> foo2
+
+          // should become to:
+          // foo1 -> bar2, bar1 -> null
+          // foo2 -> null, bar2 -> foo1
+          this.updatedFoo1 = this.lair.updateOne('foo', '1', {propBar: {id: '2'}});
         });
 
         it('foo1 is updated', () => {
@@ -229,7 +340,7 @@ describe('single record', () => {
         expect(this.lair.createOne('foo', {})).to.be.eql({id: '3', propBar: null});
       });
 
-      describe('should create relationships', () => {
+      describe('should create relationships (id passed)', () => {
         beforeEach(() => {
           this.lair.registerFactory(Factory.create({
             attrs: {
@@ -244,6 +355,36 @@ describe('single record', () => {
           }), 'b');
           this.lair.createRecords('a', 1);
           this.lair.createOne('a', {propB: '1'});
+        });
+
+        it('a2 is created', () => {
+          expect(this.lair.getOne('a', '2')).to.be.eql({id: '2', propB: {id: '1', propA: '2'}});
+        });
+
+        it('a1 is updated', () => {
+          expect(this.lair.getOne('a', '1')).to.be.eql({id: '1', propB: null});
+        });
+
+        it('b1 is updated', () => {
+          expect(this.lair.getOne('b', '1')).to.be.eql({id: '1', propA: {id: '2', propB: '1'}});
+        });
+      });
+
+      describe('should create relationships (object passed)', () => {
+        beforeEach(() => {
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              propB: Factory.hasOne('b', 'propA'),
+            },
+            createRelated: {propB: 1},
+          }), 'a');
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              propA: Factory.hasOne('a', 'propB'),
+            },
+          }), 'b');
+          this.lair.createRecords('a', 1);
+          this.lair.createOne('a', {propB: {id: '1'}});
         });
 
         it('a2 is created', () => {
@@ -334,14 +475,14 @@ describe('single record', () => {
       });
 
       it('should throw an error if relation-value contains some not id-like values', () => {
-        expect(() => this.lair.updateOne('foo', '1', {propBar: ['abc']})).to.throw(`"abc" is invalid identifier for record of "bar" [one-to-many relationship]`);
+        expect(() => this.lair.updateOne('foo', '1', {propBar: 'abc'})).to.throw(`"abc" is invalid identifier for record of "bar" [one-to-many relationship]`);
       });
 
       it('should throw an error if relation-value doesn\'t exist in the db', () => {
-        expect(() => this.lair.updateOne('foo', '1', {propBar: ['100500']})).to.throw(`Record of "bar" with id "100500" doesn't exist. Create it first [one-to-many relationship]`);
+        expect(() => this.lair.updateOne('foo', '1', {propBar: '100500'})).to.throw(`Record of "bar" with id "100500" doesn't exist. Create it first [one-to-many relationship]`);
       });
 
-      describe('should update relationships', () => {
+      describe('should update relationships (id passed)', () => {
 
         beforeEach(() => {
           this.lair.registerFactory(Factory.create({
@@ -368,6 +509,52 @@ describe('single record', () => {
         describe('', () => {
           beforeEach(() => {
             this.lair.updateOne('a', '2', {propB: '1'});
+          });
+          it('a1 updated', () => {
+            expect(this.lair.getOne('a', '1')).to.be.eql({id: '1', propB: {id: '1', propA: ['1', '2']}});
+          });
+
+          it('a2 updated', () => {
+            expect(this.lair.getOne('a', '2')).to.be.eql({id: '2', propB: {id: '1', propA: ['1', '2']}});
+          });
+
+          it('b1 updated', () => {
+            expect(this.lair.getOne('b', '1')).to.be.eql({
+              id: '1',
+              propA: [{id: '1', propB: '1'}, {id: '2', propB: '1'}],
+            });
+          });
+        });
+
+      });
+
+      describe('should update relationships (object passed)', () => {
+
+        beforeEach(() => {
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              propB: Factory.hasOne('b', 'propA'),
+            },
+          }), 'a');
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              propA: Factory.hasMany('a', 'propB'),
+            },
+            createRelated: {propA: 1},
+          }), 'b');
+          this.lair.createRecords('b', 1);
+          this.lair.createRecords('a', 1);
+        });
+
+        it('check initial state', () => {
+          expect(this.lair.getOne('a', '1').propB.id).to.be.equal('1');
+          expect(this.lair.getOne('a', '2').propB).to.be.null;
+          expect(this.lair.getOne('b', '1').propA.map(c => c.id)).to.be.eql(['1']);
+        });
+
+        describe('', () => {
+          beforeEach(() => {
+            this.lair.updateOne('a', '2', {propB: {id: '1'}});
           });
           it('a1 updated', () => {
             expect(this.lair.getOne('a', '1')).to.be.eql({id: '1', propB: {id: '1', propA: ['1', '2']}});
@@ -482,7 +669,7 @@ describe('single record', () => {
         expect(this.lair.createOne('foo', {})).to.be.eql({id: '3', propBar: null, propBaz: null});
       });
 
-      describe('should create relationships', () => {
+      describe('should create relationships (id passed)', () => {
 
         beforeEach(() => {
           this.lair.registerFactory(Factory.create({
@@ -507,6 +694,51 @@ describe('single record', () => {
         describe('', () => {
           beforeEach(() => {
             this.lair.createOne('a', {propB: '1'});
+          });
+
+          it('a2 is created', () => {
+            expect(this.lair.getOne('a', '2')).to.be.eql({id: '2', propB: {id: '1', propA: ['1', '2']}});
+          });
+
+          it('a1 is updated', () => {
+            expect(this.lair.getOne('a', '1')).to.be.eql({id: '1', propB: {id: '1', propA: ['1', '2']}});
+          });
+
+          it('b1 is updated', () => {
+            expect(this.lair.getOne('b', '1')).to.be.eql({
+              id: '1',
+              propA: [{id: '1', propB: '1'}, {id: '2', propB: '1'}],
+            });
+          });
+        });
+
+      });
+
+      describe('should create relationships (object passed)', () => {
+
+        beforeEach(() => {
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              propB: Factory.hasOne('b', 'propA'),
+            },
+            createRelated: {propB: 1},
+          }), 'a');
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              propA: Factory.hasMany('a', 'propB'),
+            },
+          }), 'b');
+          this.lair.createRecords('a', 1);
+        });
+
+        it('check initial state', () => {
+          expect(this.lair.getOne('a', '1').propB.id).to.be.equal('1');
+          expect(this.lair.getOne('b', '1').propA.map(c => c.id)).to.be.eql(['1']);
+        });
+
+        describe('', () => {
+          beforeEach(() => {
+            this.lair.createOne('a', {propB: {id: '1'}});
           });
 
           it('a2 is created', () => {
@@ -610,7 +842,7 @@ describe('single record', () => {
         expect(() => this.lair.updateOne('foo', '1', {propBar: ['100500']})).to.throw(`Record of "bar" with id "100500" doesn't exist. Create it first [many-to-one relationship]`);
       });
 
-      describe('should update cross-relationships', () => {
+      describe('should update cross-relationships (id passed)', () => {
 
         beforeEach(() => {
           this.lair.registerFactory(Factory.create({
@@ -675,6 +907,71 @@ describe('single record', () => {
 
       });
 
+      describe('should update cross-relationships (object passed)', () => {
+
+        beforeEach(() => {
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              propB: Factory.hasMany('b', 'propA'),
+            },
+            createRelated: {
+              propB: 2,
+            },
+          }), 'a');
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              propA: Factory.hasOne('a', 'propB'),
+            },
+          }), 'b');
+          this.lair.createRecords('a', 1);
+          this.lair.createRecords('b', 1);
+        });
+
+        it('check initial state', () => {
+          expect(this.lair.getOne('a', '1').propB.map(c => c.id)).to.be.eql(['1', '2']);
+          expect(this.lair.getOne('b', '1').propA.id).to.be.equal('1');
+          expect(this.lair.getOne('b', '2').propA.id).to.be.equal('1');
+          expect(this.lair.getOne('b', '3').propA).to.be.null;
+        });
+
+        describe('', () => {
+          beforeEach(() => {
+            this.lair.updateOne('a', '1', {propB: [{id: '2'}, {id: '3'}]});
+          });
+          it('a#1 updated', () => {
+            // a1.b -> [b2, b3]
+            expect(this.lair.getOne('a', '1')).to.be.eql({
+              id: '1',
+              propB: [
+                {id: '2', propA: '1'},
+                {id: '3', propA: '1'},
+              ],
+            });
+          });
+          it('b#1 updated', () => {
+            // b1.a -> null
+            expect(this.lair.getOne('b', '1')).to.be.eql({
+              id: '1',
+              propA: null,
+            });
+          });
+          it('b#2 is not updated', () => {
+            expect(this.lair.getOne('b', '2')).to.be.eql({
+              id: '2',
+              propA: {id: '1', propB: ['2', '3']},
+            });
+          });
+          it('b#3 updated', () => {
+            // b3.a -> a1
+            expect(this.lair.getOne('b', '3')).to.be.eql({
+              id: '3',
+              propA: {id: '1', propB: ['2', '3']},
+            });
+          });
+        });
+
+      });
+
     });
 
     describe('#createOne', () => {
@@ -686,7 +983,7 @@ describe('single record', () => {
         expect(() => this.lair.createOne('foo', {propBar: ['100500']})).to.throw(`Record of "bar" with id "100500" doesn't exist. Create it first [many-to-one relationship]`);
       });
 
-      describe('should create relationships', () => {
+      describe('should create relationships (id passed)', () => {
 
         beforeEach(() => {
           this.lair.registerFactory(Factory.create({
@@ -716,6 +1013,79 @@ describe('single record', () => {
         describe('', () => {
           beforeEach(() => {
             this.lair.createOne('a', {propB: ['2', '3']});
+          });
+          it('a#1 updated', () => {
+            expect(this.lair.getOne('a', '1')).to.be.eql({
+              id: '1',
+              propB: [
+                {id: '1', propA: '1'},
+              ],
+            });
+          });
+          it('a#2 created', () => {
+            expect(this.lair.getOne('a', '2')).to.be.eql({
+              id: '2',
+              propB: [
+                {id: '2', propA: '2'},
+                {id: '3', propA: '2'},
+              ],
+            });
+          });
+          it('b#1 updated', () => {
+            expect(this.lair.getOne('b', '1')).to.be.eql({
+              id: '1',
+              propA: {
+                id: '1',
+                propB: ['1'],
+              },
+            });
+          });
+          it('b#2 updated', () => {
+            expect(this.lair.getOne('b', '2')).to.be.eql({
+              id: '2',
+              propA: {id: '2', propB: ['2', '3']},
+            });
+          });
+          it('b#3 updated', () => {
+            expect(this.lair.getOne('b', '3')).to.be.eql({
+              id: '3',
+              propA: {id: '2', propB: ['2', '3']},
+            });
+          });
+        });
+
+      });
+
+      describe('should create relationships (object passed)', () => {
+
+        beforeEach(() => {
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              propB: Factory.hasMany('b', 'propA'),
+            },
+            createRelated: {
+              propB: 2,
+            },
+          }), 'a');
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              propA: Factory.hasOne('a', 'propB'),
+            },
+          }), 'b');
+          this.lair.createRecords('a', 1);
+          this.lair.createRecords('b', 1);
+        });
+
+        it('check initial state', () => {
+          expect(this.lair.getOne('a', '1').propB.map(c => c.id)).to.be.eql(['1', '2']);
+          expect(this.lair.getOne('b', '1').propA.id).to.be.equal('1');
+          expect(this.lair.getOne('b', '2').propA.id).to.be.equal('1');
+          expect(this.lair.getOne('b', '3').propA).to.be.null;
+        });
+
+        describe('', () => {
+          beforeEach(() => {
+            this.lair.createOne('a', {propB: [{id: '2'}, {id: '3'}]});
           });
           it('a#1 updated', () => {
             expect(this.lair.getOne('a', '1')).to.be.eql({
@@ -839,7 +1209,7 @@ describe('single record', () => {
         expect(() => this.lair.updateOne('foo', '1', {propBar: ['100500']})).to.throw(`Record of "bar" with id "100500" doesn't exist. Create it first [many-to-many relationship]`);
       });
 
-      describe('should update cross-relationships', () => {
+      describe('should update cross-relationships (id passed)', () => {
 
         beforeEach(() => {
           this.lair.registerFactory(Factory.create({
@@ -928,6 +1298,96 @@ describe('single record', () => {
           });
         });
       });
+
+      describe('should update cross-relationships (object passed)', () => {
+
+        beforeEach(() => {
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              propB: Factory.hasMany('b', 'propA'),
+            },
+            createRelated: {
+              propB: 2,
+            },
+          }), 'a');
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              propA: Factory.hasMany('a', 'propB'),
+            },
+          }), 'b');
+          this.lair.createRecords('a', 2);
+        });
+
+        it('check initial state', () => {
+          expect(this.lair.getOne('a', '1').propB.map(c => c.id)).to.be.eql(['1', '2']);
+          expect(this.lair.getOne('a', '2').propB.map(c => c.id)).to.be.eql(['3', '4']);
+          expect(this.lair.getOne('b', '1').propA.map(c => c.id)).to.be.eql(['1']);
+          expect(this.lair.getOne('b', '2').propA.map(c => c.id)).to.be.eql(['1']);
+          expect(this.lair.getOne('b', '3').propA.map(c => c.id)).to.be.eql(['2']);
+          expect(this.lair.getOne('b', '4').propA.map(c => c.id)).to.be.eql(['2']);
+        });
+
+        describe('', () => {
+          beforeEach(() => {
+            this.lair.updateOne('a', '1', {propB: [{id: '2'}, {id: '3'}]});
+          });
+          it('a1 updated', () => {
+            // a1.b -> [b2, b3]
+            expect(this.lair.getOne('a', '1')).to.be.eql({
+              id: '1',
+              propB: [
+                {id: '2', propA: ['1']},
+                {id: '3', propA: ['1', '2']},
+              ],
+            });
+          });
+          it('a2 updated', () => {
+            // a2.b -> [b3, b4]
+            expect(this.lair.getOne('a', '2')).to.be.eql({
+              id: '2',
+              propB: [
+                {id: '3', propA: ['1', '2']},
+                {id: '4', propA: ['2']},
+              ],
+            });
+          });
+          it('b1 updated', () => {
+            // b1.a -> []
+            expect(this.lair.getOne('b', '1')).to.be.eql({
+              id: '1',
+              propA: [],
+            });
+          });
+          it('b2 updated', () => {
+            // b2.a -> [a1, a2]
+            expect(this.lair.getOne('b', '2')).to.be.eql({
+              id: '2',
+              propA: [
+                {id: '1', propB: ['2', '3']},
+              ],
+            });
+          });
+          it('b3 updated', () => {
+            // b3.a -> [a1, a2]
+            expect(this.lair.getOne('b', '3')).to.be.eql({
+              id: '3',
+              propA: [
+                {id: '1', propB: ['2', '3']},
+                {id: '2', propB: ['3', '4']},
+              ],
+            });
+          });
+          it('b4 updated', () => {
+            // b4.a -> [a2]
+            expect(this.lair.getOne('b', '4')).to.be.eql({
+              id: '4',
+              propA: [
+                {id: '2', propB: ['3', '4']},
+              ],
+            });
+          });
+        });
+      });
     });
 
     describe('#createOne', () => {
@@ -939,7 +1399,7 @@ describe('single record', () => {
         expect(() => this.lair.createOne('foo', {propBar: ['100500']})).to.throw(`Record of "bar" with id "100500" doesn't exist. Create it first [many-to-many relationship]`);
       });
 
-      describe('should create relationships', () => {
+      describe('should create relationships (id passed)', () => {
 
         beforeEach(() => {
           this.lair.registerFactory(Factory.create({
@@ -972,6 +1432,113 @@ describe('single record', () => {
         describe('', () => {
           beforeEach(() => {
             this.lair.createOne('a', {propB: ['2', '3', '5']});
+          });
+          it('a1 updated', () => {
+            expect(this.lair.getOne('a', '1')).to.be.eql({
+              id: '1',
+              propB: [
+                {id: '1', propA: ['1']},
+                {id: '2', propA: ['1', '3']},
+              ],
+            });
+          });
+          it('a2 updated', () => {
+            expect(this.lair.getOne('a', '2')).to.be.eql({
+              id: '2',
+              propB: [
+                {id: '3', propA: ['2', '3']},
+                {id: '4', propA: ['2']},
+              ],
+            });
+          });
+          it('a3 created', () => {
+            expect(this.lair.getOne('a', '3')).to.be.eql({
+              id: '3',
+              propB: [
+                {id: '2', propA: ['1', '3']},
+                {id: '3', propA: ['2', '3']},
+                {id: '5', propA: ['3']},
+              ],
+            });
+          });
+          it('b1 updated', () => {
+            expect(this.lair.getOne('b', '1')).to.be.eql({
+              id: '1',
+              propA: [
+                {id: '1', propB: ['1', '2']},
+              ],
+            });
+          });
+          it('b2 updated', () => {
+            expect(this.lair.getOne('b', '2')).to.be.eql({
+              id: '2',
+              propA: [
+                {id: '1', propB: ['1', '2']},
+                {id: '3', propB: ['2', '3', '5']},
+              ],
+            });
+          });
+          it('b3 updated', () => {
+            expect(this.lair.getOne('b', '3')).to.be.eql({
+              id: '3',
+              propA: [
+                {id: '2', propB: ['3', '4']},
+                {id: '3', propB: ['2', '3', '5']},
+              ],
+            });
+          });
+          it('b4 updated', () => {
+            expect(this.lair.getOne('b', '4')).to.be.eql({
+              id: '4',
+              propA: [
+                {id: '2', propB: ['3', '4']},
+              ],
+            });
+          });
+          it('b5 updated', () => {
+            expect(this.lair.getOne('b', '5')).to.be.eql({
+              id: '5',
+              propA: [
+                {id: '3', propB: ['2', '3', '5']},
+              ],
+            });
+          });
+        });
+      });
+
+      describe('should create relationships (object passed)', () => {
+
+        beforeEach(() => {
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              propB: Factory.hasMany('b', 'propA'),
+            },
+            createRelated: {
+              propB: 2,
+            },
+          }), 'a');
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              propA: Factory.hasMany('a', 'propB'),
+            },
+          }), 'b');
+          this.lair.createRecords('a', 2);
+          this.lair.createRecords('b', 1);
+        });
+
+        it('check initial state', () => {
+          expect(this.lair.getOne('a', '1').propB.map(c => c.id)).to.be.eql(['1', '2']);
+          expect(this.lair.getOne('a', '2').propB.map(c => c.id)).to.be.eql(['3', '4']);
+          expect(this.lair.getOne('b', '1').propA.map(c => c.id)).to.be.eql(['1']);
+          expect(this.lair.getOne('b', '2').propA.map(c => c.id)).to.be.eql(['1']);
+          expect(this.lair.getOne('b', '3').propA.map(c => c.id)).to.be.eql(['2']);
+          expect(this.lair.getOne('b', '4').propA.map(c => c.id)).to.be.eql(['2']);
+          expect(this.lair.getOne('b', '5').propA.map(c => c.id)).to.be.eql([]);
+        });
+
+        describe('', () => {
+          beforeEach(() => {
+            this.lair.createOne('a', {propB: [{id: '2'}, {id: '3'}, {id: '5'}]});
           });
           it('a1 updated', () => {
             expect(this.lair.getOne('a', '1')).to.be.eql({

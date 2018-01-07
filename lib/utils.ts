@@ -2,6 +2,14 @@ export function isId(id: string): boolean {
   return !isNaN(parseInt(id, 10));
 }
 
+export function hasId(obj: string|{id: string}): boolean {
+  return typeof obj === 'string' ? isId(obj) : isId(obj.id);
+}
+
+export function getId(obj: string|{id: string}): string {
+  return typeof obj === 'string' ? obj : obj.id;
+}
+
 export function assert(msg: string, condition: boolean) {
   if (!condition) {
     throw new Error(msg);

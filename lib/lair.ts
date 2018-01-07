@@ -1,7 +1,7 @@
 import {CreateRecordExtraData, Factory, FactoryData, Meta, MetaAttrType} from './factory';
 import {Record} from './record';
 import {Relationships} from './relationships';
-import {assert, copy, getOrCalcValue, isId} from './utils';
+import {assert, copy, getId, getOrCalcValue, hasId} from './utils';
 
 import {assertCrudOptions, assertHasType, assertLoops, getLastItemsCount, verbose} from './decorators';
 
@@ -304,14 +304,28 @@ export class Lair {
     return ret;
   }
 
+  /**
+   * @param type
+   * @returns {boolean}
+   */
   private hasType(type: string): boolean {
     return !!this.db[type];
   }
 
+  /**
+   * @param type
+   */
   private addType(type: string): void {
     this.db[type] = {};
   }
 
+  /**
+   * @param factoryName
+   * @param count
+   * @param parentData
+   * @param relatedChain
+   * @returns {Array}
+   */
   private internalCreateRecords(factoryName: string, count: number, parentData: any = {factoryName: '', attrName: ''}, relatedChain: string[] = []): Record[] {
     assert(`Factory with name "${factoryName}" is not registered`, !!this.factories[factoryName]);
     if (factoryName === parentData.factoryName) {
@@ -362,6 +376,13 @@ export class Lair {
     return newRecords;
   }
 
+  /**
+   * @param factoryName
+   * @param id
+   * @param relatedFor
+   * @param options
+   * @returns {any}
+   */
   private getRecordWithRelationships(factoryName: string, id: string, relatedFor: any = [], options: any = {maxDepth: Infinity, currentDepth: 1, ignoreRelated: []}): Record {
     const recordRelationships = this.relationships.getRelationshipsForRecord(factoryName, id);
     const meta = this.getMetaFor(factoryName);
@@ -396,12 +417,24 @@ export class Lair {
     return record;
   }
 
+  /**
+   * @param factoryName
+   * @param attrName
+   * @param relatedFor
+   */
   private isRelated(factoryName, attrName, relatedFor: any = []) {
     const meta = this.getMetaFor(factoryName);
     const relatedFactoryName = meta[attrName].factoryName;
     return relatedFor.some(r => r.factoryName === relatedFactoryName && r.attrName && r.attrName === meta[attrName].invertedAttrName);
   }
 
+  /**
+   * @param factoryName
+   * @param id
+   * @param attrName
+   * @param val
+   * @returns {any}
+   */
   private createAttrValue(factoryName: string, id: string, attrName: string, val: any): string | string[] | null {
     const meta = this.getMetaFor(factoryName);
     const attrMeta = meta[attrName];
@@ -434,56 +467,98 @@ export class Lair {
     return val;
   }
 
+  /**
+   * @param factoryName
+   * @param id
+   * @param attrName
+   * @param newDistId
+   * @param distFactoryName
+   * @param distAttrName
+   */
   private createOneToOneAttrValue(factoryName: string, id: string, attrName: string, newDistId: string, distFactoryName: string, distAttrName: string): string | null {
     if (newDistId === null) {
       this.relationships.deleteRelationshipForAttr(factoryName, id, attrName);
       return null;
     }
-    assert(`"${newDistId}" is invalid identifier for record of "${distFactoryName}" [one-to-one relationship]`, isId(newDistId) || this.factories[factoryName].factory.allowCustomIds);
-    assert(`Record of "${distFactoryName}" with id "${newDistId}" doesn't exist. Create it first [one-to-one relationship]`, !!this.db[distFactoryName][newDistId]);
-    this.relationships.createOneToOne(factoryName, id, attrName, newDistId, distFactoryName, distAttrName);
-    return newDistId;
+    assert(`"${newDistId}" is invalid identifier for record of "${distFactoryName}" [one-to-one relationship]`, hasId(newDistId) || this.factories[factoryName].factory.allowCustomIds);
+    const distId = getId(newDistId);
+    assert(`Record of "${distFactoryName}" with id "${distId}" doesn't exist. Create it first [one-to-one relationship]`, !!this.db[distFactoryName][distId]);
+    this.relationships.createOneToOne(factoryName, id, attrName, distId, distFactoryName, distAttrName);
+    return distId;
   }
 
+  /**
+   * @param factoryName
+   * @param id
+   * @param attrName
+   * @param newDistIds
+   * @param distFactoryName
+   * @param distAttrName
+   */
   private createManyToOneAttrValue(factoryName: string, id: string, attrName: string, newDistIds: string[], distFactoryName: string, distAttrName: string): string [] | null {
     assert(`Array of ids should be provided for value of "${attrName}" [many-to-one relationship]`, isArray(newDistIds) || newDistIds === null);
     if (newDistIds === null || newDistIds.length === 0) {
       this.relationships.deleteRelationshipForAttr(factoryName, id, attrName);
       return [];
     }
-    newDistIds.map(newDistId => {
-      assert(`"${newDistId}" is invalid identifier for record of "${distFactoryName}" [many-to-one relationship]`, isId(newDistId) || this.factories[factoryName].factory.allowCustomIds);
-      assert(`Record of "${distFactoryName}" with id "${newDistId}" doesn't exist. Create it first [many-to-one relationship]`, !!this.db[distFactoryName][newDistId]);
+    const distIds = newDistIds.map(newDistId => {
+      assert(`"${newDistId}" is invalid identifier for record of "${distFactoryName}" [many-to-one relationship]`, hasId(newDistId) || this.factories[factoryName].factory.allowCustomIds);
+      const distId = getId(newDistId);
+      assert(`Record of "${distFactoryName}" with id "${distId}" doesn't exist. Create it first [many-to-one relationship]`, !!this.db[distFactoryName][distId]);
+      return distId;
     });
-    this.relationships.createManyToOne(factoryName, id, attrName, newDistIds, distFactoryName, distAttrName);
-    return newDistIds;
+    this.relationships.createManyToOne(factoryName, id, attrName, distIds, distFactoryName, distAttrName);
+    return distIds;
   }
 
+  /**
+   * @param factoryName
+   * @param id
+   * @param attrName
+   * @param newDistId
+   * @param distFactoryName
+   * @param distAttrName
+   */
   private createOneToManyAttrValue(factoryName: string, id: string, attrName: string, newDistId: string, distFactoryName: string, distAttrName: string): string | null {
     if (newDistId === null) {
       this.relationships.deleteRelationshipForAttr(factoryName, id, attrName);
       return null;
     }
-    assert(`"${newDistId}" is invalid identifier for record of "${distFactoryName}" [one-to-many relationship]`, isId(newDistId) || this.factories[factoryName].factory.allowCustomIds);
-    assert(`Record of "${distFactoryName}" with id "${newDistId}" doesn't exist. Create it first [one-to-many relationship]`, !!this.db[distFactoryName][newDistId]);
-    this.relationships.createOneToMany(factoryName, id, attrName, newDistId, distFactoryName, distAttrName);
-    return newDistId;
+    assert(`"${newDistId}" is invalid identifier for record of "${distFactoryName}" [one-to-many relationship]`, hasId(newDistId) || this.factories[factoryName].factory.allowCustomIds);
+    const distId = getId(newDistId);
+    assert(`Record of "${distFactoryName}" with id "${distId}" doesn't exist. Create it first [one-to-many relationship]`, !!this.db[distFactoryName][distId]);
+    this.relationships.createOneToMany(factoryName, id, attrName, distId, distFactoryName, distAttrName);
+    return distId;
   }
 
+  /**
+   * @param factoryName
+   * @param id
+   * @param attrName
+   * @param newDistIds
+   * @param distFactoryName
+   * @param distAttrName
+   */
   private createManyToManyAttrValue(factoryName: string, id: string, attrName: string, newDistIds: string[], distFactoryName: string, distAttrName: string): string[] | null {
     assert(`Array of ids should be provided for value of "${attrName}" [many-to-many relationship]`, isArray(newDistIds) || newDistIds === null);
     if (newDistIds === null || newDistIds.length === 0) {
       this.relationships.deleteRelationshipForAttr(factoryName, id, attrName);
       return [];
     }
-    newDistIds.map(newDistId => {
-      assert(`"${newDistId}" is invalid identifier for record of "${distFactoryName}" [many-to-many relationship]`, isId(newDistId) || this.factories[factoryName].factory.allowCustomIds);
-      assert(`Record of "${distFactoryName}" with id "${newDistId}" doesn't exist. Create it first [many-to-many relationship]`, !!this.db[distFactoryName][newDistId]);
+    const distIds = newDistIds.map(newDistId => {
+      assert(`"${newDistId}" is invalid identifier for record of "${distFactoryName}" [many-to-many relationship]`, hasId(newDistId) || this.factories[factoryName].factory.allowCustomIds);
+      const distId = getId(newDistId);
+      assert(`Record of "${distFactoryName}" with id "${distId}" doesn't exist. Create it first [many-to-many relationship]`, !!this.db[distFactoryName][distId]);
+      return distId;
     });
-    this.relationships.createManyToMany(factoryName, id, attrName, newDistIds, distFactoryName, distAttrName);
+    this.relationships.createManyToMany(factoryName, id, attrName, distIds, distFactoryName, distAttrName);
     return newDistIds;
   }
 
+  /**
+   * @param factoryName
+   * @returns {Meta}
+   */
   private getMetaFor(factoryName: string): Meta {
     return this.meta[factoryName];
   }

@@ -169,11 +169,11 @@ export class Factory {
       assert(`"value" must be one of the "allowedValues". You passed "${fieldOptions.value}"`, !allowedValues.length || allowedValues.indexOf(fieldOptions.value) !== -1);
     }
     return {
+      allowedValues,
       defaultValue: fieldOptions.defaultValue,
+      preferredType: fieldOptions.preferredType,
       type: MetaAttrType.FIELD,
       value: fieldOptions.value,
-      preferredType: fieldOptions.preferredType,
-      allowedValues,
     };
   }
 

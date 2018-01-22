@@ -16,6 +16,14 @@ export function assert(msg: string, condition: boolean) {
   }
 }
 
+export function warn(msg: string, condition: boolean) {
+  if (!condition) {
+    /* tslint:disable:no-console */
+    console.warn(msg);
+    /* tslint:enable:no-console */
+  }
+}
+
 export function arrayDiff(arr1: string[], arr2: string[]): string[] {
   return arr1.filter(x => arr2.indexOf(x) < 0);
 }

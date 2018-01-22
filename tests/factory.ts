@@ -18,6 +18,11 @@ const attrs = {
       return `fifth ${this.id}`;
     },
   }),
+  sixth: Factory.field({
+    value: 1,
+    allowedValues: [1, 2, 3],
+    preferredType: 'number',
+  }),
   rand() {
     return Math.random();
   },
@@ -44,6 +49,17 @@ describe('Factory', () => {
           return Math.random();
         },
       })).to.throw(`"defaultValue" can't be a function`);
+    });
+
+    describe('should thrown an error if `value` does not exist in the `allowedValues`', () => {
+      expect(() => Factory.create({
+        attrs: {
+          a: Factory.field({
+            value: 4,
+            allowedValues: [1, 2, 3],
+          }),
+        },
+      })).to.throw(`"value" must be one of the "allowedValues". You passed "4"`);
     });
   });
 
@@ -176,6 +192,11 @@ describe('Factory', () => {
 
     it('dynamic field attr is marked as `FIELD`', () => {
       expect(this.meta.fifth.type).to.be.equal(MetaAttrType.FIELD);
+    });
+
+    it('#24 Add `preferredType` and `allowedValues` for `Factory.field`', () => {
+      expect(this.meta.sixth.preferredType).to.be.equal('number');
+      expect(this.meta.sixth.allowedValues).to.be.eql([1, 2, 3]);
     });
 
     it('sequence item is marked as `SEQUENCE_ITEM`', () => {

@@ -41,6 +41,8 @@ export interface RelationshipMetaAttr extends MetaAttr {
 
 export interface FieldMetaAttr extends MetaAttr {
   defaultValue?: any;
+  allowedValues?: any[]; // something like enum
+  preferredType?: string;
   value: any;
 }
 
@@ -56,6 +58,8 @@ export interface SequenceItemOptions {
 export interface FieldOptions {
   defaultValue?: any;
   value: any;
+  preferredType?: string;
+  allowedValues?: any[];
 }
 
 export interface CreateOptions {
@@ -160,10 +164,16 @@ export class Factory {
     if (!fieldOptions.hasOwnProperty('defaultValue') && !(fieldOptions.value instanceof Function)) {
       fieldOptions.defaultValue = copy(fieldOptions.value);
     }
+    const allowedValues = fieldOptions.allowedValues || [];
+    if (!(fieldOptions.value instanceof Function)) {
+      assert(`"value" must be one of the "allowedValues". You passed "${fieldOptions.value}"`, !allowedValues.length || allowedValues.indexOf(fieldOptions.value) !== -1);
+    }
     return {
       defaultValue: fieldOptions.defaultValue,
       type: MetaAttrType.FIELD,
       value: fieldOptions.value,
+      preferredType: fieldOptions.preferredType,
+      allowedValues,
     };
   }
 

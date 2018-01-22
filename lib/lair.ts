@@ -1,7 +1,7 @@
 import {CreateRecordExtraData, Factory, FactoryData, Meta, MetaAttrType} from './factory';
 import {Record} from './record';
 import {Relationships} from './relationships';
-import {assert, copy, getId, getOrCalcValue, hasId} from './utils';
+import {assert, copy, getId, getOrCalcValue, hasId, warn} from './utils';
 
 import {assertCrudOptions, assertHasType, assertLoops, getLastItemsCount, verbose} from './decorators';
 
@@ -464,6 +464,10 @@ export class Lair {
         this.relationships.setOne(factoryName, id, attrName, val);
       }
     }
+    if (attrMeta.allowedValues && attrMeta.allowedValues.length) {
+      assert(`"${attrName}" must be one of the "${attrMeta.allowedValues}". You passed "${val}"`, attrMeta.allowedValues.indexOf(val) !== -1);
+    }
+    warn(`"${attrName}" expected to be "${attrMeta.preferredType}". You passed "${typeof val}"`, !attrMeta.preferredType || attrMeta.preferredType === typeof val);
     return val;
   }
 

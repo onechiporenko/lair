@@ -1,11 +1,18 @@
 import {expect} from 'chai';
 import {Factory, MetaAttrType} from '../lib/factory';
 import {Lair} from '../lib/lair';
+import sinon = require('sinon');
 
 describe('Lair', () => {
 
-  beforeEach(() => this.lair = Lair.getLair());
-  afterEach(() => Lair.cleanLair());
+  beforeEach(() => {
+    this.sandbox = sinon.createSandbox();
+    this.lair = Lair.getLair();
+  });
+  afterEach(() => {
+    Lair.cleanLair();
+    this.sandbox.restore();
+  });
 
   describe('#registerFactory', () => {
     it('should register factory', () => {
@@ -1313,6 +1320,11 @@ describe('Lair', () => {
       });
 
       describe('#createOne', () => {
+
+        beforeEach(() => {
+          this.consoleStub = this.sandbox.stub(console, 'warn');
+        });
+
         it('should create record in the database', () => {
           this.lair.createOne('foo', {foo: 'unique foo'});
           expect(this.lair.getOne('foo', '6')).to.have.property('id', '6');
@@ -1358,9 +1370,39 @@ describe('Lair', () => {
           this.lair.registerFactory(Factory.create({attrs: {}, allowCustomIds: true}), 'baz');
           expect(this.lair.createOne('baz', {id: 'custom_id'})).to.have.property('id', 'custom_id');
         });
+
+        it('should throw an error if value for field is not exist in the `allowedValues`', () => {
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              a: Factory.field({
+                value: 1,
+                allowedValues: [1, 2, 3],
+              }),
+            },
+          }), 'baz');
+          expect(() => this.lair.createOne('baz', {a: 4})).to.throw(`"a" must be one of the "1,2,3". You passed "4"`);
+        });
+
+        it('should warn user if preferredType for field mismatch provided value', () => {
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              a: Factory.field({
+                value: 1,
+                preferredType: 'number',
+              }),
+            },
+          }), 'baz');
+          this.lair.createOne('baz', {a: '2'});
+          sinon.assert.calledWith(this.consoleStub, '"a" expected to be "number". You passed "string"');
+        });
       });
 
       describe('#updateOne', () => {
+
+        beforeEach(() => {
+          this.consoleStub = this.sandbox.stub(console, 'warn');
+        });
+
         it('should update record in the database', () => {
           this.lair.updateOne('foo', '1', {foo: 'updated foo'});
           expect(this.lair.getOne('foo', '1')).to.have.property('foo', 'updated foo');
@@ -1397,6 +1439,33 @@ describe('Lair', () => {
         });
         it('should not process `id`  if `handleNotAttrs`-option is set', () => {
           expect(this.lair.updateOne('foo', '1', {id: 'new_id'}, {handleNotAttrs: true})).to.have.property('id', '1');
+        });
+
+        it('should throw an error if value for field is not exist in the `allowedValues`', () => {
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              a: Factory.field({
+                value: 1,
+                allowedValues: [1, 2, 3],
+              }),
+            },
+          }), 'baz');
+          this.lair.createRecords('baz', 1);
+          expect(() => this.lair.updateOne('baz', '1', {a: 4})).to.throw(`"a" must be one of the "1,2,3". You passed "4"`);
+        });
+
+        it('should warn user if preferredType for field mismatch provided value', () => {
+          this.lair.registerFactory(Factory.create({
+            attrs: {
+              a: Factory.field({
+                value: 1,
+                preferredType: 'number',
+              }),
+            },
+          }), 'baz');
+          this.lair.createRecords('baz', 1);
+          this.lair.updateOne('baz', '1', {a: '2'});
+          sinon.assert.calledWith(this.consoleStub, '"a" expected to be "number". You passed "string"');
         });
       });
 

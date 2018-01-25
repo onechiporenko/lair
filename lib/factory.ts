@@ -168,13 +168,18 @@ export class Factory {
     if (!(fieldOptions.value instanceof Function)) {
       assert(`"value" must be one of the "allowedValues". You passed "${fieldOptions.value}"`, !allowedValues.length || allowedValues.indexOf(fieldOptions.value) !== -1);
     }
-    return {
+    const ret = {
       allowedValues,
-      defaultValue: fieldOptions.defaultValue,
-      preferredType: fieldOptions.preferredType,
       type: MetaAttrType.FIELD,
       value: fieldOptions.value,
     };
+
+    ['defaultValue', 'preferredType'].map(prop => {
+      if (fieldOptions.hasOwnProperty(prop)) {
+        ret[prop] = fieldOptions[prop];
+      }
+    });
+    return ret;
   }
 
   /**

@@ -23,6 +23,11 @@ const attrs = {
     allowedValues: [1, 2, 3],
     preferredType: 'number',
   }),
+  seventh: Factory.field({
+    value() {
+      return 1;
+    },
+  }),
   rand() {
     return Math.random();
   },
@@ -197,6 +202,10 @@ describe('Factory', () => {
     it('#24 Add `preferredType` and `allowedValues` for `Factory.field`', () => {
       expect(this.meta.sixth.preferredType).to.be.equal('number');
       expect(this.meta.sixth.allowedValues).to.be.eql([1, 2, 3]);
+    });
+
+    it('#25 `defaultValue` for FIELD must not be `undefined`', () => {
+      expect(this.meta.seventh).to.not.have.property('defaultValue');
     });
 
     it('sequence item is marked as `SEQUENCE_ITEM`', () => {

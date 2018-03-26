@@ -113,12 +113,13 @@ const unit = Factory.create({name: 'unit'});
 lair.registerFactory(unit);
 ```
 
-Here factory name is set as a `name` in the hash passed to the `Factory.create`, so `registerFactory` need only one parameter in this case.
+Here factory name is set as a `name` in the hash passed to the `Factory.create`, so `registerFactory` need only one parameter in this case. Providing `name` directly to the `Factory.create` is more preferable way that passing it to the `registerFactory`.
 
 Records of different types may be linked one to another. There is a special way to describe such links. It's called 'relationships'. Let's say we have two factories for units and squads. One unit may be in the in the one squad and any squad may contain many units (typical one-to-many or many-to-one relationships):
 
 ```javascript
 const unit = Factory.create({
+  name: 'unit',
   attrs: {
     name() {
       return faker.name.findName();
@@ -128,6 +129,7 @@ const unit = Factory.create({
   }
 });
 const squad = Factory.create({
+  name: 'squad',
   attrs: {
     name() {
       return faker.hacker.abbreviation(); // just some random	
@@ -139,8 +141,8 @@ const squad = Factory.create({
   }
 });
 
-lair.registerFactory(unit, 'unit');
-lair.registerFactory(squad, 'squad');
+lair.registerFactory(unit);
+lair.registerFactory(squad);
 ```
 
 Fields `unit.squad` and `squad.units` are described as relationship-fields. Methods `Factory.hasOne` and `Factory.hasMany` take two arguments. First one is a related Records type and second one is a inverted property name. For `squad`-factory we added new attribute called `createRelated`. Lair uses it to know how many related records should be created "silently". In the example above we set that each `squad` should have 4 `units`. Let's try to create some squads:
@@ -155,6 +157,7 @@ Sometimes it is useful to update record after it's created. Factory has method `
 
 ```javascript
 const unit = Factory.create({
+  name: 'unit',
   attrs: {
     name() {
       return faker.name.findName();
@@ -216,6 +219,7 @@ Newly created `unit` will be automatically added to the `squad` with id `1`.
 
 ```javascript
 const Log = Factory.create({
+  name: 'log',
   attrs: {
     type: Factory.field({
       /**
@@ -238,7 +242,7 @@ const Log = Factory.create({
   }
 });
 
-lair.registerFactory('log', Log);
+lair.registerFactory(Log);
 const newLog = lair.createOne('log', {message: 'msg'}); // no `type` provided
 console.log(newLog); // {message: 'msg', type: 'info'} 'info' - default value for `type` was used
 ```
@@ -338,6 +342,7 @@ You may set functions as values for `createRelated`:
 
 ```javascript
 const squad = Factory.create({
+  name: 'squad',
   attrs: {
     units: Factory.hasMany('unit', 'squad')
   },
@@ -353,22 +358,24 @@ Now every created `squad` will have 1 - 10 related units.
 
 ```javascript
 lair.registerFactory(Factory.create({
+  name: 'parent',
   attrs: {
     children: Factory.hasMany('child', 'parent'),
   },
   createRelated: {
     children: 2,
   },
-}), 'parent');
+}));
 
 lair.registerFactory(Factory.create({
+  name: 'child',
   attrs: {
     parent: Factory.hasOne('parent', 'children'),
     field() {
       console.log(this.extraData); // <--- check this out
     },
   },
-}), 'child');
+}));
 
 lair.createRecords('parent', 1);
 lair.createRecords('child', 2);
@@ -416,12 +423,14 @@ Methods `Factory.hasOne` and `Factory.hasMany` take two arguments. However you m
  
 ```javascript
 const squad = Factory.create({
+  name: 'squad',
   attrs: {
     units: Factory.hasMany('unit', null)
   }
 });
 
 const unit = Factory.create({
+  name: 'unit',
   attrs: {
     squad: Factory.hasOne('squad', 'units'),
   }
@@ -436,6 +445,7 @@ Good example of reflexive relations is a directories structure. Each directory m
 
 ```javascript
 const Dir = Factory.create({
+  name: 'dir',
   attrs: {
     name() {
       return faker.internet.domainWord(); // any random name
@@ -450,7 +460,7 @@ const Dir = Factory.create({
   }
 });
 
-lair.registerFactory(Dir, 'dir');
+lair.registerFactory(Dir);
 lair.createRecords('dir', 1);
 lair.getOne('dir', '1');
 ```
@@ -492,6 +502,7 @@ Lair-db allows to create sequences of values. This means that you can create a t
 
 ```javascript
 const timeLine = Factory.create({
+  name: 'timeline',
   attrs: {
     timestamp: Factory.sequenceItem(
       new Date().getTime() - 24 * 3600 * 1000, 
@@ -512,6 +523,7 @@ Third argument is a POJO with options for sequence. Currently only one option is
 
 ```javascript
 const timeLine = Factory.create({
+  name: 'timeline',
   attrs: {
     timestamp: Factory.sequenceItem(
       new Date().getTime() - 24 * 3600 * 1000, 
@@ -533,6 +545,7 @@ New Factory may be created based on another Factory. `attrs`, `createRelated`, `
 
 ```javascript
 const Parent1 = Factory.create({
+  name: 'parent1',
   attrs: {
     children: Factory.hasMany('child', 'parent'),    
   },
@@ -546,6 +559,7 @@ const Parent1 = Factory.create({
 });
 
 const Parent2 = Factory.extend(Parent1, { // <----
+  name: 'parent2',
   attrs: {
     children: Factory.hasOne('child', 'parent')
   },

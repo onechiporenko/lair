@@ -246,7 +246,7 @@ export class Factory {
   }
 
   get name() {
-    return this.int
+    return this.internalName;
   }
 
   private internalMeta: Meta = null;

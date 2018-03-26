@@ -18,7 +18,16 @@ describe('Lair', () => {
     it('should register factory', () => {
       this.lair.registerFactory(Factory.create({}), 'test');
       expect(() => this.lair.createRecords('test', 1)).to.not.throw();
+    });
 
+    it('should use name from factory', () => {
+      this.lair.registerFactory(Factory.create({name: 'test'}));
+      expect(() => this.lair.createRecords('test', 1)).to.not.throw();
+    });
+
+    it('should use name from factory (2)', () => {
+      this.lair.registerFactory(Factory.create({name: 'test'}), 'another-name');
+      expect(() => this.lair.createRecords('test', 1)).to.not.throw();
     });
 
     it('should throw an error if factory is already registered', () => {
@@ -26,6 +35,12 @@ describe('Lair', () => {
       expect(() => {
         this.lair.registerFactory(Factory.create({}), 'test');
       }).to.throw('Factory with name "test" is already registered');
+    });
+
+    it('should throw an error if factory name is not provided', () => {
+      expect(() => {
+        this.lair.registerFactory(Factory.create({}));
+      }).to.throw('Factory name must be defined in the `Factory.create` or it must be provided here as a second argument');
     });
   });
 

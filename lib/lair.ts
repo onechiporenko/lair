@@ -87,13 +87,15 @@ export class Lair {
    * @param {Factory} factory
    * @param {string} factoryName
    */
-  public registerFactory(factory: Factory, factoryName: string): void {
-    assert(`Factory with name "${factoryName}" is already registered`, !this.factories[factoryName]);
-    this.factories[factoryName] = {factory, id: 1} as FactoryData;
-    this.meta[factoryName] = factory.meta;
-    this.relationships.addFactory(factoryName);
+  public registerFactory(factory: Factory, factoryName?: string): void {
+    const name = factory.name || factoryName;
+    assert('Factory name must be defined in the `Factory.create` or it must be provided here as a second argument', !!name);
+    assert(`Factory with name "${name}" is already registered`, !this.factories[name]);
+    this.factories[name] = {factory, id: 1} as FactoryData;
+    this.meta[name] = factory.meta;
+    this.relationships.addFactory(name);
     this.relationships.updateMeta(this.meta);
-    this.addType(factoryName);
+    this.addType(name);
     factory.init();
   }
 

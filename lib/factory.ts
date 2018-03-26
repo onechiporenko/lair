@@ -63,6 +63,7 @@ export interface FieldOptions {
 }
 
 export interface CreateOptions {
+  name?: string;
   attrs?: any;
   createRelated?: any;
   allowCustomIds?: boolean;
@@ -189,6 +190,7 @@ export class Factory {
    */
   public static create(options: CreateOptions): Factory {
     const factory = new Factory();
+    factory.internalName = options.name;
     factory.attrs = _attrsToFields(options.attrs || {});
     factory.createRelated = options.createRelated || {};
     factory.afterCreate = options.afterCreate || (r => r);
@@ -242,8 +244,13 @@ export class Factory {
     return this.internalMeta;
   }
 
+  get name() {
+    return this.internalName;
+  }
+
   private internalMeta: Meta = null;
   private internalFactory = null;
+  private internalName = '';
 
   private constructor() {
   }

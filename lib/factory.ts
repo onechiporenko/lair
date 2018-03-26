@@ -224,6 +224,7 @@ export class Factory {
         delete factory.createRelated[attrName];
       }
     });
+    factory.internalName = options.name;
     factory.allowCustomIds = options.allowCustomIds || source.allowCustomIds;
     factory.afterCreate = options.afterCreate || source.afterCreate;
     factory.afterCreateRelationshipsDepth = getVal(options, 'afterCreateRelationshipsDepth', source.afterCreateRelationshipsDepth);
@@ -245,7 +246,7 @@ export class Factory {
   }
 
   get name() {
-    return this.internalName;
+    return this.int
   }
 
   private internalMeta: Meta = null;

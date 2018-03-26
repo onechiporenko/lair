@@ -106,6 +106,15 @@ Here we've created 10 Records of type `unit`.
 
 Method `createRecords` **MUST** be used only for initial filling of Lair-db.
 
+Versions 1.6.0 and later have another way to set factory name:
+
+```javascript
+const unit = Factory.create({name: 'unit'});
+lair.registerFactory(unit);
+```
+
+Here factory name is set as a `name` in the hash passed to the `Factory.create`, so `registerFactory` need only one parameter in this case.
+
 Records of different types may be linked one to another. There is a special way to describe such links. It's called 'relationships'. Let's say we have two factories for units and squads. One unit may be in the in the one squad and any squad may contain many units (typical one-to-many or many-to-one relationships):
 
 ```javascript

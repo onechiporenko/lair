@@ -1,6 +1,6 @@
 {
   "name": "lair-db",
-  "version": "1.6.1",
+  "version": "1.7.0",
   "description": "JS database",
   "main": "./dist/index.js",
   "typings": "./dist/index.d.ts",

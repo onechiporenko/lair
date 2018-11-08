@@ -3,3 +3,4 @@ reports
 dist
 docs
 .idea
+.stryker-tmp

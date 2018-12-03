@@ -43,7 +43,7 @@ export interface FieldMetaAttr<T> extends MetaAttr {
   defaultValue?: T;
   allowedValues?: T[]; // something like enum
   preferredType?: string;
-  value: T;
+  value: T | (() => T);
 }
 
 export interface RelationshipOptions {
@@ -56,8 +56,8 @@ export interface SequenceItemOptions {
 }
 
 export interface FieldOptions<T> {
-  defaultValue?: T | (() => T);
-  value: T;
+  defaultValue?: T;
+  value: T | (() => T);
   preferredType?: string;
   allowedValues?: T[];
 }

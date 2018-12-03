@@ -1,11 +1,13 @@
-import {CreateRecordExtraData, Factory, FactoryData, Meta, MetaAttrType} from './factory';
+import {
+  CreateRecordExtraData, Factory, FactoryData, FieldMetaAttr, Meta, MetaAttrType, RelationshipMetaAttr,
+} from './factory';
 import {Record} from './record';
 import {Relationships} from './relationships';
 import {assert, copy, getId, getOrCalcValue, hasId, warn} from './utils';
 
 import {assertCrudOptions, assertHasType, assertLoops, getLastItemsCount, verbose} from './decorators';
 
-function getDefaultCrudOptions(options) {
+function getDefaultCrudOptions(options: {depth?: number, ignoreRelated?: string[]}): RelationshipOptions {
   return {maxDepth: options.depth || Infinity, currentDepth: 1, ignoreRelated: options.ignoreRelated || []};
 }
 
@@ -43,6 +45,28 @@ export interface DevInfo {
   [factoryName: string]: DevInfoItem;
 }
 
+export interface CreateOneData {
+  id?: string;
+  [prop: string]: any;
+}
+
+export interface ParentData {
+  factoryName: string;
+  attrName: string;
+}
+
+export interface RelationshipOptions {
+  maxDepth: number;
+  currentDepth: number;
+  ignoreRelated: string[];
+}
+
+export interface RelatedFor {
+  factoryName: string;
+  id: string;
+  attrName: string;
+}
+
 /**
  * @class Lair
  */
@@ -69,7 +93,7 @@ export class Lair {
 
   private static instance: Lair;
 
-  public verbose = false;
+  public verbose: boolean = false;
 
   private factories: { [id: string]: FactoryData } = {};
   private relationships: Relationships;
@@ -220,7 +244,7 @@ export class Lair {
   @verbose
   @assertHasType
   @assertCrudOptions
-  public createOne(factoryName: string, data: any, options: CRUDOptions = {}): Record {
+  public createOne(factoryName: string, data: CreateOneData, options: CRUDOptions = {}): Record {
     const opts = getDefaultCrudOptions(options);
     const meta = this.getMetaFor(factoryName);
     const id = this.factories[factoryName].factory.allowCustomIds ? data.id : String(this.factories[factoryName].id);
@@ -255,7 +279,7 @@ export class Lair {
   @verbose
   @assertHasType
   @assertCrudOptions
-  public updateOne(factoryName: string, id: string, data: any, options: CRUDOptions = {}): Record {
+  public updateOne(factoryName: string, id: string, data: object, options: CRUDOptions = {}): Record {
     const opts = getDefaultCrudOptions(options);
     const record = this.getOne(factoryName, id);
     assert(`Record of "${factoryName}" with id "${id}" doesn't exist`, !!record);
@@ -328,12 +352,12 @@ export class Lair {
    * @param relatedChain
    * @returns {Array}
    */
-  private internalCreateRecords(factoryName: string, count: number, parentData: any = {factoryName: '', attrName: ''}, relatedChain: string[] = []): Record[] {
+  private internalCreateRecords(factoryName: string, count: number, parentData: ParentData = {factoryName: '', attrName: ''}, relatedChain: string[] = []): Record[] {
     assert(`Factory with name "${factoryName}" is not registered`, !!this.factories[factoryName]);
     if (factoryName === parentData.factoryName) {
       // try to check reflexive relationships
       const m = this.getMetaFor(parentData.factoryName);
-      const attrMeta = m[parentData.attrName];
+      const attrMeta = m[parentData.attrName] as RelationshipMetaAttr;
       if (attrMeta.reflexive) {
         const depth = attrMeta.reflexiveDepth;
         const alreadyCreatedCount = getLastItemsCount(relatedChain, factoryName);
@@ -365,9 +389,9 @@ export class Lair {
       this.afterCreateQueue.push({factoryName, id: record.id});
       if (createRelated) {
         keys(createRelated).forEach(attrName => {
-          const fName = meta[attrName].factoryName;
+          const fName = (meta[attrName] as RelationshipMetaAttr).factoryName;
           const isHasMany = meta[attrName].type === MetaAttrType.HAS_MANY;
-          const relatedCount = isHasMany ? getOrCalcValue(createRelated[attrName], record, record.id) : 1;
+          const relatedCount = isHasMany ? getOrCalcValue<number>(createRelated[attrName], record, record.id) : 1;
           const relatedRecords = this.internalCreateRecords(fName, relatedCount, {factoryName, attrName}, [...relatedChain, factoryName]);
           this.db[factoryName][record.id][attrName] = isHasMany ? relatedRecords : relatedRecords[0];
         });
@@ -385,7 +409,7 @@ export class Lair {
    * @param options
    * @returns {any}
    */
-  private getRecordWithRelationships(factoryName: string, id: string, relatedFor: any = [], options: any = {maxDepth: Infinity, currentDepth: 1, ignoreRelated: []}): Record {
+  private getRecordWithRelationships(factoryName: string, id: string, relatedFor: RelatedFor[] = [], options: RelationshipOptions = {maxDepth: Infinity, currentDepth: 1, ignoreRelated: []}): Record {
     const recordRelationships = this.relationships.getRelationshipsForRecord(factoryName, id);
     const meta = this.getMetaFor(factoryName);
     let record = this.db[factoryName][id];
@@ -394,12 +418,12 @@ export class Lair {
     }
     record = copy(record);
     if (options.currentDepth >= options.maxDepth) {
-      return {...record, ...recordRelationships};
+      return {...record, ...recordRelationships} as Record;
     }
     if (recordRelationships) {
       keys(recordRelationships).forEach(attrName => {
         const relatedIds = recordRelationships[attrName];
-        const relatedFactoryName = meta[attrName].factoryName;
+        const relatedFactoryName = (meta[attrName] as RelationshipMetaAttr).factoryName;
         if ((options.ignoreRelated || []).indexOf(relatedFactoryName) !== -1) {
           delete record[attrName];
           return;
@@ -408,7 +432,7 @@ export class Lair {
           record[attrName] = relatedIds;
         } else {
           const isRelatedFor = [...relatedFor, {factoryName, id, attrName}];
-          const opts = {...options};
+          const opts = {...options} as RelationshipOptions;
           opts.currentDepth++;
           record[attrName] = isArray(relatedIds) ?
             relatedIds.map(relatedId => this.getRecordWithRelationships(relatedFactoryName, relatedId, isRelatedFor, opts)) :
@@ -424,10 +448,11 @@ export class Lair {
    * @param attrName
    * @param relatedFor
    */
-  private isRelated(factoryName, attrName, relatedFor: any = []) {
+  private isRelated(factoryName: string, attrName: string, relatedFor: RelatedFor[] = []): boolean {
     const meta = this.getMetaFor(factoryName);
-    const relatedFactoryName = meta[attrName].factoryName;
-    return relatedFor.some(r => r.factoryName === relatedFactoryName && r.attrName && r.attrName === meta[attrName].invertedAttrName);
+    const attrMeta = meta[attrName] as RelationshipMetaAttr;
+    const relatedFactoryName = attrMeta.factoryName;
+    return relatedFor.some(r => r.factoryName === relatedFactoryName && r.attrName && r.attrName === attrMeta.invertedAttrName);
   }
 
   /**
@@ -437,33 +462,33 @@ export class Lair {
    * @param val
    * @returns {any}
    */
-  private createAttrValue(factoryName: string, id: string, attrName: string, val: any): string | string[] | null {
+  private createAttrValue(factoryName: string, id: string, attrName: string, val: string | string[]): string | string[] | null {
     const meta = this.getMetaFor(factoryName);
-    const attrMeta = meta[attrName];
+    const attrMeta = meta[attrName] as FieldMetaAttr<any>;
     const {factoryName: distFactoryName, invertedAttrName: distAttrName} = attrMeta;
     const distMeta = this.getMetaFor(distFactoryName);
     if (attrMeta.type === MetaAttrType.HAS_MANY) {
       if (distMeta[distAttrName]) {
         if (distMeta[distAttrName].type === MetaAttrType.HAS_ONE) {
-          return this.createManyToOneAttrValue(factoryName, id, attrName, val, distFactoryName, distAttrName);
+          return this.createManyToOneAttrValue(factoryName, id, attrName, val as string[], distFactoryName, distAttrName);
         }
         if (distMeta[distAttrName].type === MetaAttrType.HAS_MANY) {
-          return this.createManyToManyAttrValue(factoryName, id, attrName, val, distFactoryName, distAttrName);
+          return this.createManyToManyAttrValue(factoryName, id, attrName, val as string[], distFactoryName, distAttrName);
         }
       } else {
-        this.relationships.setMany(factoryName, id, attrName, val);
+        this.relationships.setMany(factoryName, id, attrName, val as string[]);
       }
     }
     if (attrMeta.type === MetaAttrType.HAS_ONE) {
       if (distMeta[distAttrName]) {
         if (distMeta[distAttrName].type === MetaAttrType.HAS_ONE) {
-          return this.createOneToOneAttrValue(factoryName, id, attrName, val, distFactoryName, distAttrName);
+          return this.createOneToOneAttrValue(factoryName, id, attrName, val as string, distFactoryName, distAttrName);
         }
         if (distMeta[distAttrName].type === MetaAttrType.HAS_MANY) {
-          return this.createOneToManyAttrValue(factoryName, id, attrName, val, distFactoryName, distAttrName);
+          return this.createOneToManyAttrValue(factoryName, id, attrName, val as string, distFactoryName, distAttrName);
         }
       } else {
-        this.relationships.setOne(factoryName, id, attrName, val);
+        this.relationships.setOne(factoryName, id, attrName, val as string);
       }
     }
     if (attrMeta.allowedValues && attrMeta.allowedValues.length) {

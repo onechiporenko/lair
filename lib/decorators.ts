@@ -2,12 +2,12 @@ import {assert} from './utils';
 
 const {isArray} = Array;
 
-export function assertHasType(target, key, descriptor): any {
+export function assertHasType(target: any, key: string, descriptor: PropertyDescriptor): PropertyDescriptor {
   if (descriptor === undefined) {
     descriptor = Object.getOwnPropertyDescriptor(target, key);
   }
   const originalMethod = descriptor.value;
-  descriptor.value = function(...args) {
+  descriptor.value = function(...args: any[]): any {
     const type = args[0];
     assert(`"${type}"-type doesn't exist in the database`, this.hasType(type));
     return originalMethod.apply(this, args);
@@ -15,12 +15,12 @@ export function assertHasType(target, key, descriptor): any {
   return descriptor;
 }
 
-export function assertCrudOptions(target, key, descriptor): any {
+export function assertCrudOptions(target: any, key: string, descriptor: PropertyDescriptor): PropertyDescriptor {
   if (descriptor === undefined) {
     descriptor = Object.getOwnPropertyDescriptor(target, key);
   }
   const originalMethod = descriptor.value;
-  descriptor.value = function(...args) {
+  descriptor.value = function(...args: any[]): any {
     const crudOptions = args[args.length - 1];
     if (crudOptions && crudOptions.ignoreRelated) {
       crudOptions.ignoreRelated.forEach(type => assert(`"ignoreRelated" contains type "${type}" which doesn't exist in the database`, this.hasType(type)));
@@ -31,12 +31,12 @@ export function assertCrudOptions(target, key, descriptor): any {
 }
 
 /* tslint:disable:no-console */
-export function verbose(target, key, descriptor): any {
+export function verbose(target: any, key: string, descriptor: PropertyDescriptor): PropertyDescriptor {
   if (descriptor === undefined) {
     descriptor = Object.getOwnPropertyDescriptor(target, key);
   }
   const originalMethod = descriptor.value;
-  descriptor.value = function(...args) {
+  descriptor.value = function(...args: any[]): any {
     const strArgs = args.map(arg => arg instanceof Function ? 'callback' : `${JSON.stringify(arg)}`).join(', ');
     const msg = `${key} (args - [${strArgs}]) execution time`;
     console.time(msg);
@@ -67,6 +67,6 @@ export function getLastItemsCount(list: string[], neededValue: string): number {
   return count;
 }
 
-export function assertLoops(factoryName: string, relatedChain: string[]) {
+export function assertLoops(factoryName: string, relatedChain: string[]): void {
   assert(`Loop is detected in the "createRelated". Chain is ${JSON.stringify(relatedChain)}. You try to create records for "${factoryName}" again.`, relatedChain.indexOf(factoryName) === -1);
 }

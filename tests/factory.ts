@@ -1,12 +1,13 @@
 import {expect} from 'chai';
 import {Factory, MetaAttrType} from '../lib/factory';
+import {Record} from '../lib/record';
 
 const attrs = {
   first: 'static',
-  second() {
+  second(): string {
     return `dynamic ${this.id}`;
   },
-  third() {
+  third(): string {
     return `third is ${this.second}`;
   },
   fourth: Factory.field({
@@ -14,7 +15,7 @@ const attrs = {
     defaultValue: 'default value for fourth',
   }),
   fifth: Factory.field({
-    value() {
+    value(): string {
       return `fifth ${this.id}`;
     },
   }),
@@ -24,18 +25,18 @@ const attrs = {
     preferredType: 'number',
   }),
   seventh: Factory.field({
-    value() {
+    value(): number {
       return 1;
     },
   }),
-  rand() {
+  rand(): number {
     return Math.random();
   },
-  r1() {
-    return this.rand;
+  r1(): number {
+    return this.rand as number;
   },
-  r2() {
-    return this.rand;
+  r2(): number {
+    return this.rand as number;
   },
   one: Factory.hasOne('anotherFactory', 'attr1'),
   many: Factory.hasMany('anotherFactory', 'attr2'),
@@ -48,9 +49,9 @@ describe('Factory', () => {
 
   describe('#field', () => {
     describe('should throw an error if `defaultValue` is function', () => {
-      expect(() => Factory.field({
-        value: '',
-        defaultValue() {
+      expect(() => Factory.field<number>({
+        value: null,
+        defaultValue(): number {
           return Math.random();
         },
       })).to.throw(`"defaultValue" can't be a function`);
@@ -76,7 +77,7 @@ describe('Factory', () => {
             value: '1',
           }),
           b: Factory.field({
-            value() {
+            value(): string {
               return '1';
             },
           }),

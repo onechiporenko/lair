@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {Factory, MetaAttrType} from '../lib/factory';
 import {Lair} from '../lib/lair';
+import {Record} from '../lib/record';
 import sinon = require('sinon');
 
 describe('Lair', () => {
@@ -347,7 +348,7 @@ describe('Lair', () => {
               b: Factory.hasOne('b', null),
             },
             createRelated: {
-              b(id) {
+              b(id: string): number {
                 expect(id).to.be.equal('1');
                 return 1;
               },
@@ -364,7 +365,7 @@ describe('Lair', () => {
               c: 'some val',
             },
             createRelated: {
-              b() {
+              b(): number {
                 expect(this.id).to.be.equal('1');
                 expect(this.c).to.be.equal('some val');
                 return 1;
@@ -383,7 +384,7 @@ describe('Lair', () => {
               c: 'some val',
             },
             createRelated: {
-              b() {
+              b(): number {
                 expect(this.id).to.be.equal('1');
                 expect(this.c).to.be.equal('some val');
                 return 1;
@@ -396,7 +397,7 @@ describe('Lair', () => {
               c: Factory.hasOne('c', null),
             },
             createRelated: {
-              c() {
+              c(): number {
                 expect(this.a.id).to.be.equal('1');
                 return 1;
               },
@@ -659,7 +660,7 @@ describe('Lair', () => {
           this.lair.registerFactory(Factory.create({
             attrs: {
               children: Factory.hasMany('child', 'parent'),
-              field() {
+              field(): void {
                 expect(this.extraData).to.be.eql({relatedTo: {}});
               },
             },
@@ -670,7 +671,7 @@ describe('Lair', () => {
           this.lair.registerFactory(Factory.create({
             attrs: {
               parent: Factory.hasOne('parent', 'children'),
-              field() {
+              field(): void {
                 expect(this.extraData).to.be.eql({
                   relatedTo: {
                     factoryName: 'parent',
@@ -698,7 +699,7 @@ describe('Lair', () => {
               b: '2',
               c: '3',
             },
-            afterCreate(record) {
+            afterCreate(record: Record): Record {
               record.a = 'a';
               record.b = 'b';
               record.c = 'c';
@@ -725,7 +726,7 @@ describe('Lair', () => {
             createRelated: {
               propB: 1,
             },
-            afterCreate(record) {
+            afterCreate(record: Record): Record {
               expect(record).to.be.eql({
                 id: '1',
                 a: 'a',
@@ -750,7 +751,7 @@ describe('Lair', () => {
             createRelated: {
               propC: 1,
             },
-            afterCreate(record) {
+            afterCreate(record: Record): Record {
               expect(record).to.be.eql({
                 id: '1',
                 b: 'b',
@@ -771,7 +772,7 @@ describe('Lair', () => {
               c: 'c',
               propB: Factory.hasOne('b', 'propC'),
             },
-            afterCreate(record) {
+            afterCreate(record: Record): Record {
               expect(record).to.be.eql({
                 id: '1',
                 c: 'c',
@@ -807,7 +808,7 @@ describe('Lair', () => {
               propB: 1,
             },
             afterCreateIgnoreRelated: ['b'],
-            afterCreate(record) {
+            afterCreate(record: Record): Record {
               expect(record).to.be.eql({
                 id: '1',
                 a: 'a',
@@ -825,7 +826,7 @@ describe('Lair', () => {
             createRelated: {
               propC: 1,
             },
-            afterCreate(record) {
+            afterCreate(record: Record): Record {
               expect(record).to.be.eql({
                 id: '1',
                 b: 'b',
@@ -844,7 +845,7 @@ describe('Lair', () => {
               propB: Factory.hasOne('b', 'propC'),
             },
             afterCreateIgnoreRelated: ['b'],
-            afterCreate(record) {
+            afterCreate(record: Record): Record {
               expect(record).to.be.eql({
                 id: '1',
                 c: 'c',
@@ -870,7 +871,7 @@ describe('Lair', () => {
             propB: 2,
             propC: 1,
           },
-          afterCreate(record) {
+          afterCreate(record: Record): Record {
             record.propC.id = '100500';
             delete record.propB;
             return record;
@@ -943,7 +944,7 @@ describe('Lair', () => {
         let i = 0;
         const A = Factory.create({
           attrs: {
-            propA: Factory.sequenceItem('initial', prevValues => {
+            propA: Factory.sequenceItem<number|string>('initial', prevValues => {
               expect(prevValues).to.be.eql(expected[i++]);
               return prevValues.length + 1;
             }),
@@ -963,7 +964,7 @@ describe('Lair', () => {
         let i = 0;
         const A = Factory.create({
           attrs: {
-            propA: Factory.sequenceItem(1, v => {
+            propA: Factory.sequenceItem<number>(1, v => {
               expect(v).to.be.eql(expected[i++]);
               return v.reduce((a, b) => a + b, 0);
             }, {lastValuesCount: 2}),
@@ -978,10 +979,10 @@ describe('Lair', () => {
         const A = Factory.create({
           attrs: {
             propA: Factory.sequenceItem(new Date().getTime(), prevItems => prevItems[prevItems.length - 1] - Math.round(Math.random() * 100)),
-            propB() {
+            propB(): number {
               return this.propA;
             },
-            propC() {
+            propC(): number {
               return this.propA;
             },
           },
@@ -1020,7 +1021,7 @@ describe('Lair', () => {
         let i = 0;
         const A = Factory.create({
           attrs: {
-            propA: Factory.sequenceItem(1, function(prevValues) {
+            propA: Factory.sequenceItem<string|number>(1, function(prevValues: string[]): string {
               expect(this.id).to.be.equal(expected[i++]);
               return prevValues.pop();
             }),
@@ -1162,14 +1163,14 @@ describe('Lair', () => {
       beforeEach(() => {
         this.lair.registerFactory(Factory.create({
           attrs: {
-            foo() {
+            foo(): string {
               return `foo ${this.id}`;
             },
           },
         }), 'foo');
         this.lair.registerFactory(Factory.create({
           attrs: {
-            bar() {
+            bar(): string {
               return `foo ${this.id}`;
             },
           },

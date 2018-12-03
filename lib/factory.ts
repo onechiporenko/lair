@@ -17,7 +17,7 @@ export interface FactoryData {
 }
 
 export interface Meta {
-  [p: string]: MetaAttr;
+  [p: string]: MetaAttr | FieldMetaAttr<any> | SequenceMetaAttr<any> | RelationshipMetaAttr;
 }
 
 export interface MetaAttr {
@@ -25,10 +25,10 @@ export interface MetaAttr {
   [prop: string]: any;
 }
 
-export interface SequenceMetaAttr extends MetaAttr {
-  initialValue: any;
-  getNextValue: (prevItems: any[]) => any;
-  prevValues: any[];
+export interface SequenceMetaAttr<T> extends MetaAttr {
+  initialValue: T;
+  getNextValue: (prevItems: T[]) => T;
+  prevValues: T[];
   lastValuesCount: number;
 }
 
@@ -39,11 +39,11 @@ export interface RelationshipMetaAttr extends MetaAttr {
   reflexiveDepth: number;
 }
 
-export interface FieldMetaAttr extends MetaAttr {
-  defaultValue?: any;
-  allowedValues?: any[]; // something like enum
+export interface FieldMetaAttr<T> extends MetaAttr {
+  defaultValue?: T;
+  allowedValues?: T[]; // something like enum
   preferredType?: string;
-  value: any;
+  value: T;
 }
 
 export interface RelationshipOptions {
@@ -55,21 +55,29 @@ export interface SequenceItemOptions {
   lastValuesCount: number;
 }
 
-export interface FieldOptions {
-  defaultValue?: any;
-  value: any;
+export interface FieldOptions<T> {
+  defaultValue?: T | (() => T);
+  value: T;
   preferredType?: string;
-  allowedValues?: any[];
+  allowedValues?: T[];
+}
+
+export interface Attrs {
+  [prop: string]: any;
 }
 
 export interface CreateOptions {
   name?: string;
-  attrs?: any;
-  createRelated?: any;
+  attrs?: Attrs;
+  createRelated?: CreateRelatedOptions;
   allowCustomIds?: boolean;
   afterCreate?: (record: Record) => Record;
   afterCreateRelationshipsDepth?: number;
   afterCreateIgnoreRelated?: string[];
+}
+
+export interface CreateRelatedOptions {
+  [attrName: string]: number | ((id: string) => number);
 }
 
 export interface CreateRecordExtraData {
@@ -119,8 +127,8 @@ export class Factory {
    * @returns {RelationshipMetaAttr}
    */
   public static hasOne(factoryName: string, invertedAttrName: string, options?: RelationshipOptions): RelationshipMetaAttr {
-    const reflexive = getVal(options, 'reflexive', false);
-    const reflexiveDepth = reflexive ? getVal(options, 'depth', 2) : 2;
+    const reflexive = getVal<boolean>(options, 'reflexive', false);
+    const reflexiveDepth = reflexive ? getVal<number>(options, 'depth', 2) : 2;
     return {factoryName, invertedAttrName, type: MetaAttrType.HAS_ONE, reflexive, reflexiveDepth};
   }
 
@@ -133,8 +141,8 @@ export class Factory {
    * @returns {RelationshipMetaAttr}
    */
   public static hasMany(factoryName: string, invertedAttrName: string, options?: RelationshipOptions): RelationshipMetaAttr {
-    const reflexive = getVal(options, 'reflexive', false);
-    const reflexiveDepth = reflexive ? getVal(options, 'depth', 2) : 2;
+    const reflexive = getVal<boolean>(options, 'reflexive', false);
+    const reflexiveDepth = reflexive ? getVal<number>(options, 'depth', 2) : 2;
     return {factoryName, invertedAttrName, type: MetaAttrType.HAS_MANY, reflexive, reflexiveDepth};
   }
 
@@ -145,10 +153,10 @@ export class Factory {
    * @param {SequenceItemOptions} options
    * @returns {SequenceMetaAttr}
    */
-  public static sequenceItem(initialValue: any, getNextValue: (prevValues: any[]) => any, options?: SequenceItemOptions): SequenceMetaAttr {
+  public static sequenceItem<T>(initialValue: T, getNextValue: (prevValues: T[]) => T, options?: SequenceItemOptions): SequenceMetaAttr<T> {
     return {
       getNextValue,
-      initialValue: getOrCalcValue(initialValue),
+      initialValue: getOrCalcValue<T>(initialValue),
       lastValuesCount: options && options.hasOwnProperty('lastValuesCount') ? options.lastValuesCount : Infinity,
       prevValues: [],
       type: MetaAttrType.SEQUENCE_ITEM,
@@ -160,10 +168,10 @@ export class Factory {
    * @param {FieldOptions} fieldOptions
    * @returns {FieldMetaAttr}
    */
-  public static field(fieldOptions: FieldOptions): FieldMetaAttr {
+  public static field<T>(fieldOptions: FieldOptions<T>): FieldMetaAttr<T> {
     assert(`"defaultValue" can't be a function`, !(fieldOptions.defaultValue instanceof Function));
     if (!fieldOptions.hasOwnProperty('defaultValue') && !(fieldOptions.value instanceof Function)) {
-      fieldOptions.defaultValue = copy(fieldOptions.value);
+      fieldOptions.defaultValue = copy<T>(fieldOptions.value);
     }
     const allowedValues = fieldOptions.allowedValues || [];
     if (!(fieldOptions.value instanceof Function)) {
@@ -195,8 +203,8 @@ export class Factory {
     factory.createRelated = options.createRelated || {};
     factory.afterCreate = options.afterCreate || (r => r);
     factory.allowCustomIds = options.allowCustomIds || false;
-    factory.afterCreateRelationshipsDepth = getVal(options, 'afterCreateRelationshipsDepth', Infinity);
-    factory.afterCreateIgnoreRelated = getVal(options, 'afterCreateIgnoreRelated', []);
+    factory.afterCreateRelationshipsDepth = getVal<number>(options, 'afterCreateRelationshipsDepth', Infinity);
+    factory.afterCreateIgnoreRelated = getVal<string[]>(options, 'afterCreateIgnoreRelated', []);
     return factory;
   }
 
@@ -227,31 +235,31 @@ export class Factory {
     factory.internalName = options.name;
     factory.allowCustomIds = options.allowCustomIds || source.allowCustomIds;
     factory.afterCreate = options.afterCreate || source.afterCreate;
-    factory.afterCreateRelationshipsDepth = getVal(options, 'afterCreateRelationshipsDepth', source.afterCreateRelationshipsDepth);
-    factory.afterCreateIgnoreRelated = getVal(options, 'afterCreateIgnoreRelated', source.afterCreateIgnoreRelated);
+    factory.afterCreateRelationshipsDepth = getVal<number>(options, 'afterCreateRelationshipsDepth', source.afterCreateRelationshipsDepth);
+    factory.afterCreateIgnoreRelated = getVal<string[]>(options, 'afterCreateIgnoreRelated', source.afterCreateIgnoreRelated);
     return factory;
   }
 
-  public attrs = {};
+  public attrs: Attrs = {};
   public afterCreateRelationshipsDepth: number = Infinity;
   public afterCreateIgnoreRelated: string[] = [];
   public allowCustomIds: boolean = false;
-  public createRelated: { [attrName: string]: number | ((id: string) => number) } = {};
+  public createRelated: CreateRelatedOptions = {};
 
-  get meta() {
+  get meta(): Meta {
     if (!this.internalMeta) {
       this.getMeta();
     }
     return this.internalMeta;
   }
 
-  get name() {
+  public get name(): string {
     return this.internalName;
   }
 
   private internalMeta: Meta = null;
-  private internalFactory = null;
-  private internalName = '';
+  private internalFactory: (id: number, extraData: CreateRecordExtraData) => void = null;
+  private internalName: string = '';
 
   private constructor() {
   }
@@ -280,9 +288,9 @@ export class Factory {
    * Only attributes with type `FIELD` and provided `defaultValue` are affected
    * @returns {Object}
    */
-  public getDefaults(): any {
+  public getDefaults(): object {
     return keys(this.meta).reduce((defaults, attrName) => {
-      const attrMeta = this.meta[attrName];
+      const attrMeta = this.meta[attrName] as FieldMetaAttr<any>;
       if (attrMeta.hasOwnProperty('defaultValue')) {
         defaults[attrName] = copy(attrMeta.defaultValue);
       }
@@ -299,7 +307,7 @@ export class Factory {
   protected initInternalFactory(): void {
     const attrs = this.attrs;
 
-    function internalFactory(id, extraData: CreateRecordExtraData = {}) {
+    function internalFactory(id: number, extraData: CreateRecordExtraData = {}): void {
       this.id = String(id);
       this.extraData = extraData;
       this.cache = {}; // you can get it from the dynamic attributes but I hope you will only read it
@@ -314,7 +322,7 @@ export class Factory {
         }
         if (attr.type === MetaAttrType.SEQUENCE_ITEM) {
           const self = this;
-          options.get = function() {
+          options.get = function(): any {
             if (!self.cache.hasOwnProperty(attrName)) {
               self.cache[attrName] = id === 1 ?
                 attr.initialValue :
@@ -328,7 +336,7 @@ export class Factory {
           const v = attr.value;
           if (v instanceof Function) {
             const self = this;
-            options.get = function() {
+            options.get = function(): any {
               if (!self.cache.hasOwnProperty(attrName)) {
                 self.cache[attrName] = v.call(this, attr.defaultValue);
               }

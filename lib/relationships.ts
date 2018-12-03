@@ -1,4 +1,5 @@
-import {MetaAttrType} from './factory';
+import { MetaAttrType, RelationshipMetaAttr } from './factory';
+import {InternalMetaStore} from './lair';
 import {Record} from './record';
 import {arrayDiff, assert, isId, uniq} from './utils';
 
@@ -7,24 +8,26 @@ const {keys} = Object;
 
 interface InternalRelationships {
   [factoryName: string]: {
-    [recordId: string]: {
-      [attrName: string]: string | string[] | null;
-    };
+    [recordId: string]: RecordRelationShips;
   };
 }
 
-function mapIds(val: any[]): string[] {
-  return uniq(val.filter(v => v !== null && v !== undefined).map(v => v.id || v));
+export interface RecordRelationShips {
+  [attrName: string]: string | string[] | null;
+}
+
+function mapIds(val: string[]): string[] {
+  return uniq<string>(val.filter(v => v !== null && v !== undefined).map(v => v['id'] || v));
 }
 
 export class Relationships {
   private relationships: InternalRelationships = {};
-  private meta = {};
+  private meta: InternalMetaStore = {};
 
   /**
    * @param newMeta
    */
-  public updateMeta(newMeta): void {
+  public updateMeta(newMeta: InternalMetaStore): void {
     this.meta = newMeta;
   }
 
@@ -72,7 +75,7 @@ export class Relationships {
    */
   public recalculateRelationshipForAttr(factoryName: string, record: Record, attrName: string): void {
     const sourceMeta = this.meta[factoryName];
-    const attrMeta = sourceMeta[attrName];
+    const attrMeta = sourceMeta[attrName] as RelationshipMetaAttr;
     if (attrMeta.type !== MetaAttrType.HAS_ONE && attrMeta.type !== MetaAttrType.HAS_MANY) {
       return;
     }
@@ -126,7 +129,7 @@ export class Relationships {
    */
   public deleteRelationshipForAttr(factoryName: string, id: string, attrName: string): void {
     const meta = this.meta[factoryName];
-    const attrMeta = meta[attrName];
+    const attrMeta = meta[attrName] as RelationshipMetaAttr;
     if (attrMeta.type !== MetaAttrType.HAS_ONE && attrMeta.type !== MetaAttrType.HAS_MANY) {
       return;
     }
@@ -243,12 +246,7 @@ export class Relationships {
     this.relationships[factoryName][id][attrName] = uniq(valueToSet.sort());
   }
 
-  /**
-   * @param factoryName
-   * @param id
-   * @returns {{[p: string]: string|string[]|null}}
-   */
-  public getRelationshipsForRecord(factoryName: string, id: string) {
+  public getRelationshipsForRecord(factoryName: string, id: string): RecordRelationShips {
     return this.relationships[factoryName][id];
   }
 

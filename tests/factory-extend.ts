@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {Factory} from '../lib/factory';
 import {Lair} from '../lib/lair';
+import {Record} from '../lib/record';
 
 describe('Lair create records', () => {
 
@@ -15,19 +16,19 @@ describe('Lair create records', () => {
         const A = Factory.create({
           attrs: {
             first: 'static',
-            second() {
+            second(): string {
               return `dynamic ${this.id}`;
             },
-            third() {
+            third(): string {
               return `third is ${this.second}`;
             },
-            rand() {
+            rand(): number {
               return Math.random();
             },
-            r1() {
+            r1(): number {
               return this.rand;
             },
-            r2() {
+            r2(): number {
               return this.rand;
             },
             oneB: Factory.hasOne('b', 'oneA'),
@@ -114,14 +115,14 @@ describe('Lair create records', () => {
         beforeEach(() => {
           const A = Factory.create({
             attrs: {
-              field() {
+              field(): string {
                 return this.id + 'a';
               },
             },
           });
           const B = Factory.extend(A, {
             attrs: {
-              field() {
+              field(): string {
                 return 'b';
               },
             },
@@ -286,7 +287,7 @@ describe('Lair create records', () => {
             a1: 1,
           },
           afterCreateRelationshipsDepth: 5,
-          afterCreate(record) {
+          afterCreate(record: Record): Record {
             expect(false).to.be.ok;
             return record;
           },
@@ -327,7 +328,7 @@ describe('Lair create records', () => {
         const B = Factory.extend(this.A, {
           afterCreateRelationshipsDepth: 2,
           afterCreateIgnoreRelated: ['a2'],
-          afterCreate(record) {
+          afterCreate(record: Record): Record {
             expect(record).to.be.eql({
               id: '1',
               a1: {id: '1'},
@@ -349,7 +350,7 @@ describe('Lair create records', () => {
           },
           createRelated: {
             a1: 1,
-            a2() {
+            a2(): number {
               return 2;
             },
           },
@@ -358,7 +359,7 @@ describe('Lair create records', () => {
         const a2 = Factory.create({});
         const B = Factory.extend(A, {
           createRelated: {
-            a1() {
+            a1(): number {
               return 2;
             },
             a2: 1,

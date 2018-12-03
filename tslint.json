@@ -5,6 +5,12 @@
   ],
   "jsRules": {},
   "rules": {
+    "typedef": [
+      true,
+      "call-signature",
+      "parameter",
+      "member-variable-declaration"
+    ],
     "no-string-literal": false,
     "interface-name": [
       true,

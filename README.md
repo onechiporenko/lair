@@ -375,6 +375,10 @@ lair.registerFactory(Factory.create({
       console.log(this.extraData); // <--- check this out
     },
   },
+  afterCreate(record, extraData) {
+    console.warn(extraData); // <--- check this out
+    return record;
+  }
 }));
 
 lair.createRecords('parent', 1);

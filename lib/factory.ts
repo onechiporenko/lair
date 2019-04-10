@@ -71,7 +71,7 @@ export interface CreateOptions {
   attrs?: Attrs;
   createRelated?: CreateRelatedOptions;
   allowCustomIds?: boolean;
-  afterCreate?: (record: Record) => Record;
+  afterCreate?: (record: Record, extraData?: CreateRecordExtraData) => Record;
   afterCreateRelationshipsDepth?: number;
   afterCreateIgnoreRelated?: string[];
 }
@@ -279,7 +279,7 @@ export class Factory {
     return newRecord;
   }
 
-  public afterCreate(record: Record): Record {
+  public afterCreate(record: Record, extraData: CreateRecordExtraData): Record {
     return record;
   }
 

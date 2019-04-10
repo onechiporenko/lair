@@ -25,8 +25,9 @@ export interface InternalMetaStore {
 }
 
 interface AfterCreateItem {
-  factoryName: string;
-  id: string;
+  factoryName?: string;
+  id?: string;
+  extraData?: CreateRecordExtraData;
 }
 
 export interface CRUDOptions {
@@ -134,9 +135,10 @@ export class Lair {
     this.afterCreateQueue = [];
     this.internalCreateRecords(factoryName, count);
     while (this.afterCreateQueue.length) {
-      const {factoryName: fName, id} = this.afterCreateQueue.shift();
+      const {factoryName: fName, id, extraData} = this.afterCreateQueue.shift();
       const factory = this.factories[fName].factory;
-      const newData = factory.afterCreate.call(null, this.getRecordWithRelationships(fName, id, [], {maxDepth: factory.afterCreateRelationshipsDepth, currentDepth: 1, ignoreRelated: factory.afterCreateIgnoreRelated || []}));
+      const record = this.getRecordWithRelationships(fName, id, [], {maxDepth: factory.afterCreateRelationshipsDepth, currentDepth: 1, ignoreRelated: factory.afterCreateIgnoreRelated || []});
+      const newData = factory.afterCreate.call(null, record, extraData);
       keys(factory.meta).forEach(attrName => {
         if (newData.hasOwnProperty(attrName) && factory.meta[attrName].type === MetaAttrType.FIELD) {
           this.db[fName][id][attrName] = newData[attrName];
@@ -381,12 +383,13 @@ export class Lair {
         factoryName: relatedChain[relatedChain.length - 1],
         recordsCount: count,
       } : {};
-      const record = factoryData.factory.createRecord(this.factories[factoryName].id, {relatedTo} as CreateRecordExtraData);
+      const extraData = {relatedTo} as CreateRecordExtraData;
+      const record = factoryData.factory.createRecord(this.factories[factoryName].id, extraData);
       this.relationships.addRecord(factoryName, record.id);
       this.db[factoryName][record.id] = record;
       newRecords.push(record);
       this.factories[factoryName].id++;
-      this.afterCreateQueue.push({factoryName, id: record.id});
+      this.afterCreateQueue.push({factoryName, id: record.id, extraData});
       if (createRelated) {
         keys(createRelated).forEach(attrName => {
           const fName = (meta[attrName] as RelationshipMetaAttr).factoryName;

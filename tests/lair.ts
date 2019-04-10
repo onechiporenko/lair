@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {Factory, MetaAttrType} from '../lib/factory';
+import { CreateRecordExtraData, Factory, MetaAttrType } from '../lib/factory';
 import {Lair} from '../lib/lair';
 import {Record} from '../lib/record';
 import sinon = require('sinon');
@@ -653,10 +653,11 @@ describe('Lair', () => {
         });
       });
 
-      describe('should pass info about "createRelated" into child factory', () => {
+      describe('should pass info about "createRelated" into child factory (`field` and `afterCreate`)', () => {
 
         it('related info is correct', () => {
-          let parent = 1;
+          let parentInField = 1;
+          let parentInAfterCreate = 1;
           this.lair.registerFactory(Factory.create({
             attrs: {
               children: Factory.hasMany('child', 'parent'),
@@ -667,6 +668,10 @@ describe('Lair', () => {
             createRelated: {
               children: 3,
             },
+            afterCreate(r: Record, extraData: CreateRecordExtraData): Record {
+              expect(extraData).to.be.eql({relatedTo: {}});
+              return r;
+            },
           }), 'parent');
           this.lair.registerFactory(Factory.create({
             attrs: {
@@ -676,10 +681,18 @@ describe('Lair', () => {
                   relatedTo: {
                     factoryName: 'parent',
                     recordsCount: 3,
-                    currentRecordNumber: parent++,
+                    currentRecordNumber: parentInField++,
                   },
                 });
               },
+            },
+            afterCreate(r: Record, extraData: CreateRecordExtraData): Record {
+              expect(extraData).to.be.eql({relatedTo: {
+                factoryName: 'parent',
+                recordsCount: 3,
+                currentRecordNumber: parentInAfterCreate++,
+              }});
+              return r;
             },
           }), 'child');
           this.lair.createRecords('parent', 1);

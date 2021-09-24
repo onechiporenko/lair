@@ -21,5 +21,10 @@ jobs:
         run: npm run lint
       - name: Test Coverage
         run: npm run test:cov
+      - name: Coveralls
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: "./dist/coverage/coverage"
       - name: Test Mutation
         run: npm run test:mut

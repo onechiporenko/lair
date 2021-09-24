@@ -68,15 +68,11 @@ export interface RelatedFor {
   attrName: string;
 }
 
-/**
- * @class Lair
- */
 export class Lair {
 
   /**
    * Lair implements singleton-pattern
    * Use this method to get it's instance
-   * @returns {Lair}
    */
   public static getLair(): Lair {
     if (!Lair.instance) {
@@ -109,8 +105,6 @@ export class Lair {
   /**
    * Register factory instance in the Lair
    * Lair works only with registered factories
-   * @param {Factory} factory
-   * @param {string} factoryName
    */
   public registerFactory(factory: Factory, factoryName?: string): void {
     const name = factory.name || factoryName;
@@ -127,8 +121,6 @@ export class Lair {
   /**
    * Create number of records for needed factory and put then to the db
    * This method can be used only for initial db filling
-   * @param {string} factoryName
-   * @param {number} count
    */
   @verbose
   public createRecords(factoryName: string, count: number): void {
@@ -150,8 +142,6 @@ export class Lair {
   /**
    * Load records data from the predefined JSON's to the db
    * This method can be used only for initial db filling
-   * @param {string} factoryName
-   * @param {object[]} data
    */
   @verbose
   @assertHasType
@@ -165,10 +155,6 @@ export class Lair {
   /**
    * Filter records of needed factory
    * Callback is called with one parameter - record
-   * @param {string} factoryName
-   * @param {Function} clb
-   * @param {CRUDOptions} options
-   * @returns {Record[]}
    */
   @verbose
   @assertHasType
@@ -182,9 +168,6 @@ export class Lair {
 
   /**
    * Get all records of needed factory
-   * @param {string} factoryName
-   * @param {CRUDOptions} options
-   * @returns {Record[]}
    */
   @verbose
   @assertHasType
@@ -196,10 +179,6 @@ export class Lair {
 
   /**
    * Get one record of needed factory by its id
-   * @param {string} factoryName
-   * @param {string} id
-   * @param {CRUDOptions} options
-   * @returns {Record}
    */
   @verbose
   @assertHasType
@@ -212,10 +191,6 @@ export class Lair {
   /**
    * Filter one record of needed factory
    * Callback is called with one parameter - record
-   * @param {string} factoryName
-   * @param {Function} clb
-   * @param {CRUDOptions} options
-   * @returns {Record}
    */
   @verbose
   @assertHasType
@@ -238,10 +213,6 @@ export class Lair {
    * All `data`-fields than not declared in the factory will be skipped
    * Relationships with records of other factories will be automatically updated.
    * Important! All related records should already be in the db
-   * @param {string} factoryName
-   * @param {object} data
-   * @param {CRUDOptions} options
-   * @returns {Record}
    */
   @verbose
   @assertHasType
@@ -272,11 +243,6 @@ export class Lair {
    * ID and any field from `data` which doesn't exist in the factory's meta will be skipped (same as for `createOne`)
    * Relationships with records of other factories will be automatically updated.
    * Important! All related records should already be in the db
-   * @param {string} factoryName
-   * @param {string} id
-   * @param {object} data
-   * @param {CRUDOptions} options
-   * @returns {Record}
    */
   @verbose
   @assertHasType
@@ -302,8 +268,6 @@ export class Lair {
   /**
    * Delete one record of needed factory
    * Relationships with records of other factories will be automatically updated
-   * @param {string} factoryName
-   * @param {string} id
    */
   @verbose
   @assertHasType
@@ -318,7 +282,6 @@ export class Lair {
    *  - ID-value for each factory
    *  - Records count for each factory
    *  - Meta-info for each factory
-   * @returns {DevInfo}
    */
   public getDevInfo(): DevInfo {
     const ret = {};
@@ -332,28 +295,14 @@ export class Lair {
     return ret;
   }
 
-  /**
-   * @param type
-   * @returns {boolean}
-   */
   private hasType(type: string): boolean {
     return !!this.db[type];
   }
 
-  /**
-   * @param type
-   */
   private addType(type: string): void {
     this.db[type] = {};
   }
 
-  /**
-   * @param factoryName
-   * @param count
-   * @param parentData
-   * @param relatedChain
-   * @returns {Array}
-   */
   private internalCreateRecords(factoryName: string, count: number, parentData: ParentData = {factoryName: '', attrName: ''}, relatedChain: string[] = []): Record[] {
     assert(`Factory with name "${factoryName}" is not registered`, !!this.factories[factoryName]);
     if (factoryName === parentData.factoryName) {
@@ -405,13 +354,6 @@ export class Lair {
     return newRecords;
   }
 
-  /**
-   * @param factoryName
-   * @param id
-   * @param relatedFor
-   * @param options
-   * @returns {any}
-   */
   private getRecordWithRelationships(factoryName: string, id: string, relatedFor: RelatedFor[] = [], options: RelationshipOptions = {maxDepth: Infinity, currentDepth: 1, ignoreRelated: []}): Record {
     const recordRelationships = this.relationships.getRelationshipsForRecord(factoryName, id);
     const meta = this.getMetaFor(factoryName);
@@ -446,11 +388,6 @@ export class Lair {
     return record;
   }
 
-  /**
-   * @param factoryName
-   * @param attrName
-   * @param relatedFor
-   */
   private isRelated(factoryName: string, attrName: string, relatedFor: RelatedFor[] = []): boolean {
     const meta = this.getMetaFor(factoryName);
     const attrMeta = meta[attrName] as RelationshipMetaAttr;
@@ -458,13 +395,6 @@ export class Lair {
     return relatedFor.some(r => r.factoryName === relatedFactoryName && r.attrName && r.attrName === attrMeta.invertedAttrName);
   }
 
-  /**
-   * @param factoryName
-   * @param id
-   * @param attrName
-   * @param val
-   * @returns {any}
-   */
   private createAttrValue(factoryName: string, id: string, attrName: string, val: string | string[]): string | string[] | null {
     const meta = this.getMetaFor(factoryName);
     const attrMeta = meta[attrName] as FieldMetaAttr<any>;
@@ -501,14 +431,6 @@ export class Lair {
     return val;
   }
 
-  /**
-   * @param factoryName
-   * @param id
-   * @param attrName
-   * @param newDistId
-   * @param distFactoryName
-   * @param distAttrName
-   */
   private createOneToOneAttrValue(factoryName: string, id: string, attrName: string, newDistId: string, distFactoryName: string, distAttrName: string): string | null {
     if (newDistId === null) {
       this.relationships.deleteRelationshipForAttr(factoryName, id, attrName);
@@ -521,14 +443,6 @@ export class Lair {
     return distId;
   }
 
-  /**
-   * @param factoryName
-   * @param id
-   * @param attrName
-   * @param newDistIds
-   * @param distFactoryName
-   * @param distAttrName
-   */
   private createManyToOneAttrValue(factoryName: string, id: string, attrName: string, newDistIds: string[], distFactoryName: string, distAttrName: string): string [] | null {
     assert(`Array of ids should be provided for value of "${attrName}" [many-to-one relationship]`, isArray(newDistIds) || newDistIds === null);
     if (newDistIds === null || newDistIds.length === 0) {
@@ -545,14 +459,6 @@ export class Lair {
     return distIds;
   }
 
-  /**
-   * @param factoryName
-   * @param id
-   * @param attrName
-   * @param newDistId
-   * @param distFactoryName
-   * @param distAttrName
-   */
   private createOneToManyAttrValue(factoryName: string, id: string, attrName: string, newDistId: string, distFactoryName: string, distAttrName: string): string | null {
     if (newDistId === null) {
       this.relationships.deleteRelationshipForAttr(factoryName, id, attrName);
@@ -565,14 +471,6 @@ export class Lair {
     return distId;
   }
 
-  /**
-   * @param factoryName
-   * @param id
-   * @param attrName
-   * @param newDistIds
-   * @param distFactoryName
-   * @param distAttrName
-   */
   private createManyToManyAttrValue(factoryName: string, id: string, attrName: string, newDistIds: string[], distFactoryName: string, distAttrName: string): string[] | null {
     assert(`Array of ids should be provided for value of "${attrName}" [many-to-many relationship]`, isArray(newDistIds) || newDistIds === null);
     if (newDistIds === null || newDistIds.length === 0) {
@@ -589,10 +487,6 @@ export class Lair {
     return newDistIds;
   }
 
-  /**
-   * @param factoryName
-   * @returns {Meta}
-   */
   private getMetaFor(factoryName: string): Meta {
     return this.meta[factoryName];
   }

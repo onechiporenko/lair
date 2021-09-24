@@ -1,6 +1,5 @@
 import {expect} from 'chai';
 import {Factory, MetaAttrType} from '../lib/factory';
-import {Record} from '../lib/record';
 
 const attrs = {
   first: 'static',
@@ -45,6 +44,8 @@ const attrs = {
   sequenceItem: Factory.sequenceItem(1, prevItems => prevItems.reduce((a, b) => a + b, 0)),
 };
 
+let factory;
+
 describe('Factory', () => {
 
   describe('#field', () => {
@@ -63,7 +64,7 @@ describe('Factory', () => {
 
   describe('#18 Use `value` as `defaultValue` when `value` is not a function', () => {
     beforeEach(() => {
-      this.factory = Factory.create({
+      factory = Factory.create({
         attrs: {
           a: Factory.field({
             value: '1',
@@ -82,59 +83,64 @@ describe('Factory', () => {
     });
 
     it('`defaultValue` is generated', () => {
-      expect(this.factory.meta.a.defaultValue).to.be.equal('1');
+      expect(factory.meta.a.defaultValue).to.be.equal('1');
     });
 
     it('`defaultValue` is not generated', () => {
-      expect(this.factory.meta.b.defaultValue).to.not.exist;
+      expect(factory.meta.b.defaultValue).to.not.exist;
     });
 
     it('`defaultValue` is not overridden', () => {
-      expect(this.factory.meta.c.defaultValue).to.be.equal('1');
+      expect(factory.meta.c.defaultValue).to.be.equal('1');
     });
   });
 
   describe('#createRecord', () => {
 
+    let firstInstance;
+    let secondInstance;
+    let thirdInstance;
+    let fourthInstance;
+
     before(() => {
-      this.factory = Factory.create({attrs});
-      this.factory.init();
-      this.firstInstance = this.factory.createRecord(1);
-      this.secondInstance = this.factory.createRecord(2);
-      this.thirdInstance = this.factory.createRecord(3);
-      this.fourthInstance = this.factory.createRecord(4);
+      factory = Factory.create({attrs});
+      factory.init();
+      firstInstance = factory.createRecord(1);
+      secondInstance = factory.createRecord(2);
+      thirdInstance = factory.createRecord(3);
+      fourthInstance = factory.createRecord(4);
     });
 
     it('`id` is auto incremented', () => {
-      expect(this.firstInstance.id).to.be.equal('1');
-      expect(this.secondInstance.id).to.be.equal('2');
+      expect(firstInstance.id).to.be.equal('1');
+      expect(secondInstance.id).to.be.equal('2');
     });
 
     it('`first`-field is equal for all created records', () => {
-      expect(this.firstInstance.first).to.be.equal('static');
-      expect(this.firstInstance.first).to.be.equal(this.secondInstance.first);
+      expect(firstInstance.first).to.be.equal('static');
+      expect(firstInstance.first).to.be.equal(secondInstance.first);
     });
 
     it('`second`-field is not equal for created records', () => {
-      expect(this.firstInstance.second).to.be.equal('dynamic 1');
-      expect(this.secondInstance.second).to.be.equal('dynamic 2');
+      expect(firstInstance.second).to.be.equal('dynamic 1');
+      expect(secondInstance.second).to.be.equal('dynamic 2');
     });
 
     it('sequence items are calculated basing on previous values', () => {
-      expect(this.firstInstance.sequenceItem).to.be.equal(1);
-      expect(this.secondInstance.sequenceItem).to.be.equal(1);
-      expect(this.thirdInstance.sequenceItem).to.be.equal(2);
-      expect(this.fourthInstance.sequenceItem).to.be.equal(4);
+      expect(firstInstance.sequenceItem).to.be.equal(1);
+      expect(secondInstance.sequenceItem).to.be.equal(1);
+      expect(thirdInstance.sequenceItem).to.be.equal(2);
+      expect(fourthInstance.sequenceItem).to.be.equal(4);
     });
 
     it('`fourth`-field is equal for all created records', () => {
-      expect(this.firstInstance.fourth).to.be.equal('fourth');
-      expect(this.firstInstance.fourth).to.be.equal(this.secondInstance.fourth);
+      expect(firstInstance.fourth).to.be.equal('fourth');
+      expect(firstInstance.fourth).to.be.equal(secondInstance.fourth);
     });
 
     it('`fifth`-field is equal for all created records', () => {
-      expect(this.firstInstance.fifth).to.be.equal('fifth 1');
-      expect(this.secondInstance.fifth).to.be.equal('fifth 2');
+      expect(firstInstance.fifth).to.be.equal('fifth 1');
+      expect(secondInstance.fifth).to.be.equal('fifth 2');
     });
 
     it('should throw error if `id` is defined in the `attrs`', () => {
@@ -144,22 +150,22 @@ describe('Factory', () => {
 
     describe('dynamic attributes may get values for other attributes', () => {
       it('dynamic -> static', () => {
-        expect(this.firstInstance.second).to.be.equal('dynamic 1');
-        expect(this.secondInstance.second).to.be.equal('dynamic 2');
+        expect(firstInstance.second).to.be.equal('dynamic 1');
+        expect(secondInstance.second).to.be.equal('dynamic 2');
       });
       it('dynamic -> dynamic', () => {
-        expect(this.firstInstance.third).to.be.equal('third is dynamic 1');
-        expect(this.secondInstance.third).to.be.equal('third is dynamic 2');
+        expect(firstInstance.third).to.be.equal('third is dynamic 1');
+        expect(secondInstance.third).to.be.equal('third is dynamic 2');
       });
       describe('dynamic attribute should not be recalculated', () => {
         it('first instance', () => {
-          expect(this.firstInstance.r1).to.be.equal(this.firstInstance.r2);
+          expect(firstInstance.r1).to.be.equal(firstInstance.r2);
         });
         it('second instance', () => {
-          expect(this.secondInstance.r1).to.be.equal(this.secondInstance.r2);
+          expect(secondInstance.r1).to.be.equal(secondInstance.r2);
         });
         it('both instances', () => {
-          expect(this.firstInstance.r1).to.be.not.equal(this.secondInstance.r1);
+          expect(firstInstance.r1).to.be.not.equal(secondInstance.r1);
         });
       });
     });
@@ -168,55 +174,57 @@ describe('Factory', () => {
 
   describe('#meta', () => {
 
+    let meta;
+
     beforeEach(() => {
-      this.f = Factory.create({attrs});
-      this.f.init();
-      this.f.createRecord(1);
-      this.meta = this.f.meta;
+      factory = Factory.create({attrs});
+      factory.init();
+      factory.createRecord(1);
+      meta = factory.meta;
     });
 
     it('static attr is marked as `FIELD`', () => {
-      expect(this.meta.first.type).to.be.equal(MetaAttrType.FIELD);
+      expect(meta.first.type).to.be.equal(MetaAttrType.FIELD);
     });
 
     it('dynamic attr is marked as `FIELD`', () => {
-      expect(this.meta.second.type).to.be.equal(MetaAttrType.FIELD);
+      expect(meta.second.type).to.be.equal(MetaAttrType.FIELD);
     });
 
     it('static field attr is marked as `FIELD`', () => {
-      expect(this.meta.fourth.type).to.be.equal(MetaAttrType.FIELD);
-      expect(this.meta.fourth.defaultValue).to.be.equal('default value for fourth');
+      expect(meta.fourth.type).to.be.equal(MetaAttrType.FIELD);
+      expect(meta.fourth.defaultValue).to.be.equal('default value for fourth');
     });
 
     it('dynamic field attr is marked as `FIELD`', () => {
-      expect(this.meta.fifth.type).to.be.equal(MetaAttrType.FIELD);
+      expect(meta.fifth.type).to.be.equal(MetaAttrType.FIELD);
     });
 
     it('#24 Add `preferredType` and `allowedValues` for `Factory.field`', () => {
-      expect(this.meta.sixth.preferredType).to.be.equal('number');
-      expect(this.meta.sixth.allowedValues).to.be.eql([1, 2, 3]);
+      expect(meta.sixth.preferredType).to.be.equal('number');
+      expect(meta.sixth.allowedValues).to.be.eql([1, 2, 3]);
     });
 
     it('#25 `defaultValue` for FIELD must not be `undefined`', () => {
-      expect(this.meta.seventh).to.not.have.property('defaultValue');
+      expect(meta.seventh).to.not.have.property('defaultValue');
     });
 
     it('sequence item is marked as `SEQUENCE_ITEM`', () => {
-      const sequenceItem = this.meta.sequenceItem;
+      const sequenceItem = meta.sequenceItem;
       expect(sequenceItem.type).to.be.equal(MetaAttrType.SEQUENCE_ITEM);
       expect(sequenceItem.initialValue).to.be.equal(1);
       expect(sequenceItem.getNextValue).to.be.a('function');
     });
 
     it('single relationship attr is marked as `HAS_ONE`', () => {
-      const one = this.meta.one;
+      const one = meta.one;
       expect(one.type).to.be.equal(MetaAttrType.HAS_ONE);
       expect(one.factoryName).to.be.equal('anotherFactory');
       expect(one.invertedAttrName).to.be.equal('attr1');
     });
 
     it('single reflexive relationship attr is marked as `HAS_ONE` with needed attributes', () => {
-      const oneTest = this.meta.oneTest;
+      const oneTest = meta.oneTest;
       expect(oneTest.type).to.be.equal(MetaAttrType.HAS_ONE);
       expect(oneTest.factoryName).to.be.equal('test');
       expect(oneTest.invertedAttrName).to.be.equal(null);
@@ -225,14 +233,14 @@ describe('Factory', () => {
     });
 
     it('multi relationships attr is marked as `HAS_MANY`', () => {
-      const many = this.meta.many;
+      const many = meta.many;
       expect(many.type).to.be.equal(MetaAttrType.HAS_MANY);
       expect(many.factoryName).to.be.equal('anotherFactory');
       expect(many.invertedAttrName).to.be.equal('attr2');
     });
 
     it('multi relationships attr is marked as `HAS_MANY` with needed attributes', () => {
-      const manyTests = this.meta.manyTests;
+      const manyTests = meta.manyTests;
       expect(manyTests.type).to.be.equal(MetaAttrType.HAS_MANY);
       expect(manyTests.factoryName).to.be.equal('test');
       expect(manyTests.invertedAttrName).to.be.equal(null);
@@ -241,10 +249,10 @@ describe('Factory', () => {
     });
 
     it('meta should not be changed after init', () => {
-      this.f.attrs.newAttr = 'new val';
-      this.f.createRecord(2);
-      expect(this.f.meta).to.not.have.property('newAttr');
-      expect(this.meta).to.not.have.property('newAttr');
+      factory.attrs.newAttr = 'new val';
+      factory.createRecord(2);
+      expect(factory.meta).to.not.have.property('newAttr');
+      expect(meta).to.not.have.property('newAttr');
     });
   });
 

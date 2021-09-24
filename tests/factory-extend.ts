@@ -3,9 +3,12 @@ import {Factory} from '../lib/factory';
 import {Lair} from '../lib/lair';
 import {Record} from '../lib/record';
 
+let lair;
+let record;
+
 describe('Lair create records', () => {
 
-  beforeEach(() => this.lair = Lair.getLair());
+  beforeEach(() => lair = Lair.getLair());
   afterEach(() => Lair.cleanLair());
 
   describe('for extended factory', () => {
@@ -48,27 +51,27 @@ describe('Lair create records', () => {
           },
         });
         const a = Factory.extend(A, {});
-        this.lair.registerFactory(a, 'a');
-        this.lair.registerFactory(b, 'b');
-        this.lair.createRecords('a', 1);
-        this.record = this.lair.getOne('a', '1');
+        lair.registerFactory(a, 'a');
+        lair.registerFactory(b, 'b');
+        lair.createRecords('a', 1);
+        record = lair.getOne('a', '1');
       });
 
       it('should copy static field', () => {
-        expect(this.record.first).to.be.equal('static');
+        expect(record.first).to.be.equal('static');
       });
 
       it('should copy dynamic field', () => {
-        expect(this.record.second).to.be.equal('dynamic 1');
-        expect(this.record.third).to.be.equal('third is dynamic 1');
+        expect(record.second).to.be.equal('dynamic 1');
+        expect(record.third).to.be.equal('third is dynamic 1');
       });
 
       it('should copy dynamic field related with other fields', () => {
-        expect(this.record.r1).to.be.equal(this.record.r2);
+        expect(record.r1).to.be.equal(record.r2);
       });
 
       it('should copy hasOne-relationship', () => {
-        expect(this.record.oneB).to.be.eql({
+        expect(record.oneB).to.be.eql({
           id: '1',
           oneA: '1',
           manyA: [],
@@ -76,16 +79,16 @@ describe('Lair create records', () => {
       });
 
       it('should copy hasMany-relationship', () => {
-        expect(this.record.manyB).to.be.eql([
+        expect(record.manyB).to.be.eql([
           {id: '2', manyA: ['1'], oneA: null},
           {id: '3', manyA: ['1'], oneA: null},
         ]);
       });
 
       it('should copy sequence items', () => {
-        expect(this.record.sequenceItem).to.be.equal(1);
-        this.lair.createRecords('a', 4);
-        expect(this.lair.getAll('a').map(c => c.sequenceItem)).to.be.eql([1, 1, 2, 4, 8]);
+        expect(record.sequenceItem).to.be.equal(1);
+        lair.createRecords('a', 4);
+        expect(lair.getAll('a').map(c => c.sequenceItem)).to.be.eql([1, 1, 2, 4, 8]);
       });
     });
 
@@ -103,11 +106,11 @@ describe('Lair create records', () => {
               field: 'b',
             },
           });
-          this.lair.registerFactory(B, 'b');
-          this.lair.createRecords('b', 1);
+          lair.registerFactory(B, 'b');
+          lair.createRecords('b', 1);
         });
         it('should override field', () => {
-          expect(this.lair.getOne('b', '1').field).to.be.equal('b');
+          expect(lair.getOne('b', '1').field).to.be.equal('b');
         });
       });
 
@@ -127,11 +130,11 @@ describe('Lair create records', () => {
               },
             },
           });
-          this.lair.registerFactory(B, 'b');
-          this.lair.createRecords('b', 1);
+          lair.registerFactory(B, 'b');
+          lair.createRecords('b', 1);
         });
         it('should override field', () => {
-          expect(this.lair.getOne('b', '1').field).to.be.equal('b');
+          expect(lair.getOne('b', '1').field).to.be.equal('b');
         });
       });
 
@@ -156,15 +159,15 @@ describe('Lair create records', () => {
               oneB: 'oneB',
             },
           });
-          this.lair.registerFactory(A, 'a');
-          this.lair.registerFactory(B, 'b');
-          this.lair.registerFactory(C, 'c');
-          this.lair.createRecords('a', 1);
-          this.lair.createRecords('c', 1);
+          lair.registerFactory(A, 'a');
+          lair.registerFactory(B, 'b');
+          lair.registerFactory(C, 'c');
+          lair.createRecords('a', 1);
+          lair.createRecords('c', 1);
         });
 
         it('a-record is valid', () => {
-          expect(this.lair.getOne('a', '1')).to.be.eql({
+          expect(lair.getOne('a', '1')).to.be.eql({
             id: '1',
             oneB: {
               id: '1',
@@ -174,7 +177,7 @@ describe('Lair create records', () => {
         });
 
         it('b-record is valid', () => {
-          expect(this.lair.getOne('b', '1')).to.be.eql({
+          expect(lair.getOne('b', '1')).to.be.eql({
             id: '1',
             oneA: {
               id: '1',
@@ -184,7 +187,7 @@ describe('Lair create records', () => {
         });
 
         it('c-record is valid', () => {
-          expect(this.lair.getOne('c', '1')).to.be.eql({
+          expect(lair.getOne('c', '1')).to.be.eql({
             id: '1',
             oneB: 'oneB',
           });
@@ -212,15 +215,15 @@ describe('Lair create records', () => {
               manyB: 'manyB',
             },
           });
-          this.lair.registerFactory(A, 'a');
-          this.lair.registerFactory(B, 'b');
-          this.lair.registerFactory(C, 'c');
-          this.lair.createRecords('a', 1);
-          this.lair.createRecords('c', 1);
+          lair.registerFactory(A, 'a');
+          lair.registerFactory(B, 'b');
+          lair.registerFactory(C, 'c');
+          lair.createRecords('a', 1);
+          lair.createRecords('c', 1);
         });
 
         it('a-record is valid', () => {
-          expect(this.lair.getOne('a', '1')).to.be.eql({
+          expect(lair.getOne('a', '1')).to.be.eql({
             id: '1',
             manyB: [{
               id: '1',
@@ -230,7 +233,7 @@ describe('Lair create records', () => {
         });
 
         it('b-record is valid', () => {
-          expect(this.lair.getOne('b', '1')).to.be.eql({
+          expect(lair.getOne('b', '1')).to.be.eql({
             id: '1',
             manyA: [{
               id: '1',
@@ -240,7 +243,7 @@ describe('Lair create records', () => {
         });
 
         it('c-record is valid', () => {
-          expect(this.lair.getOne('c', '1')).to.be.eql({
+          expect(lair.getOne('c', '1')).to.be.eql({
             id: '1',
             manyB: 'manyB',
           });
@@ -259,18 +262,18 @@ describe('Lair create records', () => {
               a: Factory.sequenceItem(2, prevValues => prevValues.reduce((a, b) => a * b, 1)),
             },
           });
-          this.lair.registerFactory(A, 'a');
-          this.lair.registerFactory(B, 'b');
-          this.lair.createRecords('a', 8);
-          this.lair.createRecords('b', 5);
+          lair.registerFactory(A, 'a');
+          lair.registerFactory(B, 'b');
+          lair.createRecords('a', 8);
+          lair.createRecords('b', 5);
         });
 
         it('a-records are valid', () => {
-          expect(this.lair.getAll('a').map(r => r.a)).to.be.eql([1, 1, 2, 3, 5, 8, 13, 21]);
+          expect(lair.getAll('a').map(r => r.a)).to.be.eql([1, 1, 2, 3, 5, 8, 13, 21]);
         });
 
         it('b-records are valid', () => {
-          expect(this.lair.getAll('b').map(r => r.a)).to.be.eql([2, 2, 4, 16, 256]);
+          expect(lair.getAll('b').map(r => r.a)).to.be.eql([2, 2, 4, 16, 256]);
         });
       });
 
@@ -278,8 +281,10 @@ describe('Lair create records', () => {
 
     describe('afterCreate && afterCreateRelationshipsDepth && afterCreateIgnoreRelated', () => {
 
+      let A;
+
       beforeEach(() => {
-        this.A = Factory.create({
+        A = Factory.create({
           attrs: {
             a1: Factory.hasOne('a1', null),
           },
@@ -287,9 +292,9 @@ describe('Lair create records', () => {
             a1: 1,
           },
           afterCreateRelationshipsDepth: 5,
-          afterCreate(record: Record): Record {
+          afterCreate(r: Record): Record {
             expect(false).to.be.ok;
-            return record;
+            return r;
           },
         });
         const a1 = Factory.create({
@@ -317,23 +322,23 @@ describe('Lair create records', () => {
           },
         });
         const a4 = Factory.create({});
-        this.lair.registerFactory(this.A, 'a');
-        this.lair.registerFactory(a1, 'a1');
-        this.lair.registerFactory(a2, 'a2');
-        this.lair.registerFactory(a3, 'a3');
-        this.lair.registerFactory(a4, 'a4');
+        lair.registerFactory(A, 'a');
+        lair.registerFactory(a1, 'a1');
+        lair.registerFactory(a2, 'a2');
+        lair.registerFactory(a3, 'a3');
+        lair.registerFactory(a4, 'a4');
       });
 
       it('should be correctly overridden', () => {
-        const B = Factory.extend(this.A, {
+        const B = Factory.extend(A, {
           afterCreateRelationshipsDepth: 2,
           afterCreateIgnoreRelated: ['a2'],
-          afterCreate(record: Record): Record {
-            expect(record).to.be.eql({
+          afterCreate(r: Record): Record {
+            expect(r).to.be.eql({
               id: '1',
               a1: {id: '1'},
             });
-            return record;
+            return r;
           },
         });
       });
@@ -365,15 +370,15 @@ describe('Lair create records', () => {
             a2: 1,
           },
         });
-        this.lair.registerFactory(A, 'a');
-        this.lair.registerFactory(a1, 'a1');
-        this.lair.registerFactory(a2, 'a2');
-        this.lair.registerFactory(B, 'b');
-        this.lair.createRecords('b', 1);
+        lair.registerFactory(A, 'a');
+        lair.registerFactory(a1, 'a1');
+        lair.registerFactory(a2, 'a2');
+        lair.registerFactory(B, 'b');
+        lair.createRecords('b', 1);
       });
 
       it('b-record is valid', () => {
-        expect(this.lair.getOne('b', '1')).to.be.eql({
+        expect(lair.getOne('b', '1')).to.be.eql({
           id: '1',
           a1: [
             {id: '1'},

@@ -114,17 +114,12 @@ function _attrsToFields(attrs: Meta): Meta {
  *  - Relationship field is used to show that value is a record of the another factory.
  *    Relationship may be "has_one" (single record) and "has_many" (array of records)
  *  - Sequence item which value is based on previously generated values (for older records)
- * @class Factory
  */
 export class Factory {
 
   /**
    * Use `Factory.hasOne` for relationship-fields
    * Used for 'one-to-one' and 'one-to-many'
-   * @param {string} factoryName
-   * @param {string} invertedAttrName
-   * @param {RelationshipOptions} options
-   * @returns {RelationshipMetaAttr}
    */
   public static hasOne(factoryName: string, invertedAttrName: string, options?: RelationshipOptions): RelationshipMetaAttr {
     const reflexive = getVal<boolean>(options, 'reflexive', false);
@@ -135,10 +130,6 @@ export class Factory {
   /**
    * Use `Factory.hasMany` for relationship-fields
    * Used for 'many-to-one' and 'many-to-many'
-   * @param {string} factoryName
-   * @param {string} invertedAttrName
-   * @param {RelationshipOptions} options
-   * @returns {RelationshipMetaAttr}
    */
   public static hasMany(factoryName: string, invertedAttrName: string, options?: RelationshipOptions): RelationshipMetaAttr {
     const reflexive = getVal<boolean>(options, 'reflexive', false);
@@ -148,10 +139,6 @@ export class Factory {
 
   /**
    * Use `Factory.sequenceItem` for fields that depends on previously generated values
-   * @param {*|Function} initialValue
-   * @param {Function} getNextValue
-   * @param {SequenceItemOptions} options
-   * @returns {SequenceMetaAttr}
    */
   public static sequenceItem<T>(initialValue: T, getNextValue: (prevValues: T[]) => T, options?: SequenceItemOptions): SequenceMetaAttr<T> {
     return {
@@ -163,11 +150,6 @@ export class Factory {
     };
   }
 
-  /**
-   *
-   * @param {FieldOptions} fieldOptions
-   * @returns {FieldMetaAttr}
-   */
   public static field<T>(fieldOptions: FieldOptions<T>): FieldMetaAttr<T> {
     assert(`"defaultValue" can't be a function`, !(fieldOptions.defaultValue instanceof Function));
     if (!fieldOptions.hasOwnProperty('defaultValue') && !(fieldOptions.value instanceof Function)) {
@@ -191,11 +173,6 @@ export class Factory {
     return ret;
   }
 
-  /**
-   *
-   * @param {CreateOptions} options
-   * @returns {Factory}
-   */
   public static create(options: CreateOptions): Factory {
     const factory = new Factory();
     factory.internalName = options.name;
@@ -208,12 +185,6 @@ export class Factory {
     return factory;
   }
 
-  /**
-   *
-   * @param {Factory} source
-   * @param {CreateOptions} options
-   * @returns {Factory}
-   */
   public static extend(source: Factory, options: CreateOptions): Factory {
     const factory = new Factory();
     factory.attrs = _attrsToFields({...source.attrs, ...(options.attrs || {})});
@@ -266,9 +237,6 @@ export class Factory {
 
   /**
    * Forget about this. It's only for Lair
-   * @param {string} id
-   * @param {CreateRecordExtraData} [extraData]
-   * @returns {Record}
    */
   public createRecord(id: number, extraData: CreateRecordExtraData = {}): Record {
     this.checkAttrs();
@@ -286,7 +254,6 @@ export class Factory {
   /**
    * Return object with default values for attributes
    * Only attributes with type `FIELD` and provided `defaultValue` are affected
-   * @returns {Object}
    */
   public getDefaults(): object {
     return keys(this.meta).reduce((defaults, attrName) => {
@@ -366,7 +333,7 @@ export class Factory {
   }
 
   protected checkAttrs(): void {
-    assert(`Don't add "id" to the "attrs"`, !this.attrs.hasOwnProperty('id'));
+    assert(`Don't add "id" to the "attrs"`, !this.attrs.hasOwnProperty('id') || this.allowCustomIds);
   }
 
 }

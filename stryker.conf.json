@@ -1,0 +1,17 @@
+{
+  "testRunner": "mocha",
+  "coverageAnalysis": "off",
+  "buildCommand": "npm run build",
+  "checkers": ["typescript"],
+  "tsconfigFile": "tsconfig.json",
+  "reporters": ["clear-text", "progress", "html"],
+  "mutate": ["lib/**/*.ts", "!lib/decorators.ts"],
+  "mochaOptions": {
+    "spec": [ "dist/tests/**/*.js" ]
+  },
+  "thresholds": {
+    "break": 50,
+    "high": 80,
+    "low": 60
+  }
+}

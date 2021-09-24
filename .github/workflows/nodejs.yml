@@ -27,4 +27,4 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path-to-lcov: "./dist/coverage/coverage"
       - name: Test Mutation
-        run: npm i g stryker-cli && stryker run
+        run: npm i -g stryker-cli && stryker run

@@ -5,3 +5,4 @@ reports
 docs
 .idea
 .stryker-tmp
+dist/coverage

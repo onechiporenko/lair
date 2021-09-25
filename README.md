@@ -18,7 +18,7 @@ Lair-db is a database written on TypeScript. Its main use-case is a test-mode fo
 
 *Lair-db doesn't have any dependencies (only some dev-dependencies).*
 
-Lair-db consists of two parts - Lair and Factories. Lair is a place where all data is stored. It has several methods which implement basic CRUD operations. Lair is a Singleton. Factories are used to generate Records that are pushed to the Lair and create its initial state. Each Record has `id`-field which value is auto incremented in the scope of factory. Every `id` is a stringified number.
+Lair-db consists of two parts - Lair and Factories. Lair is a place where all data is stored. It has several methods which implement basic CRUD operations. Lair is a Singleton. Factories generate Records that are pushed to the Lair and create its initial state. Each Record has `id`-field which value is auto incremented in the scope of factory. Every `id` is a "stringified" number.
 
 To get Lair instance you should use static method `getLair`:
 
@@ -29,14 +29,14 @@ const lair = Lair.getLair();
 
 ## Lair initial state
 
-Factory-instance may be created by call static method `create`:
+Factory-instance is created by call static method `create`:
 
 ```javascript
 const {Lair, Factory} = require('lair-db');
 const factoryInstance = Factory.create({});
 ```
 
-Now we have a factory. Currently it can't do any useful things. Every generated Record for this Factory will have only one property (`id`). All properties for Records are described in the field `attrs`:
+Now we have a factory. Currently, it can't do any useful things. Every generated Record for this Factory will have only single property (`id`). All properties for Records are in the field `attrs`:
 
 ```javascript
 const {Lair, Factory} = require('lair-db');
@@ -54,7 +54,7 @@ const factoryInstance = Factory.create({
 });
 ```
 
-Our factory will create Records with fields `id`, `firstName` and `lastName`. Since `faker` returns truly random values we'll get really different Records. We declared `firstName` and `lastName` as functions that returns some random values. Inside this functions new Record is available as context. So, you can write next:
+Our factory will create Records with fields `id`, `firstName` and `lastName`. Since `faker` returns truly random values we'll get really different Records. We declared `firstName` and `lastName` as functions that returns some random values. Inside these functions new Record is available as context. So, you can write next:
 
 ```javascript
 const {Lair, Factory} = require('lair-db');
@@ -115,7 +115,7 @@ lair.registerFactory(unit);
 
 Here factory name is set as a `name` in the hash passed to the `Factory.create`, so `registerFactory` need only one parameter in this case. Providing `name` directly to the `Factory.create` is more preferable way that passing it to the `registerFactory`.
 
-Records of different types may be linked one to another. There is a special way to describe such links. It's called 'relationships'. Let's say we have two factories for units and squads. One unit may be in the in the one squad and any squad may contain many units (typical one-to-many or many-to-one relationships):
+Records of different types may be linked one to another. There is a special way to describe such links. It's called 'relationships'. Let's say we have two factories for units and squads. One unit may be in the one squad and any squad may contain many units (typical one-to-many or many-to-one relationships):
 
 ```javascript
 const unit = Factory.create({
@@ -190,7 +190,7 @@ This method has several requirements:
 * Related factories must be registered too
 * Related records must be already loaded
 
-Once all Factories are created and registered and Lair is filled with records you are ready to mock your back-end.
+Once all Factories are created (and registered) and Lair is filled with records you are ready to mock your back-end.
 
 ## CRUD operations
 
@@ -215,7 +215,7 @@ Newly created `unit` will be automatically added to the `squad` with id `1`.
 
 #### Default values for attributes
 
-`Lair` uses attributes `value` as a default value for `createOne` if it's not provided. Method `Factory.field` allows to override `defaultValue`. It takes hash with two properties `value` and `defaultValue`. First one is same as usual "old" field-declaration. Second one is a value (**not** Function) that will be used in the `createOne` if nothing will be provided for field.
+`Lair` uses attribute `value` as a default value for `createOne` if it's not provided. Method `Factory.field` allows to override `defaultValue`. It takes hash with two properties `value` and `defaultValue`. First one is same as usual "old" field-declaration. Second one is a value (**not** Function) that will be used in the `createOne` if nothing will be provided for field.
 
 ```javascript
 const Log = Factory.create({
@@ -294,7 +294,7 @@ It returns record with all related data:
 
 ### `queryOne`
 
-This method is also used to get one record. The main difference between methods is that `getOne` uses `id` to get record and `queryOne` uses a callback:
+This method is also used to get a single record. The main difference between methods is that `getOne` uses `id` to get record and `queryOne` uses a callback:
 
 ```javascript
 lair.queryOne('unit', record => record.id === '1');
@@ -409,7 +409,7 @@ In the example above `console.log` (in the `field` attribute) will be called 4 t
 }
 ```
 
-Here `relatedTo` contains name of the parent-factory, records count of child factory that will be created and number of creating child-record. `currentRecordNumber` isn't new record identifier and it's just a sequence number. It will be dropped to `1` for each parent-record.
+Here `relatedTo` contains name of the parent-factory, records count of child factory that will be created and number of creating child-record. `currentRecordNumber` isn't new record identifier, and it's just a sequence number. It will be dropped to `1` for each parent-record.
 
 Last two times `console.log` from the `field`-attribute will out:
 
@@ -423,7 +423,7 @@ Field `relatedTo` is empty because child-records are created standalone and not 
 
 ### One way relationships
 
-Methods `Factory.hasOne` and `Factory.hasMany` take two arguments. However you may set `null` as second parameter. In this case records will be related in one way:
+Methods `Factory.hasOne` and `Factory.hasMany` take two arguments. However, you may set `null` as second parameter. In this case records will be related in one way:
  
 ```javascript
 const squad = Factory.create({
@@ -502,7 +502,7 @@ Factory `Dir` will create records with a lot of related records. Each `dir` will
 
 ### Sequences
 
-Lair-db allows to create sequences of values. This means that you can create a time line like:
+Lair-db allows creating sequences of values. This means that you can create a time line like:
 
 ```javascript
 const timeLine = Factory.create({
@@ -604,4 +604,4 @@ lair.getOne('squad', '1', {ignoreRelated: ['unit']});
 
 Here we have two options called `depth` and `ignoreRelared`. First one determines how deeply Lair should go to get data for needed record. Second one determines what factories should be ignored while Lair combines data for needed record. **Important** `ignoreRelated` contains a list of factory names and not attribute names! Both `depth` and `ignoreRelated` may be used together.
 
-This options are very useful for cases with a lot of related records that may cause performance issues when Lair will collect them from internal store.
+These options are very useful for cases with a lot of related records that may cause performance issues when Lair will collect them from internal store.

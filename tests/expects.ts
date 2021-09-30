@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 function incStr(val: string): string {
   return '' + (Number(val) + 1);
 }
@@ -71,16 +72,18 @@ export const oneToManyBar = (id = '1') => {
   return {
     id,
     sBar: 'static bar',
-    propFoo: [{
-      id,
-      sFoo: 'static foo',
-      propBar: id,
-      propBaz: {
+    propFoo: [
+      {
         id,
-        sBaz: 'static baz',
-        propFoo: [id],
+        sFoo: 'static foo',
+        propBar: id,
+        propBaz: {
+          id,
+          sBaz: 'static baz',
+          propFoo: [id],
+        },
       },
-    }],
+    ],
   };
 };
 export const oneToManyBaz = (id = '1') => {
@@ -107,12 +110,12 @@ export const manyToOneFoo = (id = '1') => {
     id,
     sFoo: 'static foo',
     propBar: [
-      {id: '1', sBar: 'static bar', propFoo: id},
-      {id: '2', sBar: 'static bar', propFoo: id},
+      { id: '1', sBar: 'static bar', propFoo: id },
+      { id: '2', sBar: 'static bar', propFoo: id },
     ],
     propBaz: [
-      {id: '1', sBaz: 'static baz', propFoo: id},
-      {id: '2', sBaz: 'static baz', propFoo: id},
+      { id: '1', sBaz: 'static baz', propFoo: id },
+      { id: '2', sBaz: 'static baz', propFoo: id },
     ],
   };
 };
@@ -125,8 +128,8 @@ export const manyToOneBar = (id = '1', barId = '1') => {
       sFoo: 'static foo',
       propBar: ['1', '2'],
       propBaz: [
-        {id: '1', sBaz: 'static baz', propFoo: id},
-        {id: '2', sBaz: 'static baz', propFoo: id},
+        { id: '1', sBaz: 'static baz', propFoo: id },
+        { id: '2', sBaz: 'static baz', propFoo: id },
       ],
     },
   };
@@ -140,8 +143,8 @@ export const manyToOneBaz = (id = '1', bazId = '1') => {
       sFoo: 'static foo',
       propBaz: ['1', '2'],
       propBar: [
-        {id: '1', sBar: 'static bar', propFoo: id},
-        {id: '2', sBar: 'static bar', propFoo: id},
+        { id: '1', sBar: 'static bar', propFoo: id },
+        { id: '2', sBar: 'static bar', propFoo: id },
       ],
     },
   };
@@ -152,16 +155,21 @@ export const manyToManyFoo = (id = '1', barId = '1', bazId = '1') => {
     id,
     sFoo: 'static foo',
     propBar: [
-      {id: barId, sBar: 'static bar', propFoo: [id]},
-      {id: incStr(barId), sBar: 'static bar', propFoo: [id]},
+      { id: barId, sBar: 'static bar', propFoo: [id] },
+      { id: incStr(barId), sBar: 'static bar', propFoo: [id] },
     ],
     propBaz: [
-      {id: bazId, sBaz: 'static baz', propFoo: [id]},
-      {id: incStr(bazId), sBaz: 'static baz', propFoo: [id]},
+      { id: bazId, sBaz: 'static baz', propFoo: [id] },
+      { id: incStr(bazId), sBaz: 'static baz', propFoo: [id] },
     ],
   };
 };
-export const manyToManyBar = (id = '1', fooId = '1', barId = '1', bazId = '1') => {
+export const manyToManyBar = (
+  id = '1',
+  fooId = '1',
+  barId = '1',
+  bazId = '1'
+) => {
   return {
     id,
     sBar: 'static bar',
@@ -171,14 +179,19 @@ export const manyToManyBar = (id = '1', fooId = '1', barId = '1', bazId = '1') =
         sFoo: 'static foo',
         propBar: [barId, incStr(barId)],
         propBaz: [
-          {id: bazId, sBaz: 'static baz', propFoo: [fooId]},
-          {id: incStr(bazId), sBaz: 'static baz', propFoo: [fooId]},
+          { id: bazId, sBaz: 'static baz', propFoo: [fooId] },
+          { id: incStr(bazId), sBaz: 'static baz', propFoo: [fooId] },
         ],
       },
     ],
   };
 };
-export const manyToManyBaz = (id = '1', fooId = '1', barId = '1', bazId = '1') => {
+export const manyToManyBaz = (
+  id = '1',
+  fooId = '1',
+  barId = '1',
+  bazId = '1'
+) => {
   return {
     id,
     sBaz: 'static baz',
@@ -187,8 +200,8 @@ export const manyToManyBaz = (id = '1', fooId = '1', barId = '1', bazId = '1') =
         id: fooId,
         sFoo: 'static foo',
         propBar: [
-          {id: barId, sBar: 'static bar', propFoo: [fooId]},
-          {id: incStr(barId), sBar: 'static bar', propFoo: [fooId]},
+          { id: barId, sBar: 'static bar', propFoo: [fooId] },
+          { id: incStr(barId), sBar: 'static bar', propFoo: [fooId] },
         ],
         propBaz: [bazId, incStr(bazId)],
       },

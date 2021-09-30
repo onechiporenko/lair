@@ -8,6 +8,5 @@ docs
 .github
 dist/coverage
 publish.sh
-tslint.json
 tsconfig.json
 stryker.conf.json

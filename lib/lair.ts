@@ -1,22 +1,38 @@
 import {
-  CreateRecordExtraData, Factory, FactoryData, FieldMetaAttr, Meta, MetaAttrType, RelationshipMetaAttr,
+  CreateRecordExtraData,
+  Factory,
+  FactoryData,
+  FieldMetaAttr,
+  Meta,
+  MetaAttrType,
+  RelationshipMetaAttr,
 } from './factory';
-import {Record} from './record';
-import {Relationships} from './relationships';
-import {assert, copy, getId, getOrCalcValue, hasId, warn} from './utils';
+import { LairRecord } from './record';
+import { Relationships } from './relationships';
+import { assert, copy, getId, getOrCalcValue, hasId, warn } from './utils';
 
-import {assertCrudOptions, assertHasType, assertLoops, getLastItemsCount, verbose} from './decorators';
+import {
+  assertCrudOptions,
+  assertHasType,
+  assertLoops,
+  getLastItemsCount,
+  verbose,
+} from './decorators';
 
 function getDefaultCrudOptions(options: CRUDOptions): RelationshipOptions {
-  return {maxDepth: options.depth || Infinity, currentDepth: 1, ignoreRelated: options.ignoreRelated || []};
+  return {
+    maxDepth: options.depth || Infinity,
+    currentDepth: 1,
+    ignoreRelated: options.ignoreRelated || [],
+  };
 }
 
-const {keys} = Object;
-const {isArray} = Array;
+const { keys, hasOwnProperty } = Object;
+const { isArray } = Array;
 
 export interface InternalDb {
   [factoryName: string]: {
-    [recordId: string]: Record;
+    [recordId: string]: LairRecord;
   };
 }
 
@@ -69,7 +85,6 @@ export interface RelatedFor {
 }
 
 export class Lair {
-
   /**
    * Lair implements singleton-pattern
    * Use this method to get it's instance
@@ -90,7 +105,7 @@ export class Lair {
 
   private static instance: Lair;
 
-  public verbose: boolean = false;
+  public verbose = false;
 
   private factories: { [id: string]: FactoryData } = {};
   private relationships: Relationships;
@@ -108,9 +123,15 @@ export class Lair {
    */
   public registerFactory(factory: Factory, factoryName?: string): void {
     const name = factory.name || factoryName;
-    assert('Factory name must be defined in the `Factory.create` or it must be provided here as a second argument', !!name);
-    assert(`Factory with name "${name}" is already registered`, !this.factories[name]);
-    this.factories[name] = {factory, id: 1} as FactoryData;
+    assert(
+      'Factory name must be defined in the `Factory.create` or it must be provided here as a second argument',
+      !!name
+    );
+    assert(
+      `Factory with name "${name}" is already registered`,
+      !this.factories[name]
+    );
+    this.factories[name] = { factory, id: 1 } as FactoryData;
     this.meta[name] = factory.meta;
     this.relationships.addFactory(name);
     this.relationships.updateMeta(this.meta);
@@ -127,12 +148,23 @@ export class Lair {
     this.afterCreateQueue = [];
     this.internalCreateRecords(factoryName, count);
     while (this.afterCreateQueue.length) {
-      const {factoryName: fName, id, extraData} = this.afterCreateQueue.shift();
+      const {
+        factoryName: fName,
+        id,
+        extraData,
+      } = this.afterCreateQueue.shift();
       const factory = this.factories[fName].factory;
-      const record = this.getRecordWithRelationships(fName, id, [], {maxDepth: factory.afterCreateRelationshipsDepth, currentDepth: 1, ignoreRelated: factory.afterCreateIgnoreRelated || []});
+      const record = this.getRecordWithRelationships(fName, id, [], {
+        maxDepth: factory.afterCreateRelationshipsDepth,
+        currentDepth: 1,
+        ignoreRelated: factory.afterCreateIgnoreRelated || [],
+      });
       const newData = factory.afterCreate.call(null, record, extraData);
-      keys(factory.meta).forEach(attrName => {
-        if (newData.hasOwnProperty(attrName) && factory.meta[attrName].type === MetaAttrType.FIELD) {
+      keys(factory.meta).forEach((attrName) => {
+        if (
+          hasOwnProperty.call(newData, attrName) &&
+          factory.meta[attrName].type === MetaAttrType.FIELD
+        ) {
           this.db[fName][id][attrName] = newData[attrName];
         }
       });
@@ -145,9 +177,15 @@ export class Lair {
    */
   @verbose
   @assertHasType
-  public loadRecords(factoryName: string, data: object[]): void {
-    assert(`"${factoryName}" must have "allowCustomIds" set to "true"`, this.factories[factoryName].factory.allowCustomIds);
-    data.forEach(item => {
+  public loadRecords(
+    factoryName: string,
+    data: Record<string, unknown>[]
+  ): void {
+    assert(
+      `"${factoryName}" must have "allowCustomIds" set to "true"`,
+      this.factories[factoryName].factory.allowCustomIds
+    );
+    data.forEach((item) => {
       this.createOne(factoryName, item);
     });
   }
@@ -159,11 +197,15 @@ export class Lair {
   @verbose
   @assertHasType
   @assertCrudOptions
-  public queryMany(factoryName: string, clb: (record: Record) => boolean, options: CRUDOptions = {}): Record[] {
+  public queryMany(
+    factoryName: string,
+    clb: (record: LairRecord) => boolean,
+    options: CRUDOptions = {}
+  ): LairRecord[] {
     const opts = getDefaultCrudOptions(options);
     return keys(this.db[factoryName])
-      .filter(id => clb.call(null, this.db[factoryName][id]))
-      .map(id => this.getRecordWithRelationships(factoryName, id, [], opts));
+      .filter((id) => clb.call(null, this.db[factoryName][id]))
+      .map((id) => this.getRecordWithRelationships(factoryName, id, [], opts));
   }
 
   /**
@@ -172,9 +214,11 @@ export class Lair {
   @verbose
   @assertHasType
   @assertCrudOptions
-  public getAll(factoryName: string, options: CRUDOptions = {}): Record[] {
+  public getAll(factoryName: string, options: CRUDOptions = {}): LairRecord[] {
     const opts = getDefaultCrudOptions(options);
-    return keys(this.db[factoryName]).map(id => this.getRecordWithRelationships(factoryName, id, [], opts));
+    return keys(this.db[factoryName]).map((id) =>
+      this.getRecordWithRelationships(factoryName, id, [], opts)
+    );
   }
 
   /**
@@ -183,7 +227,11 @@ export class Lair {
   @verbose
   @assertHasType
   @assertCrudOptions
-  public getOne(factoryName: string, id: string, options: CRUDOptions = {}): Record {
+  public getOne(
+    factoryName: string,
+    id: string,
+    options: CRUDOptions = {}
+  ): LairRecord {
     const opts = getDefaultCrudOptions(options);
     return this.getRecordWithRelationships(factoryName, id, [], opts);
   }
@@ -195,7 +243,11 @@ export class Lair {
   @verbose
   @assertHasType
   @assertCrudOptions
-  public queryOne(factoryName: string, clb: (record: Record) => boolean, options: CRUDOptions = {}): Record {
+  public queryOne(
+    factoryName: string,
+    clb: (record: LairRecord) => boolean,
+    options: CRUDOptions = {}
+  ): LairRecord {
     const opts = getDefaultCrudOptions(options);
     const records = this.db[factoryName];
     const ids = keys(records);
@@ -217,16 +269,27 @@ export class Lair {
   @verbose
   @assertHasType
   @assertCrudOptions
-  public createOne(factoryName: string, data: CreateOneData, options: CRUDOptions = {}): Record {
+  public createOne(
+    factoryName: string,
+    data: CreateOneData,
+    options: CRUDOptions = {}
+  ): LairRecord {
     const opts = getDefaultCrudOptions(options);
     const meta = this.getMetaFor(factoryName);
-    const id = this.factories[factoryName].factory.allowCustomIds ? data.id : String(this.factories[factoryName].id);
+    const id = this.factories[factoryName].factory.allowCustomIds
+      ? data.id
+      : String(this.factories[factoryName].id);
     const factory = this.factories[factoryName].factory;
     this.relationships.addRecord(factoryName, id);
-    const newRecord = {id, ...factory.getDefaults()};
-    keys(data).forEach(attrName => {
-      if (meta.hasOwnProperty(attrName)) {
-        newRecord[attrName] = this.createAttrValue(factoryName, id, attrName, data[attrName]);
+    const newRecord = { id, ...factory.getDefaults() };
+    keys(data).forEach((attrName) => {
+      if (hasOwnProperty.call(meta, attrName)) {
+        newRecord[attrName] = this.createAttrValue(
+          factoryName,
+          id,
+          attrName,
+          data[attrName]
+        );
       } else {
         if (options.handleNotAttrs && attrName !== 'id') {
           newRecord[attrName] = data[attrName];
@@ -247,14 +310,27 @@ export class Lair {
   @verbose
   @assertHasType
   @assertCrudOptions
-  public updateOne(factoryName: string, id: string, data: object, options: CRUDOptions = {}): Record {
+  public updateOne(
+    factoryName: string,
+    id: string,
+    data: Record<string, any>,
+    options: CRUDOptions = {}
+  ): LairRecord {
     const opts = getDefaultCrudOptions(options);
     const record = this.getOne(factoryName, id);
-    assert(`Record of "${factoryName}" with id "${id}" doesn't exist`, !!record);
+    assert(
+      `Record of "${factoryName}" with id "${id}" doesn't exist`,
+      !!record
+    );
     const meta = this.getMetaFor(factoryName);
-    keys(data).forEach(attrName => {
-      if (meta.hasOwnProperty(attrName)) {
-        record[attrName] = this.createAttrValue(factoryName, id, attrName, data[attrName]);
+    keys(data).forEach((attrName) => {
+      if (hasOwnProperty.call(meta, attrName)) {
+        record[attrName] = this.createAttrValue(
+          factoryName,
+          id,
+          attrName,
+          data[attrName]
+        );
       } else {
         if (options.handleNotAttrs && attrName !== 'id') {
           record[attrName] = data[attrName];
@@ -285,7 +361,7 @@ export class Lair {
    */
   public getDevInfo(): DevInfo {
     const ret = {};
-    Object.keys(this.factories).forEach(factoryName => {
+    Object.keys(this.factories).forEach((factoryName) => {
       ret[factoryName] = {
         count: Object.keys(this.db[factoryName]).length,
         id: this.factories[factoryName].id,
@@ -303,15 +379,26 @@ export class Lair {
     this.db[type] = {};
   }
 
-  private internalCreateRecords(factoryName: string, count: number, parentData: ParentData = {factoryName: '', attrName: ''}, relatedChain: string[] = []): Record[] {
-    assert(`Factory with name "${factoryName}" is not registered`, !!this.factories[factoryName]);
+  private internalCreateRecords(
+    factoryName: string,
+    count: number,
+    parentData: ParentData = { factoryName: '', attrName: '' },
+    relatedChain: string[] = []
+  ): LairRecord[] {
+    assert(
+      `Factory with name "${factoryName}" is not registered`,
+      !!this.factories[factoryName]
+    );
     if (factoryName === parentData.factoryName) {
       // try to check reflexive relationships
       const m = this.getMetaFor(parentData.factoryName);
       const attrMeta = m[parentData.attrName] as RelationshipMetaAttr;
       if (attrMeta.reflexive) {
         const depth = attrMeta.reflexiveDepth;
-        const alreadyCreatedCount = getLastItemsCount(relatedChain, factoryName);
+        const alreadyCreatedCount = getLastItemsCount(
+          relatedChain,
+          factoryName
+        );
         if (depth === alreadyCreatedCount) {
           return [];
         }
@@ -323,39 +410,68 @@ export class Lair {
       assertLoops(factoryName, relatedChain);
     }
     const factoryData = this.factories[factoryName];
-    const {meta, createRelated} = factoryData.factory;
+    const { meta, createRelated } = factoryData.factory;
     const newRecords = [];
     let counter = 1;
     for (let i = 0; i < count; i++) {
-      const relatedTo = relatedChain.length ? {
-        currentRecordNumber: counter,
-        factoryName: relatedChain[relatedChain.length - 1],
-        recordsCount: count,
-      } : {};
-      const extraData = {relatedTo} as CreateRecordExtraData;
-      const record = factoryData.factory.createRecord(this.factories[factoryName].id, extraData);
+      const relatedTo = relatedChain.length
+        ? {
+            currentRecordNumber: counter,
+            factoryName: relatedChain[relatedChain.length - 1],
+            recordsCount: count,
+          }
+        : {};
+      const extraData = { relatedTo } as CreateRecordExtraData;
+      const record = factoryData.factory.createRecord(
+        this.factories[factoryName].id,
+        extraData
+      );
       this.relationships.addRecord(factoryName, record.id);
       this.db[factoryName][record.id] = record;
       newRecords.push(record);
       this.factories[factoryName].id++;
-      this.afterCreateQueue.push({factoryName, id: record.id, extraData});
+      this.afterCreateQueue.push({ factoryName, id: record.id, extraData });
       if (createRelated) {
-        keys(createRelated).forEach(attrName => {
+        keys(createRelated).forEach((attrName) => {
           const fName = (meta[attrName] as RelationshipMetaAttr).factoryName;
           const isHasMany = meta[attrName].type === MetaAttrType.HAS_MANY;
-          const relatedCount = isHasMany ? getOrCalcValue<number>(createRelated[attrName], record, record.id) : 1;
-          const relatedRecords = this.internalCreateRecords(fName, relatedCount, {factoryName, attrName}, [...relatedChain, factoryName]);
-          this.db[factoryName][record.id][attrName] = isHasMany ? relatedRecords : relatedRecords[0];
+          const relatedCount = isHasMany
+            ? getOrCalcValue<number>(createRelated[attrName], record, record.id)
+            : 1;
+          const relatedRecords = this.internalCreateRecords(
+            fName,
+            relatedCount,
+            { factoryName, attrName },
+            [...relatedChain, factoryName]
+          );
+          this.db[factoryName][record.id][attrName] = isHasMany
+            ? relatedRecords
+            : relatedRecords[0];
         });
       }
-      this.relationships.recalculateRelationshipsForRecord(factoryName, this.db[factoryName][record.id]);
+      this.relationships.recalculateRelationshipsForRecord(
+        factoryName,
+        this.db[factoryName][record.id]
+      );
       counter++;
     }
     return newRecords;
   }
 
-  private getRecordWithRelationships(factoryName: string, id: string, relatedFor: RelatedFor[] = [], options: RelationshipOptions = {maxDepth: Infinity, currentDepth: 1, ignoreRelated: []}): Record {
-    const recordRelationships = this.relationships.getRelationshipsForRecord(factoryName, id);
+  private getRecordWithRelationships(
+    factoryName: string,
+    id: string,
+    relatedFor: RelatedFor[] = [],
+    options: RelationshipOptions = {
+      maxDepth: Infinity,
+      currentDepth: 1,
+      ignoreRelated: [],
+    }
+  ): LairRecord {
+    const recordRelationships = this.relationships.getRelationshipsForRecord(
+      factoryName,
+      id
+    );
     const meta = this.getMetaFor(factoryName);
     let record = this.db[factoryName][id];
     if (!record) {
@@ -363,19 +479,22 @@ export class Lair {
     }
     record = copy(record);
     if (options.currentDepth >= options.maxDepth) {
-      return {...record, ...recordRelationships} as Record;
+      return { ...record, ...recordRelationships } as LairRecord;
     }
     let ignoreRelated = [];
     if (typeof options.ignoreRelated === 'boolean') {
-      ignoreRelated = options.ignoreRelated ? this.getRelatedFactoryNames(factoryName) : [];
+      ignoreRelated = options.ignoreRelated
+        ? this.getRelatedFactoryNames(factoryName)
+        : [];
     }
     if (isArray(options.ignoreRelated)) {
       ignoreRelated = options.ignoreRelated;
     }
     if (recordRelationships) {
-      keys(recordRelationships).forEach(attrName => {
+      keys(recordRelationships).forEach((attrName) => {
         const relatedIds = recordRelationships[attrName];
-        const relatedFactoryName = (meta[attrName] as RelationshipMetaAttr).factoryName;
+        const relatedFactoryName = (meta[attrName] as RelationshipMetaAttr)
+          .factoryName;
         if (ignoreRelated.indexOf(relatedFactoryName) !== -1) {
           delete record[attrName];
           return;
@@ -383,37 +502,80 @@ export class Lair {
         if (this.isRelated(factoryName, attrName, relatedFor)) {
           record[attrName] = relatedIds;
         } else {
-          const isRelatedFor = [...relatedFor, {factoryName, id, attrName}];
-          const opts = {...options} as RelationshipOptions;
+          const isRelatedFor = [...relatedFor, { factoryName, id, attrName }];
+          const opts = { ...options } as RelationshipOptions;
           opts.currentDepth++;
-          record[attrName] = isArray(relatedIds) ?
-            relatedIds.map(relatedId => this.getRecordWithRelationships(relatedFactoryName, relatedId, isRelatedFor, opts)) :
-            (relatedIds ? this.getRecordWithRelationships(relatedFactoryName, relatedIds, isRelatedFor, opts) : null);
+          record[attrName] = isArray(relatedIds)
+            ? relatedIds.map((relatedId) =>
+                this.getRecordWithRelationships(
+                  relatedFactoryName,
+                  relatedId,
+                  isRelatedFor,
+                  opts
+                )
+              )
+            : relatedIds
+            ? this.getRecordWithRelationships(
+                relatedFactoryName,
+                relatedIds,
+                isRelatedFor,
+                opts
+              )
+            : null;
         }
       });
     }
     return record;
   }
 
-  private isRelated(factoryName: string, attrName: string, relatedFor: RelatedFor[] = []): boolean {
+  private isRelated(
+    factoryName: string,
+    attrName: string,
+    relatedFor: RelatedFor[] = []
+  ): boolean {
     const meta = this.getMetaFor(factoryName);
     const attrMeta = meta[attrName] as RelationshipMetaAttr;
     const relatedFactoryName = attrMeta.factoryName;
-    return relatedFor.some(r => r.factoryName === relatedFactoryName && r.attrName && r.attrName === attrMeta.invertedAttrName);
+    return relatedFor.some(
+      (r) =>
+        r.factoryName === relatedFactoryName &&
+        r.attrName &&
+        r.attrName === attrMeta.invertedAttrName
+    );
   }
 
-  private createAttrValue(factoryName: string, id: string, attrName: string, val: string | string[]): string | string[] | null {
+  private createAttrValue(
+    factoryName: string,
+    id: string,
+    attrName: string,
+    val: string | string[]
+  ): string | string[] | null {
     const meta = this.getMetaFor(factoryName);
     const attrMeta = meta[attrName] as FieldMetaAttr<any>;
-    const {factoryName: distFactoryName, invertedAttrName: distAttrName} = attrMeta;
+    const { factoryName: distFactoryName, invertedAttrName: distAttrName } =
+      attrMeta;
     const distMeta = this.getMetaFor(distFactoryName);
     if (attrMeta.type === MetaAttrType.HAS_MANY) {
       if (distMeta[distAttrName]) {
         if (distMeta[distAttrName].type === MetaAttrType.HAS_ONE) {
-          return this.createManyToOneAttrValue(factoryName, id, attrName, val as string[], distFactoryName, distAttrName);
+          return this.createManyToOneAttrValue(
+            factoryName,
+            id,
+            attrName,
+            val as string[],
+            distFactoryName,
+            distAttrName
+          );
         }
         if (distMeta[distAttrName].type === MetaAttrType.HAS_MANY) {
-          return this.createManyToManyAttrValue(factoryName, id, attrName, val as string[], distFactoryName, distAttrName);
+          return this.createManyToManyAttrValue(
+            factoryName,
+            id,
+            attrName,
+            val as string[],
+            distFactoryName,
+            distAttrName
+          );
         }
       } else {
         this.relationships.setMany(factoryName, id, attrName, val as string[]);
@@ -422,75 +584,183 @@ export class Lair {
     if (attrMeta.type === MetaAttrType.HAS_ONE) {
       if (distMeta[distAttrName]) {
         if (distMeta[distAttrName].type === MetaAttrType.HAS_ONE) {
-          return this.createOneToOneAttrValue(factoryName, id, attrName, val as string, distFactoryName, distAttrName);
+          return this.createOneToOneAttrValue(
+            factoryName,
+            id,
+            attrName,
+            val as string,
+            distFactoryName,
+            distAttrName
+          );
         }
         if (distMeta[distAttrName].type === MetaAttrType.HAS_MANY) {
-          return this.createOneToManyAttrValue(factoryName, id, attrName, val as string, distFactoryName, distAttrName);
+          return this.createOneToManyAttrValue(
+            factoryName,
+            id,
+            attrName,
+            val as string,
+            distFactoryName,
+            distAttrName
+          );
         }
       } else {
         this.relationships.setOne(factoryName, id, attrName, val as string);
       }
     }
     if (attrMeta.allowedValues && attrMeta.allowedValues.length) {
-      assert(`"${attrName}" must be one of the "${attrMeta.allowedValues}". You passed "${val}"`, attrMeta.allowedValues.indexOf(val) !== -1);
+      assert(
+        `"${attrName}" must be one of the "${attrMeta.allowedValues}". You passed "${val}"`,
+        attrMeta.allowedValues.indexOf(val) !== -1
+      );
     }
-    warn(`"${attrName}" expected to be "${attrMeta.preferredType}". You passed "${typeof val}"`, !attrMeta.preferredType || attrMeta.preferredType === typeof val);
+    warn(
+      `"${attrName}" expected to be "${
+        attrMeta.preferredType
+      }". You passed "${typeof val}"`,
+      !attrMeta.preferredType || attrMeta.preferredType === typeof val
+    );
     return val;
   }
 
-  private createOneToOneAttrValue(factoryName: string, id: string, attrName: string, newDistId: string, distFactoryName: string, distAttrName: string): string | null {
+  private createOneToOneAttrValue(
+    factoryName: string,
+    id: string,
+    attrName: string,
+    newDistId: string,
+    distFactoryName: string,
+    distAttrName: string
+  ): string | null {
     if (newDistId === null) {
       this.relationships.deleteRelationshipForAttr(factoryName, id, attrName);
       return null;
     }
-    assert(`"${newDistId}" is invalid identifier for record of "${distFactoryName}" [one-to-one relationship]`, hasId(newDistId) || this.factories[factoryName].factory.allowCustomIds);
+    assert(
+      `"${newDistId}" is invalid identifier for record of "${distFactoryName}" [one-to-one relationship]`,
+      hasId(newDistId) || this.factories[factoryName].factory.allowCustomIds
+    );
     const distId = getId(newDistId);
-    assert(`Record of "${distFactoryName}" with id "${distId}" doesn't exist. Create it first [one-to-one relationship]`, !!this.db[distFactoryName][distId]);
-    this.relationships.createOneToOne(factoryName, id, attrName, distId, distFactoryName, distAttrName);
+    assert(
+      `Record of "${distFactoryName}" with id "${distId}" doesn't exist. Create it first [one-to-one relationship]`,
+      !!this.db[distFactoryName][distId]
+    );
+    this.relationships.createOneToOne(
+      factoryName,
+      id,
+      attrName,
+      distId,
+      distFactoryName,
+      distAttrName
+    );
     return distId;
   }
 
-  private createManyToOneAttrValue(factoryName: string, id: string, attrName: string, newDistIds: string[], distFactoryName: string, distAttrName: string): string [] | null {
-    assert(`Array of ids should be provided for value of "${attrName}" [many-to-one relationship]`, isArray(newDistIds) || newDistIds === null);
+  private createManyToOneAttrValue(
+    factoryName: string,
+    id: string,
+    attrName: string,
+    newDistIds: string[],
+    distFactoryName: string,
+    distAttrName: string
+  ): string[] | null {
+    assert(
+      `Array of ids should be provided for value of "${attrName}" [many-to-one relationship]`,
+      isArray(newDistIds) || newDistIds === null
+    );
     if (newDistIds === null || newDistIds.length === 0) {
       this.relationships.deleteRelationshipForAttr(factoryName, id, attrName);
       return [];
     }
-    const distIds = newDistIds.map(newDistId => {
-      assert(`"${newDistId}" is invalid identifier for record of "${distFactoryName}" [many-to-one relationship]`, hasId(newDistId) || this.factories[factoryName].factory.allowCustomIds);
+    const distIds = newDistIds.map((newDistId) => {
+      assert(
+        `"${newDistId}" is invalid identifier for record of "${distFactoryName}" [many-to-one relationship]`,
+        hasId(newDistId) || this.factories[factoryName].factory.allowCustomIds
+      );
       const distId = getId(newDistId);
-      assert(`Record of "${distFactoryName}" with id "${distId}" doesn't exist. Create it first [many-to-one relationship]`, !!this.db[distFactoryName][distId]);
+      assert(
+        `Record of "${distFactoryName}" with id "${distId}" doesn't exist. Create it first [many-to-one relationship]`,
+        !!this.db[distFactoryName][distId]
+      );
       return distId;
     });
-    this.relationships.createManyToOne(factoryName, id, attrName, distIds, distFactoryName, distAttrName);
+    this.relationships.createManyToOne(
+      factoryName,
+      id,
+      attrName,
+      distIds,
+      distFactoryName,
+      distAttrName
+    );
     return distIds;
   }
 
-  private createOneToManyAttrValue(factoryName: string, id: string, attrName: string, newDistId: string, distFactoryName: string, distAttrName: string): string | null {
+  private createOneToManyAttrValue(
+    factoryName: string,
+    id: string,
+    attrName: string,
+    newDistId: string,
+    distFactoryName: string,
+    distAttrName: string
+  ): string | null {
     if (newDistId === null) {
       this.relationships.deleteRelationshipForAttr(factoryName, id, attrName);
       return null;
     }
-    assert(`"${newDistId}" is invalid identifier for record of "${distFactoryName}" [one-to-many relationship]`, hasId(newDistId) || this.factories[factoryName].factory.allowCustomIds);
+    assert(
+      `"${newDistId}" is invalid identifier for record of "${distFactoryName}" [one-to-many relationship]`,
+      hasId(newDistId) || this.factories[factoryName].factory.allowCustomIds
+    );
     const distId = getId(newDistId);
-    assert(`Record of "${distFactoryName}" with id "${distId}" doesn't exist. Create it first [one-to-many relationship]`, !!this.db[distFactoryName][distId]);
-    this.relationships.createOneToMany(factoryName, id, attrName, distId, distFactoryName, distAttrName);
+    assert(
+      `Record of "${distFactoryName}" with id "${distId}" doesn't exist. Create it first [one-to-many relationship]`,
+      !!this.db[distFactoryName][distId]
+    );
+    this.relationships.createOneToMany(
+      factoryName,
+      id,
+      attrName,
+      distId,
+      distFactoryName,
+      distAttrName
+    );
     return distId;
   }
 
-  private createManyToManyAttrValue(factoryName: string, id: string, attrName: string, newDistIds: string[], distFactoryName: string, distAttrName: string): string[] | null {
-    assert(`Array of ids should be provided for value of "${attrName}" [many-to-many relationship]`, isArray(newDistIds) || newDistIds === null);
+  private createManyToManyAttrValue(
+    factoryName: string,
+    id: string,
+    attrName: string,
+    newDistIds: string[],
+    distFactoryName: string,
+    distAttrName: string
+  ): string[] | null {
+    assert(
+      `Array of ids should be provided for value of "${attrName}" [many-to-many relationship]`,
+      isArray(newDistIds) || newDistIds === null
+    );
     if (newDistIds === null || newDistIds.length === 0) {
       this.relationships.deleteRelationshipForAttr(factoryName, id, attrName);
       return [];
     }
-    const distIds = newDistIds.map(newDistId => {
-      assert(`"${newDistId}" is invalid identifier for record of "${distFactoryName}" [many-to-many relationship]`, hasId(newDistId) || this.factories[factoryName].factory.allowCustomIds);
+    const distIds = newDistIds.map((newDistId) => {
+      assert(
+        `"${newDistId}" is invalid identifier for record of "${distFactoryName}" [many-to-many relationship]`,
+        hasId(newDistId) || this.factories[factoryName].factory.allowCustomIds
+      );
       const distId = getId(newDistId);
-      assert(`Record of "${distFactoryName}" with id "${distId}" doesn't exist. Create it first [many-to-many relationship]`, !!this.db[distFactoryName][distId]);
+      assert(
+        `Record of "${distFactoryName}" with id "${distId}" doesn't exist. Create it first [many-to-many relationship]`,
+        !!this.db[distFactoryName][distId]
+      );
       return distId;
     });
-    this.relationships.createManyToMany(factoryName, id, attrName, distIds, distFactoryName, distAttrName);
+    this.relationships.createManyToMany(
+      factoryName,
+      id,
+      attrName,
+      distIds,
+      distFactoryName,
+      distAttrName
+    );
     return newDistIds;
   }
 
@@ -502,11 +772,10 @@ export class Lair {
     const metaForFactory = this.getMetaFor(factoryName);
     const relatedFactoryNames = [];
     keys(metaForFactory).forEach((fieldName: string) => {
-      if(!!metaForFactory[fieldName].factoryName) {
+      if (metaForFactory[fieldName].factoryName) {
         relatedFactoryNames.push(metaForFactory[fieldName].factoryName);
       }
     });
     return relatedFactoryNames;
   }
-
 }

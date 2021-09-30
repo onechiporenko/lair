@@ -8,20 +8,11 @@ import {
   RelationshipMetaAttr,
   SequenceMetaAttr,
 } from './factory';
-import {
-  CRUDOptions,
-  DevInfo,
-  DevInfoItem,
-  Lair,
-} from './lair';
+import { CRUDOptions, DevInfo, DevInfoItem, Lair } from './lair';
 
-import {
-  Record,
-} from './record';
+import { LairRecord } from './record';
 
-import {
-  Relationships,
-} from './relationships';
+import { Relationships } from './relationships';
 
 export {
   CRUDOptions,
@@ -32,7 +23,7 @@ export {
   MetaAttrType,
   FactoryData,
   Meta,
-  Record,
+  LairRecord,
   Relationships,
   MetaAttr,
   FieldMetaAttr,

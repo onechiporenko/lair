@@ -1,20 +1,17 @@
-import {expect} from 'chai';
-import {Factory} from '../lib/factory';
-import {Lair} from '../lib/lair';
-import {Record} from '../lib/record';
+import { expect } from 'chai';
+import { Factory } from '../lib/factory';
+import { Lair } from '../lib/lair';
+import { LairRecord } from '../lib/record';
 
 let lair;
 let record;
 
 describe('Lair create records', () => {
-
-  beforeEach(() => lair = Lair.getLair());
+  beforeEach(() => (lair = Lair.getLair()));
   afterEach(() => Lair.cleanLair());
 
   describe('for extended factory', () => {
-
     describe('without attrs overrides', () => {
-
       beforeEach(() => {
         const A = Factory.create({
           attrs: {
@@ -36,7 +33,9 @@ describe('Lair create records', () => {
             },
             oneB: Factory.hasOne('b', 'oneA'),
             manyB: Factory.hasMany('b', 'manyA'),
-            sequenceItem: Factory.sequenceItem(1, prevItems => prevItems.reduce((x, y) => x + y, 0)),
+            sequenceItem: Factory.sequenceItem(1, (prevItems) =>
+              prevItems.reduce((x, y) => x + y, 0)
+            ),
           },
           createRelated: {
             oneB: 1,
@@ -80,20 +79,21 @@ describe('Lair create records', () => {
 
       it('should copy hasMany-relationship', () => {
         expect(record.manyB).to.be.eql([
-          {id: '2', manyA: ['1'], oneA: null},
-          {id: '3', manyA: ['1'], oneA: null},
+          { id: '2', manyA: ['1'], oneA: null },
+          { id: '3', manyA: ['1'], oneA: null },
         ]);
       });
 
       it('should copy sequence items', () => {
         expect(record.sequenceItem).to.be.equal(1);
         lair.createRecords('a', 4);
-        expect(lair.getAll('a').map(c => c.sequenceItem)).to.be.eql([1, 1, 2, 4, 8]);
+        expect(lair.getAll('a').map((c) => c.sequenceItem)).to.be.eql([
+          1, 1, 2, 4, 8,
+        ]);
       });
     });
 
     describe('with attrs overrides', () => {
-
       describe('static field', () => {
         beforeEach(() => {
           const A = Factory.create({
@@ -139,7 +139,6 @@ describe('Lair create records', () => {
       });
 
       describe('hasOne field', () => {
-
         beforeEach(() => {
           const A = Factory.create({
             attrs: {
@@ -192,7 +191,6 @@ describe('Lair create records', () => {
             oneB: 'oneB',
           });
         });
-
       });
 
       describe('hasMany field', () => {
@@ -225,20 +223,24 @@ describe('Lair create records', () => {
         it('a-record is valid', () => {
           expect(lair.getOne('a', '1')).to.be.eql({
             id: '1',
-            manyB: [{
-              id: '1',
-              manyA: ['1'],
-            }],
+            manyB: [
+              {
+                id: '1',
+                manyA: ['1'],
+              },
+            ],
           });
         });
 
         it('b-record is valid', () => {
           expect(lair.getOne('b', '1')).to.be.eql({
             id: '1',
-            manyA: [{
-              id: '1',
-              manyB: ['1'],
-            }],
+            manyA: [
+              {
+                id: '1',
+                manyB: ['1'],
+              },
+            ],
           });
         });
 
@@ -254,12 +256,18 @@ describe('Lair create records', () => {
         beforeEach(() => {
           const A = Factory.create({
             attrs: {
-              a: Factory.sequenceItem(1, prevValues => prevValues.reduce((a, b) => a + b, 0), {lastValuesCount: 2}),
+              a: Factory.sequenceItem(
+                1,
+                (prevValues) => prevValues.reduce((a, b) => a + b, 0),
+                { lastValuesCount: 2 }
+              ),
             },
           });
           const B = Factory.extend(A, {
             attrs: {
-              a: Factory.sequenceItem(2, prevValues => prevValues.reduce((a, b) => a * b, 1)),
+              a: Factory.sequenceItem(2, (prevValues) =>
+                prevValues.reduce((a, b) => a * b, 1)
+              ),
             },
           });
           lair.registerFactory(A, 'a');
@@ -269,18 +277,20 @@ describe('Lair create records', () => {
         });
 
         it('a-records are valid', () => {
-          expect(lair.getAll('a').map(r => r.a)).to.be.eql([1, 1, 2, 3, 5, 8, 13, 21]);
+          expect(lair.getAll('a').map((r) => r.a)).to.be.eql([
+            1, 1, 2, 3, 5, 8, 13, 21,
+          ]);
         });
 
         it('b-records are valid', () => {
-          expect(lair.getAll('b').map(r => r.a)).to.be.eql([2, 2, 4, 16, 256]);
+          expect(lair.getAll('b').map((r) => r.a)).to.be.eql([
+            2, 2, 4, 16, 256,
+          ]);
         });
       });
-
     });
 
     describe('afterCreate && afterCreateRelationshipsDepth && afterCreateIgnoreRelated', () => {
-
       let A;
 
       beforeEach(() => {
@@ -292,7 +302,7 @@ describe('Lair create records', () => {
             a1: 1,
           },
           afterCreateRelationshipsDepth: 5,
-          afterCreate(r: Record): Record {
+          afterCreate(r: LairRecord): LairRecord {
             expect(false).to.be.ok;
             return r;
           },
@@ -330,23 +340,21 @@ describe('Lair create records', () => {
       });
 
       it('should be correctly overridden', () => {
-        const B = Factory.extend(A, {
+        Factory.extend(A, {
           afterCreateRelationshipsDepth: 2,
           afterCreateIgnoreRelated: ['a2'],
-          afterCreate(r: Record): Record {
+          afterCreate(r: LairRecord): LairRecord {
             expect(r).to.be.eql({
               id: '1',
-              a1: {id: '1'},
+              a1: { id: '1' },
             });
             return r;
           },
         });
       });
-
     });
 
     describe('createRelated', () => {
-
       beforeEach(() => {
         const A = Factory.create({
           attrs: {
@@ -380,16 +388,10 @@ describe('Lair create records', () => {
       it('b-record is valid', () => {
         expect(lair.getOne('b', '1')).to.be.eql({
           id: '1',
-          a1: [
-            {id: '1'},
-            {id: '2'},
-          ],
-          a2: [
-            {id: '1'},
-          ],
+          a1: [{ id: '1' }, { id: '2' }],
+          a2: [{ id: '1' }],
         });
       });
-
     });
 
     describe('allowCustomIds', () => {
@@ -417,7 +419,5 @@ describe('Lair create records', () => {
         expect(Child.allowCustomIds).to.be.true;
       });
     });
-
   });
-
 });

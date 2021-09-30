@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {Factory, MetaAttrType} from '../lib/factory';
+import { expect } from 'chai';
+import { Factory, MetaAttrType } from '../lib/factory';
 
 const attrs = {
   first: 'static',
@@ -39,26 +39,28 @@ const attrs = {
   },
   one: Factory.hasOne('anotherFactory', 'attr1'),
   many: Factory.hasMany('anotherFactory', 'attr2'),
-  oneTest: Factory.hasOne('test', null, {reflexive: true, depth: 2}),
-  manyTests: Factory.hasMany('test', null, {reflexive: true, depth: 2}),
-  sequenceItem: Factory.sequenceItem(1, prevItems => prevItems.reduce((a, b) => a + b, 0)),
+  oneTest: Factory.hasOne('test', null, { reflexive: true, depth: 2 }),
+  manyTests: Factory.hasMany('test', null, { reflexive: true, depth: 2 }),
+  sequenceItem: Factory.sequenceItem(1, (prevItems) =>
+    prevItems.reduce((a, b) => a + b, 0)
+  ),
 };
 
 let factory;
 
 describe('Factory', () => {
-
   describe('#field', () => {
-
     describe('should thrown an error if `value` does not exist in the `allowedValues`', () => {
-      expect(() => Factory.create({
-        attrs: {
-          a: Factory.field({
-            value: 4,
-            allowedValues: [1, 2, 3],
-          }),
-        },
-      })).to.throw(`"value" must be one of the "allowedValues". You passed "4"`);
+      expect(() =>
+        Factory.create({
+          attrs: {
+            a: Factory.field({
+              value: 4,
+              allowedValues: [1, 2, 3],
+            }),
+          },
+        })
+      ).to.throw(`"value" must be one of the "allowedValues". You passed "4"`);
     });
   });
 
@@ -96,14 +98,13 @@ describe('Factory', () => {
   });
 
   describe('#createRecord', () => {
-
     let firstInstance;
     let secondInstance;
     let thirdInstance;
     let fourthInstance;
 
     before(() => {
-      factory = Factory.create({attrs});
+      factory = Factory.create({ attrs });
       factory.init();
       firstInstance = factory.createRecord(1);
       secondInstance = factory.createRecord(2);
@@ -144,7 +145,7 @@ describe('Factory', () => {
     });
 
     it('should throw error if `id` is defined in the `attrs`', () => {
-      const f = Factory.create({attrs: {id: '100500'}});
+      const f = Factory.create({ attrs: { id: '100500' } });
       expect(() => f.createRecord(1)).to.throw(`Don't add "id" to the "attrs"`);
     });
 
@@ -169,15 +170,13 @@ describe('Factory', () => {
         });
       });
     });
-
   });
 
   describe('#meta', () => {
-
     let meta;
 
     beforeEach(() => {
-      factory = Factory.create({attrs});
+      factory = Factory.create({ attrs });
       factory.init();
       factory.createRecord(1);
       meta = factory.meta;
@@ -278,8 +277,7 @@ describe('Factory', () => {
       },
     });
     it('should return object with default values for attributes', () => {
-      expect(A.getDefaults()).to.be.eql({a: '1', b: 2, c: false});
+      expect(A.getDefaults()).to.be.eql({ a: '1', b: 2, c: false });
     });
   });
-
 });

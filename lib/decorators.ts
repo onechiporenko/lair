@@ -22,7 +22,7 @@ export function assertCrudOptions(target: any, key: string, descriptor: Property
   const originalMethod = descriptor.value;
   descriptor.value = function(...args: any[]): any {
     const crudOptions = args[args.length - 1];
-    if (crudOptions && crudOptions.ignoreRelated) {
+    if (crudOptions && crudOptions.ignoreRelated && isArray(crudOptions.ignoreRelated)) {
       crudOptions.ignoreRelated.forEach(type => assert(`"ignoreRelated" contains type "${type}" which doesn't exist in the database`, this.hasType(type)));
     }
     return originalMethod.apply(this, args);

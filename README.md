@@ -604,4 +604,6 @@ lair.getOne('squad', '1', {ignoreRelated: ['unit']});
 
 Here we have two options called `depth` and `ignoreRelared`. First one determines how deeply Lair should go to get data for needed record. Second one determines what factories should be ignored while Lair combines data for needed record. **Important** `ignoreRelated` contains a list of factory names and not attribute names! Both `depth` and `ignoreRelated` may be used together.
 
+Key `ignoreRelated` also can be a boolean. `true` is for case when **all** related factories should be ignored. `false` is for case when **no one** related factory should be ignored (default behavior).
+
 These options are very useful for cases with a lot of related records that may cause performance issues when Lair will collect them from internal store.

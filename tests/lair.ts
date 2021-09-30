@@ -1949,6 +1949,14 @@ describe('Lair', () => {
           it('get `c` and ignore related `b`', () => {
             expect(lair.getOne('c', '1', {ignoreRelated: ['b']})).to.be.eql({id: '1'});
           });
+
+          it('get `a` and ignore all related', () => {
+            expect(lair.getOne('a', '1', {ignoreRelated: true})).to.be.eql({id: '1'});
+          });
+
+          it('get `a` and not ignore anything related', () => {
+            expect(lair.getOne('a', '1', {ignoreRelated: false})).to.be.eql({id: '1', propB: [{id: '1', propA: '1', propC: [{id: '1', propB: '1'}]}]});
+          });
         });
 
         describe('#getAll', () => {
@@ -1966,6 +1974,14 @@ describe('Lair', () => {
 
           it('get `c` and ignore related `b`', () => {
             expect(lair.getAll('c', {ignoreRelated: ['b']})).to.be.eql([{id: '1'}]);
+          });
+
+          it('get `a` and ignore all related', () => {
+            expect(lair.getAll('a', {ignoreRelated: true})).to.be.eql([{id: '1'}]);
+          });
+
+          it('get `a` and not ignore anything related', () => {
+            expect(lair.getAll('a', {ignoreRelated: false})).to.be.eql([{id: '1', propB: [{id: '1', propA: '1', propC: [{id: '1', propB: '1'}]}]}]);
           });
         });
 
@@ -1985,6 +2001,14 @@ describe('Lair', () => {
           it('get `c` and ignore related `b`', () => {
             expect(lair.queryOne('c', record => record.id === '1', {ignoreRelated: ['b']})).to.be.eql({id: '1'});
           });
+
+          it('get `a` and ignore all related', () => {
+            expect(lair.queryOne('a', record => record.id === '1', {ignoreRelated: true})).to.be.eql({id: '1'});
+          });
+
+          it('get `a` and not ignore anything related', () => {
+            expect(lair.queryOne('a', record => record.id === '1', {ignoreRelated: false})).to.be.eql({id: '1', propB: [{id: '1', propA: '1', propC: [{id: '1', propB: '1'}]}]});
+          });
         });
 
         describe('#queryMany', () => {
@@ -2002,6 +2026,14 @@ describe('Lair', () => {
 
           it('get `c` and ignore related `b`', () => {
             expect(lair.queryMany('c', record => record.id === '1', {ignoreRelated: ['b']})).to.be.eql([{id: '1'}]);
+          });
+
+          it('get `a` and ignore all related', () => {
+            expect(lair.queryMany('a', record => record.id === '1', {ignoreRelated: true})).to.be.eql([{id: '1'}]);
+          });
+
+          it('get `a` and not ignore anything related', () => {
+            expect(lair.queryMany('a', record => record.id === '1', {ignoreRelated: false})).to.be.eql([{id: '1', propB: [{id: '1', propA: '1', propC: [{id: '1', propB: '1'}]}]}]);
           });
         });
 
@@ -2021,6 +2053,14 @@ describe('Lair', () => {
           it('get `c` and ignore related `b`', () => {
             expect(lair.updateOne('c', '1', {}, {ignoreRelated: ['b']})).to.be.eql({id: '1'});
           });
+
+          it('get `a` and ignore all related', () => {
+            expect(lair.updateOne('a', '1', {},{ignoreRelated: true})).to.be.eql({id: '1'});
+          });
+
+          it('get `a` and not ignore anything related', () => {
+            expect(lair.updateOne('a', '1', {}, {ignoreRelated: false})).to.be.eql({id: '1', propB: [{id: '1', propA: '1', propC: [{id: '1', propB: '1'}]}]});
+          });
         });
 
         describe('#createOne', () => {
@@ -2038,6 +2078,14 @@ describe('Lair', () => {
 
           it('get `c` and ignore related `b`', () => {
             expect(lair.createOne('c', {}, {ignoreRelated: ['b']})).to.be.eql({id: '2'});
+          });
+
+          it('get `a` and ignore all related', () => {
+            expect(lair.createOne('a', {}, {ignoreRelated: true})).to.be.eql({id: '2'});
+          });
+
+          it('get `a` and not ignore anything related', () => {
+            expect(lair.createOne('a', {}, {ignoreRelated: false})).to.be.eql({id: '2', propB: []});
           });
         });
       });

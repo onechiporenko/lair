@@ -7,7 +7,7 @@ import {assert, copy, getId, getOrCalcValue, hasId, warn} from './utils';
 
 import {assertCrudOptions, assertHasType, assertLoops, getLastItemsCount, verbose} from './decorators';
 
-function getDefaultCrudOptions(options: {depth?: number, ignoreRelated?: string[]}): RelationshipOptions {
+function getDefaultCrudOptions(options: CRUDOptions): RelationshipOptions {
   return {maxDepth: options.depth || Infinity, currentDepth: 1, ignoreRelated: options.ignoreRelated || []};
 }
 
@@ -32,7 +32,7 @@ interface AfterCreateItem {
 
 export interface CRUDOptions {
   depth?: number;
-  ignoreRelated?: string[];
+  ignoreRelated?: string[] | boolean;
   handleNotAttrs?: boolean;
 }
 
@@ -59,7 +59,7 @@ export interface ParentData {
 export interface RelationshipOptions {
   maxDepth: number;
   currentDepth: number;
-  ignoreRelated: string[];
+  ignoreRelated: string[] | boolean;
 }
 
 export interface RelatedFor {
@@ -365,11 +365,18 @@ export class Lair {
     if (options.currentDepth >= options.maxDepth) {
       return {...record, ...recordRelationships} as Record;
     }
+    let ignoreRelated = [];
+    if (typeof options.ignoreRelated === 'boolean') {
+      ignoreRelated = options.ignoreRelated ? this.getRelatedFactoryNames(factoryName) : [];
+    }
+    if (isArray(options.ignoreRelated)) {
+      ignoreRelated = options.ignoreRelated;
+    }
     if (recordRelationships) {
       keys(recordRelationships).forEach(attrName => {
         const relatedIds = recordRelationships[attrName];
         const relatedFactoryName = (meta[attrName] as RelationshipMetaAttr).factoryName;
-        if ((options.ignoreRelated || []).indexOf(relatedFactoryName) !== -1) {
+        if (ignoreRelated.indexOf(relatedFactoryName) !== -1) {
           delete record[attrName];
           return;
         }
@@ -489,6 +496,17 @@ export class Lair {
 
   private getMetaFor(factoryName: string): Meta {
     return this.meta[factoryName];
+  }
+
+  private getRelatedFactoryNames(factoryName: string): string[] {
+    const metaForFactory = this.getMetaFor(factoryName);
+    const relatedFactoryNames = [];
+    keys(metaForFactory).forEach((fieldName: string) => {
+      if(!!metaForFactory[fieldName].factoryName) {
+        relatedFactoryNames.push(metaForFactory[fieldName].factoryName);
+      }
+    });
+    return relatedFactoryNames;
   }
 
 }

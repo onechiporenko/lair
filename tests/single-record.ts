@@ -584,7 +584,7 @@ describe('single record', () => {
           expect(lair.getOne('b', '1').propA.map((c) => c.id)).to.be.eql(['1']);
         });
 
-        describe('', () => {
+        describe('record is updated (relations are updated too)', () => {
           beforeEach(() => {
             lair.updateOne('a', '2', { propB: '1' });
           });
@@ -643,7 +643,7 @@ describe('single record', () => {
           expect(lair.getOne('b', '1').propA.map((c) => c.id)).to.be.eql(['1']);
         });
 
-        describe('', () => {
+        describe('record is updated (relations are updated too)', () => {
           beforeEach(() => {
             lair.updateOne('a', '2', { propB: { id: '1' } });
           });
@@ -710,7 +710,7 @@ describe('single record', () => {
           ]);
         });
 
-        describe('', () => {
+        describe('one-to-one relation update (id is passed)', () => {
           beforeEach(() => {
             lair.updateOne('a', '1', { propB: '2' });
           });
@@ -813,7 +813,7 @@ describe('single record', () => {
           expect(lair.getOne('b', '1').propA.map((c) => c.id)).to.be.eql(['1']);
         });
 
-        describe('', () => {
+        describe('one-to-one relation update (id is passed)', () => {
           beforeEach(() => {
             lair.createOne('a', { propB: '1' });
           });
@@ -844,7 +844,7 @@ describe('single record', () => {
         });
       });
 
-      describe('should create relationships (object passed)', () => {
+      describe('should create relationships (object is passed)', () => {
         beforeEach(() => {
           lair.registerFactory(
             Factory.create({
@@ -871,7 +871,7 @@ describe('single record', () => {
           expect(lair.getOne('b', '1').propA.map((c) => c.id)).to.be.eql(['1']);
         });
 
-        describe('', () => {
+        describe('one-to-one relation update (object passed)', () => {
           beforeEach(() => {
             lair.createOne('a', { propB: { id: '1' } });
           });
@@ -1042,7 +1042,7 @@ describe('single record', () => {
           expect(lair.getOne('b', '3').propA).to.be.null;
         });
 
-        describe('', () => {
+        describe('one-to-many relation update (list of ids is passed)', () => {
           beforeEach(() => {
             lair.updateOne('a', '1', { propB: ['2', '3'] });
           });
@@ -1114,7 +1114,7 @@ describe('single record', () => {
           expect(lair.getOne('b', '3').propA).to.be.null;
         });
 
-        describe('', () => {
+        describe('one-to-many relation update (list of object is passed)', () => {
           beforeEach(() => {
             lair.updateOne('a', '1', { propB: [{ id: '2' }, { id: '3' }] });
           });
@@ -1200,7 +1200,7 @@ describe('single record', () => {
           expect(lair.getOne('b', '3').propA).to.be.null;
         });
 
-        describe('', () => {
+        describe('one-to-many relation update (list of ids is passed)', () => {
           beforeEach(() => {
             lair.createOne('a', { propB: ['2', '3'] });
           });
@@ -1278,7 +1278,7 @@ describe('single record', () => {
           expect(lair.getOne('b', '3').propA).to.be.null;
         });
 
-        describe('', () => {
+        describe('one-to-many relation update (list of ids is passed)', () => {
           beforeEach(() => {
             lair.createOne('a', { propB: [{ id: '2' }, { id: '3' }] });
           });
@@ -1465,7 +1465,7 @@ describe('single record', () => {
           expect(lair.getOne('b', '4').propA.map((c) => c.id)).to.be.eql(['2']);
         });
 
-        describe('', () => {
+        describe('one-to-many relation update (list of ids is passed)', () => {
           beforeEach(() => {
             lair.updateOne('a', '1', { propB: ['2', '3'] });
           });
@@ -1562,7 +1562,7 @@ describe('single record', () => {
           expect(lair.getOne('b', '4').propA.map((c) => c.id)).to.be.eql(['2']);
         });
 
-        describe('', () => {
+        describe('one-to-many relation update (list of objects is passed)', () => {
           beforeEach(() => {
             lair.updateOne('a', '1', { propB: [{ id: '2' }, { id: '3' }] });
           });
@@ -1675,7 +1675,7 @@ describe('single record', () => {
           expect(lair.getOne('b', '5').propA.map((c) => c.id)).to.be.eql([]);
         });
 
-        describe('', () => {
+        describe('one-to-many relation update (list of ids is passed)', () => {
           beforeEach(() => {
             lair.createOne('a', { propB: ['2', '3', '5'] });
           });
@@ -1787,7 +1787,7 @@ describe('single record', () => {
           expect(lair.getOne('b', '5').propA.map((c) => c.id)).to.be.eql([]);
         });
 
-        describe('', () => {
+        describe('one-to-many relation update (list of objects is passed)', () => {
           beforeEach(() => {
             lair.createOne('a', {
               propB: [{ id: '2' }, { id: '3' }, { id: '5' }],

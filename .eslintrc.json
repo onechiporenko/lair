@@ -8,7 +8,8 @@
     "eslint:recommended",
     "plugin:prettier/recommended",
     "plugin:@typescript-eslint/eslint-recommended",
-    "plugin:@typescript-eslint/recommended"
+    "plugin:@typescript-eslint/recommended",
+    "plugin:mocha-cleanup/recommended"
   ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
@@ -31,6 +32,9 @@
       {
         "ignoreRestArgs": true
       }
-    ]
+    ],
+    "mocha-cleanup/asserts-limit": 0,
+    "mocha-cleanup/complexity-it": 0,
+    "mocha-cleanup/no-outside-declaration": 0
   }
 }

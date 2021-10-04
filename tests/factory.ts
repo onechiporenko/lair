@@ -50,7 +50,7 @@ let factory;
 
 describe('Factory', () => {
   describe('#field', () => {
-    describe('should thrown an error if `value` does not exist in the `allowedValues`', () => {
+    it('should thrown an error if `value` does not exist in the `allowedValues`', () => {
       expect(() =>
         Factory.create({
           attrs: {

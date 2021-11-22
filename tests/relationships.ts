@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { Factory, MetaAttrType } from '../lib/factory';
+import { Factory, field, hasMany, hasOne, MetaAttrType } from '../lib/factory';
 import { Relationships } from '../lib/relationships';
 
 let relationships;
@@ -41,7 +41,22 @@ describe('Relationships', () => {
     it('should fill relations for new record with default values', () => {
       expect(relationships.relationships).to.not.have.property('baz');
       relationships.updateMeta({
-        baz: { a: Factory.hasOne('b', 'a'), b: Factory.hasMany('c', 'a') },
+        baz: {
+          a: {
+            factoryName: 'a',
+            invertedAttrName: 'a',
+            type: MetaAttrType.HAS_ONE,
+            reflexive: false,
+            reflexiveDepth: 2,
+          },
+          b: {
+            factoryName: 'c',
+            invertedAttrName: 'a',
+            type: MetaAttrType.HAS_MANY,
+            reflexive: false,
+            reflexiveDepth: 2,
+          },
+        },
       });
       relationships.addRecord('baz', '1');
       expect(relationships.relationships).to.be.eql({
@@ -216,21 +231,19 @@ describe('Relationships', () => {
 
   describe('#recalculateRelationshipsForRecord', () => {
     describe('#updateOneToOne', () => {
+      class FactoryRecalcRelOneToOneFoo extends Factory {
+        static factoryName = 'foo';
+        @hasOne('bar', 'f') b;
+        @field() prop = 'static';
+      }
+      class FactoryRecalcRelOneToOneBar extends Factory {
+        static factoryName = 'bar';
+        @hasOne('foo', 'b') f;
+        @field() prop = 'static';
+      }
       beforeEach(() => {
-        foo = Factory.create({
-          attrs: {
-            b: Factory.hasOne('bar', 'f'),
-            prop: 'static',
-          },
-        });
-        bar = Factory.create({
-          attrs: {
-            f: Factory.hasOne('foo', 'b'),
-            prop: 'static',
-          },
-        });
-        foo.init();
-        bar.init();
+        foo = new FactoryRecalcRelOneToOneFoo();
+        bar = new FactoryRecalcRelOneToOneBar();
         foo.createRecord(1);
         bar.createRecord(1);
         relationships.addFactory('bar');
@@ -295,21 +308,19 @@ describe('Relationships', () => {
     });
 
     describe('#updateManyToOne', () => {
+      class FactoryRecalcRelManyToOneFoo extends Factory {
+        static factoryName = 'foo';
+        @hasMany('bar', 'f') b;
+        @field() prop = 'static';
+      }
+      class FactoryRecalcRelManyToOneBar extends Factory {
+        static factoryName = 'bar';
+        @hasOne('foo', 'b') f;
+        @field() prop = 'static';
+      }
       beforeEach(() => {
-        foo = Factory.create({
-          attrs: {
-            b: Factory.hasMany('bar', 'f'),
-            prop: 'static',
-          },
-        });
-        bar = Factory.create({
-          attrs: {
-            f: Factory.hasOne('foo', 'b'),
-            prop: 'static',
-          },
-        });
-        foo.init();
-        bar.init();
+        foo = new FactoryRecalcRelManyToOneFoo();
+        bar = new FactoryRecalcRelManyToOneBar();
         foo.createRecord(1);
         bar.createRecord(1);
         relationships.addFactory('bar');
@@ -404,21 +415,19 @@ describe('Relationships', () => {
     });
 
     describe('#updateOneToMany', () => {
+      class FactoryRecalcRelOneToManyFoo extends Factory {
+        static factoryName = 'foo';
+        @hasOne('bar', 'f') b;
+        @field() prop = 'static';
+      }
+      class FactoryRecalcRelOneToManyBar extends Factory {
+        static factoryName = 'bar';
+        @hasMany('foo', 'b') f;
+        @field() prop = 'static';
+      }
       beforeEach(() => {
-        foo = Factory.create({
-          attrs: {
-            b: Factory.hasOne('bar', 'f'),
-            prop: 'static',
-          },
-        });
-        bar = Factory.create({
-          attrs: {
-            f: Factory.hasMany('foo', 'b'),
-            prop: 'static',
-          },
-        });
-        foo.init();
-        bar.init();
+        foo = new FactoryRecalcRelOneToManyFoo();
+        bar = new FactoryRecalcRelOneToManyBar();
         foo.createRecord(1);
         bar.createRecord(1);
         relationships.addFactory('bar');
@@ -513,21 +522,19 @@ describe('Relationships', () => {
     });
 
     describe('#updateManyToMany', () => {
+      class FactoryRecalcRelManyToManyFoo extends Factory {
+        static factoryName = 'foo';
+        @hasMany('bar', 'f') b;
+        @field() prop = 'static';
+      }
+      class FactoryRecalcRelManyToManyBar extends Factory {
+        static factoryName = 'bar';
+        @hasMany('foo', 'b') f;
+        @field() prop = 'static';
+      }
       beforeEach(() => {
-        foo = Factory.create({
-          attrs: {
-            b: Factory.hasMany('bar', 'f'),
-            prop: 'static',
-          },
-        });
-        bar = Factory.create({
-          attrs: {
-            f: Factory.hasMany('foo', 'b'),
-            prop: 'static',
-          },
-        });
-        foo.init();
-        bar.init();
+        foo = new FactoryRecalcRelManyToManyFoo();
+        bar = new FactoryRecalcRelManyToManyBar();
         foo.createRecord(1);
         bar.createRecord(1);
         relationships.addFactory('bar');
@@ -624,21 +631,19 @@ describe('Relationships', () => {
 
   describe('#deleteRelationshipsForRecord', () => {
     describe('#updateOneToOne', () => {
+      class FactoryDelRelOneToOneFoo extends Factory {
+        static factoryName = 'foo';
+        @hasOne('bar', 'f') b;
+        @field() prop = 'static';
+      }
+      class FactoryDelRelOneToOneBar extends Factory {
+        static factoryName = 'bar';
+        @hasOne('foo', 'b') f;
+        @field() prop = 'static';
+      }
       beforeEach(() => {
-        foo = Factory.create({
-          attrs: {
-            b: Factory.hasOne('bar', 'f'),
-            prop: 'static',
-          },
-        });
-        bar = Factory.create({
-          attrs: {
-            f: Factory.hasOne('foo', 'b'),
-            prop: 'static',
-          },
-        });
-        foo.init();
-        bar.init();
+        foo = new FactoryDelRelOneToOneFoo();
+        bar = new FactoryDelRelOneToOneBar();
         foo.createRecord(1);
         bar.createRecord(1);
         relationships.addFactory('bar');
@@ -663,21 +668,19 @@ describe('Relationships', () => {
     });
 
     describe('#updateOneToMany', () => {
+      class FactoryDelRelOneToManyFoo extends Factory {
+        static factoryName = 'foo';
+        @hasOne('bar', 'f') b;
+        @field() prop = 'static';
+      }
+      class FactoryDelRelOneToManyBar extends Factory {
+        static factoryName = 'bar';
+        @hasMany('foo', 'b') f;
+        @field() prop = 'static';
+      }
       beforeEach(() => {
-        foo = Factory.create({
-          attrs: {
-            b: Factory.hasOne('bar', 'f'),
-            prop: 'static',
-          },
-        });
-        bar = Factory.create({
-          attrs: {
-            f: Factory.hasMany('foo', 'b'),
-            prop: 'static',
-          },
-        });
-        foo.init();
-        bar.init();
+        foo = new FactoryDelRelOneToManyFoo();
+        bar = new FactoryDelRelOneToManyBar();
         foo.createRecord(1);
         bar.createRecord(1);
         relationships.addFactory('bar');
@@ -702,21 +705,19 @@ describe('Relationships', () => {
     });
 
     describe('#updateManyToOne', () => {
+      class FactoryDelRelManyToOneFoo extends Factory {
+        static factoryName = 'foo';
+        @hasMany('bar', 'f') b;
+        @field() prop = 'static';
+      }
+      class FactoryDelRelManyToOneBar extends Factory {
+        static factoryName = 'bar';
+        @hasOne('foo', 'b') f;
+        @field() prop = 'static';
+      }
       beforeEach(() => {
-        foo = Factory.create({
-          attrs: {
-            b: Factory.hasMany('bar', 'f'),
-            prop: 'static',
-          },
-        });
-        bar = Factory.create({
-          attrs: {
-            f: Factory.hasOne('foo', 'b'),
-            prop: 'static',
-          },
-        });
-        foo.init();
-        bar.init();
+        foo = new FactoryDelRelManyToOneFoo();
+        bar = new FactoryDelRelManyToOneBar();
         foo.createRecord(1);
         bar.createRecord(1);
         relationships.addFactory('bar');
@@ -741,21 +742,19 @@ describe('Relationships', () => {
     });
 
     describe('#updateManyToMany', () => {
+      class FactoryDelRelManyToManyFoo extends Factory {
+        static factoryName = 'foo';
+        @hasMany('bar', 'f') b;
+        @field() prop = 'static';
+      }
+      class FactoryDelRelManyToManyBar extends Factory {
+        static factoryName = 'bar';
+        @hasMany('foo', 'b') f;
+        @field() prop = 'static';
+      }
       beforeEach(() => {
-        foo = Factory.create({
-          attrs: {
-            b: Factory.hasMany('bar', 'f'),
-            prop: 'static',
-          },
-        });
-        bar = Factory.create({
-          attrs: {
-            f: Factory.hasMany('foo', 'b'),
-            prop: 'static',
-          },
-        });
-        foo.init();
-        bar.init();
+        foo = new FactoryDelRelManyToManyFoo();
+        bar = new FactoryDelRelManyToManyBar();
         foo.createRecord(1);
         bar.createRecord(1);
         relationships.addFactory('bar');

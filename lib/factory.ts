@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import { LairRecord } from './record';
 import { assert, copy, getOrCalcValue, getVal } from './utils';
 
@@ -41,6 +42,7 @@ export interface RelationshipMetaAttr extends MetaAttr {
   invertedAttrName: string;
   reflexive: boolean;
   reflexiveDepth: number;
+  createRelated?: number | ((id: string) => number);
 }
 
 export interface FieldMetaAttr<T> extends MetaAttr {
@@ -48,11 +50,13 @@ export interface FieldMetaAttr<T> extends MetaAttr {
   allowedValues?: T[]; // something like enum
   preferredType?: string;
   value: T | (() => T);
+  getter?: (...args: any[]) => any;
 }
 
 export interface RelationshipOptions {
-  reflexive: boolean;
-  depth: number;
+  reflexive?: boolean;
+  depth?: number;
+  createRelated?: number | ((id: string) => number);
 }
 
 export interface SequenceItemOptions {
@@ -61,30 +65,8 @@ export interface SequenceItemOptions {
 
 export interface FieldOptions<T> {
   defaultValue?: T;
-  value: T | (() => T);
   preferredType?: string;
   allowedValues?: T[];
-}
-
-export interface Attrs {
-  [prop: string]: any;
-}
-
-export interface CreateOptions {
-  name?: string;
-  attrs?: Attrs;
-  createRelated?: CreateRelatedOptions;
-  allowCustomIds?: boolean;
-  afterCreate?: (
-    record: LairRecord,
-    extraData?: CreateRecordExtraData
-  ) => LairRecord;
-  afterCreateRelationshipsDepth?: number;
-  afterCreateIgnoreRelated?: string[];
-}
-
-export interface CreateRelatedOptions {
-  [attrName: string]: number | ((id: string) => number);
 }
 
 export interface CreateRecordExtraData {
@@ -98,16 +80,188 @@ export interface RelatedToData {
   recordsCount: number;
 }
 
-function _attrsToFields(attrs: Meta): Meta {
-  keys(attrs).forEach((attrName) => {
-    if (!attrs[attrName].type) {
-      attrs[attrName] = {
-        type: MetaAttrType.FIELD,
-        value: attrs[attrName],
+export const FACTORY_META_KEY = Symbol('FACTORY_META_KEY');
+
+const setupFactoryMeta = (classConstructor: any): void => {
+  if (!Reflect.hasOwnMetadata(FACTORY_META_KEY, classConstructor)) {
+    Reflect.defineMetadata(FACTORY_META_KEY, {}, classConstructor);
+  }
+};
+
+const updateFactoryMeta = (
+  classConstructor: any,
+  propertyKey: string,
+  propertyKeyMeta: MetaAttr,
+  force = false
+) => {
+  const meta = Reflect.getOwnMetadata(FACTORY_META_KEY, classConstructor);
+  if (force) {
+    meta[propertyKey] = propertyKeyMeta;
+  } else {
+    meta[propertyKey] = meta[propertyKey] || propertyKeyMeta;
+  }
+  Reflect.defineMetadata(FACTORY_META_KEY, meta, classConstructor);
+};
+
+export function field<T>(fieldOptions: FieldOptions<T> = {}): any {
+  return function (
+    target: any,
+    propertyKey: string,
+    descriptor: PropertyDescriptor
+  ): any {
+    assert(
+      `Decorator "field" must be used only for instance properties (now it's used for "${propertyKey}")`,
+      !!target.constructor
+    );
+    setupFactoryMeta(target.constructor);
+    assert(
+      `"defaultValue" can't be a function`,
+      !(fieldOptions.defaultValue instanceof Function)
+    );
+    const allowedValues =
+      'allowedValues' in fieldOptions ? fieldOptions.allowedValues : null;
+    const propertyKeyMeta = {
+      type: MetaAttrType.FIELD,
+    } as FieldMetaAttr<any>;
+    if (descriptor?.get) {
+      propertyKeyMeta.getter = descriptor?.get;
+    }
+    if (allowedValues) {
+      propertyKeyMeta.allowedValues = allowedValues;
+    }
+
+    ['defaultValue', 'preferredType'].map((prop) => {
+      if (hasOwnProperty.call(fieldOptions, prop)) {
+        propertyKeyMeta[prop] = fieldOptions[prop];
+      }
+    });
+    updateFactoryMeta(target.constructor, propertyKey, propertyKeyMeta);
+    if (descriptor) {
+      descriptor.get = function () {
+        if (!this.cache.has(this.currentRecordId)) {
+          this.cache.set(this.currentRecordId, {});
+        }
+        const recordCache = this.cache.get(this.currentRecordId);
+        if (recordCache[propertyKey]) {
+          return recordCache[propertyKey];
+        }
+        if (propertyKeyMeta.getter) {
+          recordCache[propertyKey] = propertyKeyMeta.getter?.call(this);
+        }
+        this.cache.set(this.currentRecordId, recordCache);
+        return recordCache[propertyKey];
+      };
+      descriptor.set = function (v: any) {
+        if (!this.cache.has(this.currentRecordId)) {
+          this.cache.set(this.currentRecordId, {});
+        }
+        const recordCache = this.cache.get(this.currentRecordId);
+        recordCache[propertyKey] = v;
+        this.cache.set(this.currentRecordId, recordCache);
       };
     }
-  });
-  return attrs;
+  };
+}
+
+/**
+ * Use `hasOne` for relationship-fields
+ * Used for 'one-to-one' and 'one-to-many'
+ */
+export function hasOne(
+  factoryName: string,
+  invertedAttrName: string,
+  options?: RelationshipOptions
+): any {
+  return function (
+    target: any,
+    propertyKey: string,
+    descriptor: PropertyDescriptor
+  ): any {
+    assert(
+      `Decorator "hasOne" must be used only for instance properties (now it's used for "${propertyKey}")`,
+      !!target.constructor
+    );
+    setupFactoryMeta(target.constructor);
+    const reflexive = getVal<boolean>(options, 'reflexive', false);
+    const reflexiveDepth = reflexive ? getVal<number>(options, 'depth', 2) : 2;
+    const propertyKeyMeta = {
+      factoryName,
+      invertedAttrName,
+      type: MetaAttrType.HAS_ONE,
+      reflexive,
+      reflexiveDepth,
+    } as RelationshipMetaAttr;
+    if (options?.createRelated) {
+      propertyKeyMeta.createRelated = options?.createRelated;
+    }
+    updateFactoryMeta(target.constructor, propertyKey, propertyKeyMeta);
+  };
+}
+
+/**
+ * Use `hasMany` for relationship-fields
+ * Used for 'many-to-one' and 'many-to-many'
+ */
+export function hasMany(
+  factoryName: string,
+  invertedAttrName: string,
+  options?: RelationshipOptions
+): any {
+  return function (
+    target: any,
+    propertyKey: string,
+    descriptor: PropertyDescriptor
+  ): any {
+    assert(
+      `Decorator "hasMany" must be used only for instance properties (now it's used for "${propertyKey}")`,
+      !!target.constructor
+    );
+    setupFactoryMeta(target.constructor);
+    const reflexive = getVal<boolean>(options, 'reflexive', false);
+    const reflexiveDepth = reflexive ? getVal<number>(options, 'depth', 2) : 2;
+    const propertyKeyMeta = {
+      factoryName,
+      invertedAttrName,
+      type: MetaAttrType.HAS_MANY,
+      reflexive,
+      reflexiveDepth,
+    } as RelationshipMetaAttr;
+    if (options?.createRelated) {
+      propertyKeyMeta.createRelated = options?.createRelated;
+    }
+    updateFactoryMeta(target.constructor, propertyKey, propertyKeyMeta);
+  };
+}
+
+/**
+ * Use `sequenceItem` for fields that depend on previously generated values
+ */
+export function sequenceItem<T>(
+  initialValue: T,
+  getNextValue: (prevValues: T[]) => T,
+  options?: SequenceItemOptions
+): any {
+  return function (
+    target: any,
+    propertyKey: string,
+    descriptor: PropertyDescriptor
+  ): any {
+    assert(
+      `Decorator "sequenceItem" must be used only for instance properties (now it's used for "${propertyKey}")`,
+      !!target.constructor
+    );
+    setupFactoryMeta(target.constructor);
+    updateFactoryMeta(target.constructor, propertyKey, {
+      getNextValue,
+      initialValue: getOrCalcValue<T>(initialValue),
+      lastValuesCount:
+        options && hasOwnProperty.call(options, 'lastValuesCount')
+          ? options.lastValuesCount
+          : Infinity,
+      prevValues: [],
+      type: MetaAttrType.SEQUENCE_ITEM,
+    });
+  };
 }
 
 /**
@@ -123,185 +277,41 @@ function _attrsToFields(attrs: Meta): Meta {
  *  - Sequence item which value is based on previously generated values (for older records)
  */
 export class Factory {
-  /**
-   * Use `Factory.hasOne` for relationship-fields
-   * Used for 'one-to-one' and 'one-to-many'
-   */
-  public static hasOne(
-    factoryName: string,
-    invertedAttrName: string,
-    options?: RelationshipOptions
-  ): RelationshipMetaAttr {
-    const reflexive = getVal<boolean>(options, 'reflexive', false);
-    const reflexiveDepth = reflexive ? getVal<number>(options, 'depth', 2) : 2;
-    return {
-      factoryName,
-      invertedAttrName,
-      type: MetaAttrType.HAS_ONE,
-      reflexive,
-      reflexiveDepth,
-    };
-  }
+  static factoryName = '';
+  static internalMeta: Meta;
 
-  /**
-   * Use `Factory.hasMany` for relationship-fields
-   * Used for 'many-to-one' and 'many-to-many'
-   */
-  public static hasMany(
-    factoryName: string,
-    invertedAttrName: string,
-    options?: RelationshipOptions
-  ): RelationshipMetaAttr {
-    const reflexive = getVal<boolean>(options, 'reflexive', false);
-    const reflexiveDepth = reflexive ? getVal<number>(options, 'depth', 2) : 2;
-    return {
-      factoryName,
-      invertedAttrName,
-      type: MetaAttrType.HAS_MANY,
-      reflexive,
-      reflexiveDepth,
-    };
-  }
-
-  /**
-   * Use `Factory.sequenceItem` for fields that depends on previously generated values
-   */
-  public static sequenceItem<T>(
-    initialValue: T,
-    getNextValue: (prevValues: T[]) => T,
-    options?: SequenceItemOptions
-  ): SequenceMetaAttr<T> {
-    return {
-      getNextValue,
-      initialValue: getOrCalcValue<T>(initialValue),
-      lastValuesCount:
-        options && hasOwnProperty.call(options, 'lastValuesCount')
-          ? options.lastValuesCount
-          : Infinity,
-      prevValues: [],
-      type: MetaAttrType.SEQUENCE_ITEM,
-    };
-  }
-
-  public static field<T>(fieldOptions: FieldOptions<T>): FieldMetaAttr<T> {
-    assert(
-      `"defaultValue" can't be a function`,
-      !(fieldOptions.defaultValue instanceof Function)
-    );
-    if (
-      !hasOwnProperty.call(fieldOptions, 'defaultValue') &&
-      !(fieldOptions.value instanceof Function)
-    ) {
-      fieldOptions.defaultValue = copy<T>(fieldOptions.value);
-    }
-    const allowedValues = fieldOptions.allowedValues || [];
-    if (!(fieldOptions.value instanceof Function)) {
-      assert(
-        `"value" must be one of the "allowedValues". You passed "${fieldOptions.value}"`,
-        !allowedValues.length ||
-          allowedValues.indexOf(fieldOptions.value) !== -1
-      );
-    }
-    const ret = {
-      allowedValues,
-      type: MetaAttrType.FIELD,
-      value: fieldOptions.value,
-    };
-
-    ['defaultValue', 'preferredType'].map((prop) => {
-      if (hasOwnProperty.call(fieldOptions, prop)) {
-        ret[prop] = fieldOptions[prop];
+  // for internal use
+  static resetMeta(): void {
+    const meta = Reflect.getOwnMetadata(FACTORY_META_KEY, this);
+    keys(meta).forEach((attrName) => {
+      if (meta[attrName].type === MetaAttrType.SEQUENCE_ITEM) {
+        updateFactoryMeta(
+          this,
+          attrName,
+          {
+            ...meta[attrName],
+            prevValues: [],
+          },
+          true
+        );
       }
     });
-    return ret;
   }
 
-  public static create(options: CreateOptions): Factory {
-    const factory = new Factory();
-    factory.internalName = options.name;
-    factory.attrs = _attrsToFields(options.attrs || {});
-    factory.createRelated = options.createRelated || {};
-    factory.afterCreate = options.afterCreate || ((r) => r);
-    factory.allowCustomIds = options.allowCustomIds || false;
-    factory.afterCreateRelationshipsDepth = getVal<number>(
-      options,
-      'afterCreateRelationshipsDepth',
-      Infinity
-    );
-    factory.afterCreateIgnoreRelated = getVal<string[]>(
-      options,
-      'afterCreateIgnoreRelated',
-      []
-    );
-    return factory;
-  }
-
-  public static extend(source: Factory, options: CreateOptions): Factory {
-    const factory = new Factory();
-    factory.attrs = _attrsToFields({
-      ...source.attrs,
-      ...(options.attrs || {}),
-    });
-    // drop prevValues for all sequence attrs
-    keys(factory.attrs).forEach((attrName) => {
-      if (factory.attrs[attrName].type === MetaAttrType.SEQUENCE_ITEM) {
-        factory.attrs[attrName].prevValues = [];
-      }
-    });
-    factory.createRelated = {
-      ...source.createRelated,
-      ...(options.createRelated || {}),
-    };
-    // check if some attrs were relations in the source-factory and become not-relations in the new factory
-    // such attrs should be removed from `createRelated`
-    keys(factory.createRelated).forEach((attrName) => {
-      const type = factory.attrs[attrName].type;
-      if (type !== MetaAttrType.HAS_MANY && type !== MetaAttrType.HAS_ONE) {
-        delete factory.createRelated[attrName];
-      }
-    });
-    factory.internalName = options.name;
-    factory.allowCustomIds = options.allowCustomIds || source.allowCustomIds;
-    factory.afterCreate = options.afterCreate || source.afterCreate;
-    factory.afterCreateRelationshipsDepth = getVal<number>(
-      options,
-      'afterCreateRelationshipsDepth',
-      source.afterCreateRelationshipsDepth
-    );
-    factory.afterCreateIgnoreRelated = getVal<string[]>(
-      options,
-      'afterCreateIgnoreRelated',
-      source.afterCreateIgnoreRelated
-    );
-    return factory;
-  }
-
-  public attrs: Attrs = {};
   public afterCreateRelationshipsDepth = Infinity;
   public afterCreateIgnoreRelated: string[] = [];
   public allowCustomIds = false;
-  public createRelated: CreateRelatedOptions = {};
+
+  protected cache = new Map();
+  protected currentRecordId;
+
+  @field() id;
 
   get meta(): Meta {
-    if (!this.internalMeta) {
-      this.getMeta();
-    }
-    return this.internalMeta;
-  }
-
-  public get name(): string {
-    return this.internalName;
-  }
-
-  private internalMeta: Meta = null;
-  private internalFactory: (
-    id: number,
-    extraData: CreateRecordExtraData
-  ) => void = null;
-  private internalName = '';
-
-  private constructor() {
-    // do nothing
+    return Reflect.getOwnMetadata(
+      FACTORY_META_KEY,
+      this['__proto__'].constructor
+    );
   }
 
   /**
@@ -311,12 +321,10 @@ export class Factory {
     id: number,
     extraData: CreateRecordExtraData = {}
   ): LairRecord {
-    this.checkAttrs();
-    const attrs = this.attrs;
-    const newRecord = { id: String(id) } as LairRecord;
-    const n = new this.internalFactory(id, extraData);
-    keys(attrs).forEach((attrName) => (newRecord[attrName] = n[attrName]));
-    return newRecord;
+    const newRecord = this.getNewRecord(id, extraData);
+    return {
+      ...newRecord,
+    };
   }
 
   public afterCreate(
@@ -324,6 +332,10 @@ export class Factory {
     extraData: CreateRecordExtraData
   ): LairRecord {
     return record;
+  }
+
+  public getFactoryName(): string {
+    return this['__proto__'].constructor.factoryName;
   }
 
   /**
@@ -340,86 +352,66 @@ export class Factory {
     }, {});
   }
 
-  public init(): void {
-    this.checkAttrs();
-    this.getMeta();
-    this.initInternalFactory();
+  public constructor() {
+    setupFactoryMeta(this['__proto__'].constructor);
+    this.mergeMetaWithParent();
   }
 
-  protected initInternalFactory(): void {
-    const attrs = this.attrs;
-
-    function internalFactory(
-      id: number,
-      extraData: CreateRecordExtraData = {}
-    ): void {
-      this.id = String(id);
-      this.extraData = extraData;
-      this.cache = {}; // you can get it from the dynamic attributes but I hope you will only read it
-      keys(attrs).forEach((attrName) => {
-        const attr = attrs[attrName];
-        const options: PropertyDescriptor = { enumerable: true };
-        if (attr.type === MetaAttrType.HAS_ONE) {
-          options.value = null;
+  protected mergeMetaWithParent(): void {
+    const parentClass = this['__proto__']['__proto__'];
+    if (parentClass) {
+      const parentMeta =
+        Reflect.getOwnMetadata(FACTORY_META_KEY, parentClass.constructor) || {};
+      keys(parentMeta).forEach((attrName) => {
+        if (!this.meta[attrName]) {
+          updateFactoryMeta(
+            this['__proto__'].constructor,
+            attrName,
+            parentMeta[attrName]
+          );
         }
-        if (attr.type === MetaAttrType.HAS_MANY) {
-          options.value = [];
-        }
-        if (attr.type === MetaAttrType.SEQUENCE_ITEM) {
-          const self = this;
-          options.get = function (): any {
-            if (!hasOwnProperty.call(self.cache, attrName)) {
-              self.cache[attrName] =
-                id === 1
-                  ? attr.initialValue
-                  : attr.getNextValue.call(
-                      this,
-                      copy(attr.prevValues.slice(-attr.lastValuesCount))
-                    );
-              attr.prevValues.push(self.cache[attrName]);
-            }
-            return self.cache[attrName];
-          };
-        }
-        if (attr.type === MetaAttrType.FIELD) {
-          const v = attr.value;
-          if (v instanceof Function) {
-            const self = this;
-            options.get = function (): any {
-              if (!hasOwnProperty.call(self.cache, attrName)) {
-                self.cache[attrName] = v.call(this, attr.defaultValue);
-              }
-              return self.cache[attrName];
-            };
-          } else {
-            options.value = copy(v);
-          }
-        }
-        defineProperty(this, attrName, options);
       });
     }
-
-    this.internalFactory = internalFactory;
   }
 
-  protected getMeta(): void {
-    if (this.internalMeta) {
-      return;
-    }
-    this.internalMeta = {};
-    const attrs = this.attrs;
-    keys(attrs).forEach((attrName) => {
-      const val = attrs[attrName];
-      this.internalMeta[attrName] = val.type
-        ? val
-        : { type: MetaAttrType.FIELD };
+  protected getNewRecord(
+    id: number,
+    extraData: CreateRecordExtraData = {}
+  ): LairRecord {
+    this.currentRecordId = id;
+    const _id = String(id);
+    this.id = _id;
+    const record = {
+      id: _id,
+      extraData,
+    } as LairRecord;
+    keys(this.meta).forEach((attrName) => {
+      const attrMeta = this.meta[attrName];
+      const options: PropertyDescriptor = { enumerable: true };
+      if (attrMeta.type === MetaAttrType.HAS_ONE) {
+        options.value = null;
+      }
+      if (attrMeta.type === MetaAttrType.HAS_MANY) {
+        options.value = [];
+      }
+      if (attrMeta.type === MetaAttrType.SEQUENCE_ITEM) {
+        const v =
+          id === 1
+            ? attrMeta.initialValue
+            : attrMeta.getNextValue.call(
+                record,
+                attrMeta.prevValues.slice(-attrMeta.lastValuesCount)
+              );
+        attrMeta.prevValues.push(v);
+        options.value = copy(v);
+      }
+      if (attrMeta.type === MetaAttrType.FIELD) {
+        options.value = copy(this[attrName]);
+      }
+      defineProperty(record, attrName, options);
     });
-  }
-
-  protected checkAttrs(): void {
-    assert(
-      `Don't add "id" to the "attrs"`,
-      !hasOwnProperty.call(this.attrs, 'id') || this.allowCustomIds
-    );
+    this.cache.delete(this.currentRecordId);
+    delete record.extraData;
+    return record;
   }
 }

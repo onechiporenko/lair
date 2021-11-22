@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { Factory } from '../lib/factory';
+import { Factory, field, hasMany, hasOne, sequenceItem } from '../lib/factory';
 import { Lair } from '../lib/lair';
 import { LairRecord } from '../lib/record';
 
@@ -12,46 +12,56 @@ describe('Lair create records', () => {
 
   describe('for extended factory', () => {
     describe('without attrs overrides', () => {
+      class FactoryWithoutAttrsOverridesA extends Factory {
+        static factoryName = 'parent';
+        @field() first = 'static';
+        @field()
+        get second(): string {
+          return `dynamic ${this.id}`;
+        }
+        @field()
+        get third(): string {
+          return `third is ${this.second}`;
+        }
+        @field()
+        get rand(): number {
+          return Math.random();
+        }
+        @field()
+        get r1(): number {
+          return this.rand;
+        }
+        @field()
+        get r2(): number {
+          return this.rand;
+        }
+        @hasOne('b', 'oneA', {
+          createRelated: 1,
+        })
+        oneB;
+        @hasMany('b', 'manyA', {
+          createRelated: 2,
+        })
+        manyB;
+        @sequenceItem(1, (prevValues) => {
+          return prevValues.reduce((x, y) => x + y, 0);
+        })
+        sequenceItem;
+      }
+      class FactoryWithoutAttrsOverridesAChild extends FactoryWithoutAttrsOverridesA {
+        static factoryName = 'a';
+      }
+      class FactoryWithoutAttrsOverridesB extends Factory {
+        static factoryName = 'b';
+        @hasOne('a', 'oneB') oneA;
+        @hasMany('a', 'manyB') manyA;
+      }
       beforeEach(() => {
-        const A = Factory.create({
-          attrs: {
-            first: 'static',
-            second(): string {
-              return `dynamic ${this.id}`;
-            },
-            third(): string {
-              return `third is ${this.second}`;
-            },
-            rand(): number {
-              return Math.random();
-            },
-            r1(): number {
-              return this.rand;
-            },
-            r2(): number {
-              return this.rand;
-            },
-            oneB: Factory.hasOne('b', 'oneA'),
-            manyB: Factory.hasMany('b', 'manyA'),
-            sequenceItem: Factory.sequenceItem(1, (prevItems) =>
-              prevItems.reduce((x, y) => x + y, 0)
-            ),
-          },
-          createRelated: {
-            oneB: 1,
-            manyB: 2,
-          },
-        });
-
-        const b = Factory.create({
-          attrs: {
-            oneA: Factory.hasOne('a', 'oneB'),
-            manyA: Factory.hasMany('a', 'manyB'),
-          },
-        });
-        const a = Factory.extend(A, {});
-        lair.registerFactory(a, 'a');
-        lair.registerFactory(b, 'b');
+        lair.registerFactory(new FactoryWithoutAttrsOverridesAChild());
+        lair.registerFactory(new FactoryWithoutAttrsOverridesB());
+        FactoryWithoutAttrsOverridesA.resetMeta();
+        FactoryWithoutAttrsOverridesAChild.resetMeta();
+        FactoryWithoutAttrsOverridesB.resetMeta();
         lair.createRecords('a', 1);
         record = lair.getOne('a', '1');
       });
@@ -95,18 +105,16 @@ describe('Lair create records', () => {
 
     describe('with attrs overrides', () => {
       describe('static field', () => {
+        class FactoryWithStaticFieldA extends Factory {
+          static factoryName = 'a';
+          @field() field = 'a';
+        }
+        class FactoryWithStaticFieldB extends FactoryWithStaticFieldA {
+          static factoryName = 'b';
+          @field() field = 'b';
+        }
         beforeEach(() => {
-          const A = Factory.create({
-            attrs: {
-              field: 'a',
-            },
-          });
-          const B = Factory.extend(A, {
-            attrs: {
-              field: 'b',
-            },
-          });
-          lair.registerFactory(B, 'b');
+          lair.registerFactory(new FactoryWithStaticFieldB());
           lair.createRecords('b', 1);
         });
         it('should override field', () => {
@@ -115,22 +123,22 @@ describe('Lair create records', () => {
       });
 
       describe('dynamic field', () => {
+        class FactoryWithDynamicFieldA extends Factory {
+          static factoryName = 'a';
+          @field()
+          get field(): string {
+            return this.id + 'a';
+          }
+        }
+        class FactoryWithDynamicFieldB extends FactoryWithDynamicFieldA {
+          static factoryName = 'b';
+          @field()
+          get field(): string {
+            return 'b';
+          }
+        }
         beforeEach(() => {
-          const A = Factory.create({
-            attrs: {
-              field(): string {
-                return this.id + 'a';
-              },
-            },
-          });
-          const B = Factory.extend(A, {
-            attrs: {
-              field(): string {
-                return 'b';
-              },
-            },
-          });
-          lair.registerFactory(B, 'b');
+          lair.registerFactory(new FactoryWithDynamicFieldB());
           lair.createRecords('b', 1);
         });
         it('should override field', () => {
@@ -139,28 +147,25 @@ describe('Lair create records', () => {
       });
 
       describe('hasOne field', () => {
+        class FactoryWithHasOneFieldA extends Factory {
+          static factoryName = 'a';
+          @hasOne('b', 'oneA', {
+            createRelated: 1,
+          })
+          oneB;
+        }
+        class FactoryWithHasOneFieldB extends Factory {
+          static factoryName = 'b';
+          @hasOne('a', 'oneB') oneA;
+        }
+        class FactoryWithHasOneFieldC extends FactoryWithHasOneFieldA {
+          static factoryName = 'c';
+          @field() oneB = 'oneB';
+        }
         beforeEach(() => {
-          const A = Factory.create({
-            attrs: {
-              oneB: Factory.hasOne('b', 'oneA'),
-            },
-            createRelated: {
-              oneB: 1,
-            },
-          });
-          const B = Factory.create({
-            attrs: {
-              oneA: Factory.hasOne('a', 'oneB'),
-            },
-          });
-          const C = Factory.extend(A, {
-            attrs: {
-              oneB: 'oneB',
-            },
-          });
-          lair.registerFactory(A, 'a');
-          lair.registerFactory(B, 'b');
-          lair.registerFactory(C, 'c');
+          lair.registerFactory(new FactoryWithHasOneFieldA());
+          lair.registerFactory(new FactoryWithHasOneFieldB());
+          lair.registerFactory(new FactoryWithHasOneFieldC());
           lair.createRecords('a', 1);
           lair.createRecords('c', 1);
         });
@@ -194,28 +199,25 @@ describe('Lair create records', () => {
       });
 
       describe('hasMany field', () => {
+        class FactoryWithHasManyFieldA extends Factory {
+          static factoryName = 'a';
+          @hasMany('b', 'manyA', {
+            createRelated: 1,
+          })
+          manyB;
+        }
+        class FactoryWithHasManyFieldB extends Factory {
+          static factoryName = 'b';
+          @hasMany('a', 'manyB') manyA;
+        }
+        class FactoryWithHasManyFieldC extends FactoryWithHasManyFieldA {
+          static factoryName = 'c';
+          @field() manyB = 'manyB';
+        }
         beforeEach(() => {
-          const A = Factory.create({
-            attrs: {
-              manyB: Factory.hasMany('b', 'manyA'),
-            },
-            createRelated: {
-              manyB: 1,
-            },
-          });
-          const B = Factory.create({
-            attrs: {
-              manyA: Factory.hasMany('a', 'manyB'),
-            },
-          });
-          const C = Factory.extend(A, {
-            attrs: {
-              manyB: 'manyB',
-            },
-          });
-          lair.registerFactory(A, 'a');
-          lair.registerFactory(B, 'b');
-          lair.registerFactory(C, 'c');
+          lair.registerFactory(new FactoryWithHasManyFieldA());
+          lair.registerFactory(new FactoryWithHasManyFieldB());
+          lair.registerFactory(new FactoryWithHasManyFieldC());
           lair.createRecords('a', 1);
           lair.createRecords('c', 1);
         });
@@ -253,25 +255,27 @@ describe('Lair create records', () => {
       });
 
       describe('sequenceItem field', () => {
+        class FactoryWithSequenceItemA extends Factory {
+          static factoryName = 'a';
+          @sequenceItem(
+            1,
+            (prevValues) => prevValues.reduce((a, b) => a + b, 0),
+            { lastValuesCount: 2 }
+          )
+          a;
+        }
+        class FactoryWithSequenceItemB extends FactoryWithSequenceItemA {
+          static factoryName = 'b';
+          @sequenceItem(2, (prevValues) =>
+            prevValues.reduce((a, b) => a * b, 1)
+          )
+          a;
+        }
         beforeEach(() => {
-          const A = Factory.create({
-            attrs: {
-              a: Factory.sequenceItem(
-                1,
-                (prevValues) => prevValues.reduce((a, b) => a + b, 0),
-                { lastValuesCount: 2 }
-              ),
-            },
-          });
-          const B = Factory.extend(A, {
-            attrs: {
-              a: Factory.sequenceItem(2, (prevValues) =>
-                prevValues.reduce((a, b) => a * b, 1)
-              ),
-            },
-          });
-          lair.registerFactory(A, 'a');
-          lair.registerFactory(B, 'b');
+          lair.registerFactory(new FactoryWithSequenceItemA());
+          lair.registerFactory(new FactoryWithSequenceItemB());
+          FactoryWithSequenceItemA.resetMeta();
+          FactoryWithSequenceItemB.resetMeta();
           lair.createRecords('a', 8);
           lair.createRecords('b', 5);
         });
@@ -291,97 +295,106 @@ describe('Lair create records', () => {
     });
 
     describe('afterCreate && afterCreateRelationshipsDepth && afterCreateIgnoreRelated', () => {
-      let A;
-
+      class FactoryA extends Factory {
+        static factoryName = 'a';
+        @hasOne('a1', null, {
+          createRelated: 1,
+        })
+        a1;
+        afterCreateRelationshipsDepth = 5;
+        afterCreate(r: LairRecord): LairRecord {
+          expect(false).to.be.ok;
+          return r;
+        }
+      }
+      class FactoryA1 extends Factory {
+        static factoryName = 'a1';
+        @hasOne('a2', null, {
+          createRelated: 1,
+        })
+        a2;
+      }
+      class FactoryA2 extends Factory {
+        static factoryName = 'a2';
+        @hasOne('a3', null, {
+          createRelated: 1,
+        })
+        a3;
+      }
+      class FactoryA3 extends Factory {
+        static factoryName = 'a3';
+        @hasOne('a4', null, {
+          createRelated: 1,
+        })
+        a4;
+      }
+      class FactoryA4 extends Factory {
+        static factoryName = 'a4';
+      }
       beforeEach(() => {
-        A = Factory.create({
-          attrs: {
-            a1: Factory.hasOne('a1', null),
-          },
-          createRelated: {
-            a1: 1,
-          },
-          afterCreateRelationshipsDepth: 5,
-          afterCreate(r: LairRecord): LairRecord {
-            expect(false).to.be.ok;
-            return r;
-          },
-        });
-        const a1 = Factory.create({
-          attrs: {
-            a2: Factory.hasOne('a2', null),
-          },
-          createRelated: {
-            a2: 1,
-          },
-        });
-        const a2 = Factory.create({
-          attrs: {
-            a3: Factory.hasOne('a3', null),
-          },
-          createRelated: {
-            a3: 1,
-          },
-        });
-        const a3 = Factory.create({
-          attrs: {
-            a4: Factory.hasOne('a4', null),
-          },
-          createRelated: {
-            a4: 1,
-          },
-        });
-        const a4 = Factory.create({});
-        lair.registerFactory(A, 'a');
-        lair.registerFactory(a1, 'a1');
-        lair.registerFactory(a2, 'a2');
-        lair.registerFactory(a3, 'a3');
-        lair.registerFactory(a4, 'a4');
+        lair.registerFactory(new FactoryA());
+        lair.registerFactory(new FactoryA1());
+        lair.registerFactory(new FactoryA2());
+        lair.registerFactory(new FactoryA3());
+        lair.registerFactory(new FactoryA4());
       });
 
       it('should be correctly overridden', () => {
-        Factory.extend(A, {
-          afterCreateRelationshipsDepth: 2,
-          afterCreateIgnoreRelated: ['a2'],
+        class FactoryAChild extends FactoryA {
+          static factoryName = 'a-child';
+          afterCreateRelationshipsDepth = 2;
+          afterCreateIgnoreRelated = ['a2'];
           afterCreate(r: LairRecord): LairRecord {
             expect(r).to.be.eql({
               id: '1',
-              a1: { id: '1' },
+              a1: { id: '1', a2: '1' },
             });
             return r;
-          },
-        });
+          }
+        }
+        lair.registerFactory(new FactoryAChild());
+        lair.createRecords('a-child', 1);
       });
     });
 
     describe('createRelated', () => {
+      class FactoryCreateRelatedA extends Factory {
+        static factoryName = 'a';
+        @hasMany('a1', null, {
+          createRelated: 1,
+        })
+        a1;
+        @hasMany('a2', null, {
+          get createRelated(): number {
+            return 2;
+          },
+        })
+        a2;
+      }
+      class FactoryCreateRelatedA1 extends Factory {
+        static factoryName = 'a1';
+      }
+      class FactoryCreateRelatedA2 extends Factory {
+        static factoryName = 'a2';
+      }
+      class FactoryCreateRelatedB extends FactoryCreateRelatedA {
+        static factoryName = 'b';
+        @hasMany('a1', null, {
+          get createRelated(): number {
+            return 2;
+          },
+        })
+        a1;
+        @hasMany('a2', null, {
+          createRelated: 1,
+        })
+        a2;
+      }
       beforeEach(() => {
-        const A = Factory.create({
-          attrs: {
-            a1: Factory.hasMany('a1', null),
-            a2: Factory.hasMany('a2', null),
-          },
-          createRelated: {
-            a1: 1,
-            a2(): number {
-              return 2;
-            },
-          },
-        });
-        const a1 = Factory.create({});
-        const a2 = Factory.create({});
-        const B = Factory.extend(A, {
-          createRelated: {
-            a1(): number {
-              return 2;
-            },
-            a2: 1,
-          },
-        });
-        lair.registerFactory(A, 'a');
-        lair.registerFactory(a1, 'a1');
-        lair.registerFactory(a2, 'a2');
-        lair.registerFactory(B, 'b');
+        lair.registerFactory(new FactoryCreateRelatedA());
+        lair.registerFactory(new FactoryCreateRelatedA1());
+        lair.registerFactory(new FactoryCreateRelatedA2());
+        lair.registerFactory(new FactoryCreateRelatedB());
         lair.createRecords('b', 1);
       });
 
@@ -396,27 +409,27 @@ describe('Lair create records', () => {
 
     describe('allowCustomIds', () => {
       it('field is mapped from parent', () => {
-        const Parent = Factory.create({
-          attrs: {},
-          allowCustomIds: true,
-        });
-        const Child = Factory.extend(Parent, {
-          attrs: {},
-        });
-        expect(Parent.allowCustomIds).to.be.true;
-        expect(Child.allowCustomIds).to.be.true;
+        class FactoryCustomIdParent extends Factory {
+          static factoryName = 'parent';
+          allowCustomIds = true;
+        }
+        class FactoryCustomIdChild extends FactoryCustomIdParent {
+          static factoryName = 'child';
+        }
+        expect(new FactoryCustomIdParent().allowCustomIds).to.be.true;
+        expect(new FactoryCustomIdChild().allowCustomIds).to.be.true;
       });
       it('field is overridden', () => {
-        const Parent = Factory.create({
-          attrs: {},
-          allowCustomIds: false,
-        });
-        const Child = Factory.extend(Parent, {
-          attrs: {},
-          allowCustomIds: true,
-        });
-        expect(Parent.allowCustomIds).to.be.false;
-        expect(Child.allowCustomIds).to.be.true;
+        class FactoryCustomIdOverrideParent extends Factory {
+          static factoryName = 'parent';
+          allowCustomIds = false;
+        }
+        class FactoryCustomIdOverrideChild extends Factory {
+          static factoryName = 'child';
+          allowCustomIds = true;
+        }
+        expect(new FactoryCustomIdOverrideParent().allowCustomIds).to.be.false;
+        expect(new FactoryCustomIdOverrideChild().allowCustomIds).to.be.true;
       });
     });
   });

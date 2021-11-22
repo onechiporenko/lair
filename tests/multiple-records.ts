@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { Factory } from '../lib/factory';
+import { Factory, field, hasMany, hasOne } from '../lib/factory';
 import { Lair } from '../lib/lair';
 
 import {
@@ -24,41 +24,32 @@ describe('multiple records', () => {
   afterEach(() => Lair.cleanLair());
 
   describe('one-to-one', () => {
+    class FactoryOneToOneFoo extends Factory {
+      static factoryName = 'foo';
+      @hasOne('bar', 'propFoo', {
+        createRelated: 1,
+      })
+      propBar;
+      @field() sFoo = 'static foo';
+    }
+    class FactoryOneToOneBar extends Factory {
+      static factoryName = 'bar';
+      @hasOne('foo', 'propBar') propFoo;
+      @hasOne('baz', 'propBar', {
+        createRelated: 1,
+      })
+      propBaz;
+      @field() sBar = 'static bar';
+    }
+    class FactoryOneToOneBaz extends Factory {
+      static factoryName = 'baz';
+      @hasOne('bar', 'propBaz') propBar;
+      @field() sBaz = 'static baz';
+    }
     beforeEach(() => {
-      lair.registerFactory(
-        Factory.create({
-          attrs: {
-            propBar: Factory.hasOne('bar', 'propFoo'),
-            sFoo: 'static foo',
-          },
-          createRelated: {
-            propBar: 1,
-          },
-        }),
-        'foo'
-      );
-      lair.registerFactory(
-        Factory.create({
-          attrs: {
-            propFoo: Factory.hasOne('foo', 'propBar'),
-            propBaz: Factory.hasOne('baz', 'propBar'),
-            sBar: 'static bar',
-          },
-          createRelated: {
-            propBaz: 1,
-          },
-        }),
-        'bar'
-      );
-      lair.registerFactory(
-        Factory.create({
-          attrs: {
-            propBar: Factory.hasOne('bar', 'propBaz'),
-            sBaz: 'static baz',
-          },
-        }),
-        'baz'
-      );
+      lair.registerFactory(new FactoryOneToOneFoo());
+      lair.registerFactory(new FactoryOneToOneBar());
+      lair.registerFactory(new FactoryOneToOneBaz());
       lair.createRecords('foo', 2);
     });
 
@@ -107,39 +98,32 @@ describe('multiple records', () => {
   });
 
   describe('one-to-many', () => {
+    class FactoryOneToManyFoo extends Factory {
+      static factoryName = 'foo';
+      @hasOne('bar', 'propFoo', {
+        createRelated: 1,
+      })
+      propBar;
+      @hasOne('baz', 'propFoo', {
+        createRelated: 1,
+      })
+      propBaz;
+      @field() sFoo = 'static foo';
+    }
+    class FactoryOneToManyBar extends Factory {
+      static factoryName = 'bar';
+      @hasMany('foo', 'propBar') propFoo;
+      @field() sBar = 'static bar';
+    }
+    class FactoryOneToManyBaz extends Factory {
+      static factoryName = 'baz';
+      @hasMany('foo', 'propBaz') propFoo;
+      @field() sBaz = 'static baz';
+    }
     beforeEach(() => {
-      lair.registerFactory(
-        Factory.create({
-          attrs: {
-            propBar: Factory.hasOne('bar', 'propFoo'),
-            propBaz: Factory.hasOne('baz', 'propFoo'),
-            sFoo: 'static foo',
-          },
-          createRelated: {
-            propBar: 1,
-            propBaz: 1,
-          },
-        }),
-        'foo'
-      );
-      lair.registerFactory(
-        Factory.create({
-          attrs: {
-            propFoo: Factory.hasMany('foo', 'propBar'),
-            sBar: 'static bar',
-          },
-        }),
-        'bar'
-      );
-      lair.registerFactory(
-        Factory.create({
-          attrs: {
-            propFoo: Factory.hasMany('foo', 'propBaz'),
-            sBaz: 'static baz',
-          },
-        }),
-        'baz'
-      );
+      lair.registerFactory(new FactoryOneToManyFoo());
+      lair.registerFactory(new FactoryOneToManyBar());
+      lair.registerFactory(new FactoryOneToManyBaz());
       lair.createRecords('foo', 2);
     });
 
@@ -188,39 +172,32 @@ describe('multiple records', () => {
   });
 
   describe('many-to-one', () => {
+    class FactoryManyToOneFoo extends Factory {
+      static factoryName = 'foo';
+      @field() sFoo = 'static foo';
+      @hasMany('bar', 'propFoo', {
+        createRelated: 2,
+      })
+      propBar;
+      @hasMany('baz', 'propFoo', {
+        createRelated: 2,
+      })
+      propBaz;
+    }
+    class FactoryManyToOneBar extends Factory {
+      static factoryName = 'bar';
+      @hasOne('foo', 'propBar') propFoo;
+      @field() sBar = 'static bar';
+    }
+    class FactoryManyToOneBaz extends Factory {
+      static factoryName = 'baz';
+      @hasOne('foo', 'propBaz') propFoo;
+      @field() sBaz = 'static baz';
+    }
     beforeEach(() => {
-      lair.registerFactory(
-        Factory.create({
-          attrs: {
-            sFoo: 'static foo',
-            propBar: Factory.hasMany('bar', 'propFoo'),
-            propBaz: Factory.hasMany('baz', 'propFoo'),
-          },
-          createRelated: {
-            propBar: 2,
-            propBaz: 2,
-          },
-        }),
-        'foo'
-      );
-      lair.registerFactory(
-        Factory.create({
-          attrs: {
-            propFoo: Factory.hasOne('foo', 'propBar'),
-            sBar: 'static bar',
-          },
-        }),
-        'bar'
-      );
-      lair.registerFactory(
-        Factory.create({
-          attrs: {
-            propFoo: Factory.hasOne('foo', 'propBaz'),
-            sBaz: 'static baz',
-          },
-        }),
-        'baz'
-      );
+      lair.registerFactory(new FactoryManyToOneFoo());
+      lair.registerFactory(new FactoryManyToOneBar());
+      lair.registerFactory(new FactoryManyToOneBaz());
       lair.createRecords('foo', 1);
     });
 
@@ -266,39 +243,32 @@ describe('multiple records', () => {
   });
 
   describe('many-to-many', () => {
+    class FactoryManyToManyFoo extends Factory {
+      static factoryName = 'foo';
+      @field() sFoo = 'static foo';
+      @hasMany('bar', 'propFoo', {
+        createRelated: 2,
+      })
+      propBar;
+      @hasMany('baz', 'propFoo', {
+        createRelated: 2,
+      })
+      propBaz;
+    }
+    class FactoryManyToManyBar extends Factory {
+      static factoryName = 'bar';
+      @hasMany('foo', 'propBar') propFoo;
+      @field() sBar = 'static bar';
+    }
+    class FactoryManyToManyBaz extends Factory {
+      static factoryName = 'baz';
+      @hasMany('foo', 'propBaz') propFoo;
+      @field() sBaz = 'static baz';
+    }
     beforeEach(() => {
-      lair.registerFactory(
-        Factory.create({
-          attrs: {
-            sFoo: 'static foo',
-            propBar: Factory.hasMany('bar', 'propFoo'),
-            propBaz: Factory.hasMany('baz', 'propFoo'),
-          },
-          createRelated: {
-            propBar: 2,
-            propBaz: 2,
-          },
-        }),
-        'foo'
-      );
-      lair.registerFactory(
-        Factory.create({
-          attrs: {
-            propFoo: Factory.hasMany('foo', 'propBar'),
-            sBar: 'static bar',
-          },
-        }),
-        'bar'
-      );
-      lair.registerFactory(
-        Factory.create({
-          attrs: {
-            propFoo: Factory.hasMany('foo', 'propBaz'),
-            sBaz: 'static baz',
-          },
-        }),
-        'baz'
-      );
+      lair.registerFactory(new FactoryManyToManyFoo());
+      lair.registerFactory(new FactoryManyToManyBar());
+      lair.registerFactory(new FactoryManyToManyBaz());
       lair.createRecords('foo', 2);
     });
 
@@ -352,30 +322,27 @@ describe('multiple records', () => {
 
   describe('non-cross relationships', () => {
     describe('#getAll', () => {
+      class FactoryGetAllNonCrossA extends Factory {
+        static factoryName = 'aFactory';
+        @hasOne('bFactory', null, {
+          createRelated: 1,
+        })
+        propB;
+      }
+      class FactoryGetAllNonCrossB extends Factory {
+        static factoryName = 'bFactory';
+      }
+      class FactoryGetAllNonCrossC extends Factory {
+        static factoryName = 'cFactory';
+        @hasMany('bFactory', null, {
+          createRelated: 2,
+        })
+        propB;
+      }
       beforeEach(() => {
-        lair.registerFactory(
-          Factory.create({
-            attrs: {
-              propB: Factory.hasOne('bFactory', null),
-            },
-            createRelated: {
-              propB: 1,
-            },
-          }),
-          'aFactory'
-        );
-        lair.registerFactory(Factory.create({}), 'bFactory');
-        lair.registerFactory(
-          Factory.create({
-            attrs: {
-              propB: Factory.hasMany('bFactory', null),
-            },
-            createRelated: {
-              propB: 2,
-            },
-          }),
-          'cFactory'
-        );
+        lair.registerFactory(new FactoryGetAllNonCrossA());
+        lair.registerFactory(new FactoryGetAllNonCrossB());
+        lair.registerFactory(new FactoryGetAllNonCrossC());
         lair.createRecords('aFactory', 1);
         lair.createRecords('cFactory', 1);
       });
@@ -400,30 +367,27 @@ describe('multiple records', () => {
     });
 
     describe('#queryMany', () => {
+      class FactoryQueryManyNonCrossA extends Factory {
+        static factoryName = 'aFactory';
+        @hasOne('bFactory', null, {
+          createRelated: 1,
+        })
+        propB;
+      }
+      class FactoryQueryManyNonCrossB extends Factory {
+        static factoryName = 'bFactory';
+      }
+      class FactoryQueryManyNonCrossC extends Factory {
+        static factoryName = 'cFactory';
+        @hasMany('bFactory', null, {
+          createRelated: 2,
+        })
+        propB;
+      }
       beforeEach(() => {
-        lair.registerFactory(
-          Factory.create({
-            attrs: {
-              propB: Factory.hasOne('bFactory', null),
-            },
-            createRelated: {
-              propB: 1,
-            },
-          }),
-          'aFactory'
-        );
-        lair.registerFactory(Factory.create({}), 'bFactory');
-        lair.registerFactory(
-          Factory.create({
-            attrs: {
-              propB: Factory.hasMany('bFactory', null),
-            },
-            createRelated: {
-              propB: 2,
-            },
-          }),
-          'cFactory'
-        );
+        lair.registerFactory(new FactoryQueryManyNonCrossA());
+        lair.registerFactory(new FactoryQueryManyNonCrossB());
+        lair.registerFactory(new FactoryQueryManyNonCrossC());
         lair.createRecords('aFactory', 1);
         lair.createRecords('cFactory', 1);
       });

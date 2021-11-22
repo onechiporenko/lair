@@ -110,7 +110,7 @@ export class Lair {
   private factories: { [id: string]: FactoryData } = {};
   private relationships: Relationships;
   private db: InternalDb = {};
-  private meta: InternalMetaStore = {};
+  public meta: InternalMetaStore = {};
   private afterCreateQueue: AfterCreateItem[] = [];
 
   private constructor() {
@@ -121,10 +121,16 @@ export class Lair {
    * Register factory instance in the Lair
    * Lair works only with registered factories
    */
-  public registerFactory(factory: Factory, factoryName?: string): void {
-    const name = factory.name || factoryName;
+  public registerFactory(
+    factoryInstanceOrClass: Factory | typeof Factory
+  ): void {
+    const factory =
+      factoryInstanceOrClass instanceof Factory
+        ? factoryInstanceOrClass
+        : new factoryInstanceOrClass();
+    const name = factory.getFactoryName();
     assert(
-      'Factory name must be defined in the `Factory.create` or it must be provided here as a second argument',
+      'Factory name must be defined in the `Factory` child-class as a static property "factoryName"',
       !!name
     );
     assert(
@@ -136,7 +142,6 @@ export class Lair {
     this.relationships.addFactory(name);
     this.relationships.updateMeta(this.meta);
     this.addType(name);
-    factory.init();
   }
 
   /**
@@ -324,6 +329,9 @@ export class Lair {
     );
     const meta = this.getMetaFor(factoryName);
     keys(data).forEach((attrName) => {
+      if (attrName === 'id') {
+        return;
+      }
       if (hasOwnProperty.call(meta, attrName)) {
         record[attrName] = this.createAttrValue(
           factoryName,
@@ -410,7 +418,7 @@ export class Lair {
       assertLoops(factoryName, relatedChain);
     }
     const factoryData = this.factories[factoryName];
-    const { meta, createRelated } = factoryData.factory;
+    const { meta } = factoryData.factory;
     const newRecords = [];
     let counter = 1;
     for (let i = 0; i < count; i++) {
@@ -431,24 +439,26 @@ export class Lair {
       newRecords.push(record);
       this.factories[factoryName].id++;
       this.afterCreateQueue.push({ factoryName, id: record.id, extraData });
-      if (createRelated) {
-        keys(createRelated).forEach((attrName) => {
-          const fName = (meta[attrName] as RelationshipMetaAttr).factoryName;
-          const isHasMany = meta[attrName].type === MetaAttrType.HAS_MANY;
-          const relatedCount = isHasMany
-            ? getOrCalcValue<number>(createRelated[attrName], record, record.id)
-            : 1;
-          const relatedRecords = this.internalCreateRecords(
-            fName,
-            relatedCount,
-            { factoryName, attrName },
-            [...relatedChain, factoryName]
-          );
-          this.db[factoryName][record.id][attrName] = isHasMany
-            ? relatedRecords
-            : relatedRecords[0];
-        });
-      }
+      keys(meta).forEach((attrName) => {
+        const isHasMany = meta[attrName].type === MetaAttrType.HAS_MANY;
+        const createRelated = meta[attrName].createRelated;
+        if (!createRelated) {
+          return;
+        }
+        const fName = (meta[attrName] as RelationshipMetaAttr).factoryName;
+        const relatedCount = isHasMany
+          ? getOrCalcValue<number>(createRelated, record, record.id)
+          : 1;
+        const relatedRecords = this.internalCreateRecords(
+          fName,
+          relatedCount,
+          { factoryName, attrName },
+          [...relatedChain, factoryName]
+        );
+        this.db[factoryName][record.id][attrName] = isHasMany
+          ? relatedRecords
+          : relatedRecords[0];
+      });
       this.relationships.recalculateRelationshipsForRecord(
         factoryName,
         this.db[factoryName][record.id]
@@ -764,8 +774,16 @@ export class Lair {
     return newDistIds;
   }
 
-  private getMetaFor(factoryName: string): Meta {
-    return this.meta[factoryName];
+  public getMetaFor(factoryNameOrClass: any): Meta {
+    const metaForFactoryName = this.meta[factoryNameOrClass];
+    if (metaForFactoryName) {
+      return metaForFactoryName;
+    }
+    const factoryName = keys(this.factories).find(
+      (factoryName) =>
+        this.factories[factoryName].factory === factoryNameOrClass
+    );
+    return factoryName ? this.meta[factoryName] : undefined;
   }
 
   private getRelatedFactoryNames(factoryName: string): string[] {

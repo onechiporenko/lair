@@ -35,7 +35,9 @@ export function uniq<T>(list: T[]): T[] {
 }
 
 export function copy<T>(val: T): T {
-  return JSON.parse(JSON.stringify(val));
+  return val === undefined || val === null
+    ? val
+    : JSON.parse(JSON.stringify(val));
 }
 
 export function getOrCalcValue<T>(

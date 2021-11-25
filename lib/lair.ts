@@ -168,6 +168,7 @@ export class Lair {
       keys(factory.meta).forEach((attrName) => {
         if (
           hasOwnProperty.call(newData, attrName) &&
+          attrName !== 'id' &&
           factory.meta[attrName].type === MetaAttrType.FIELD
         ) {
           this.db[fName][id][attrName] = newData[attrName];

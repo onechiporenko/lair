@@ -35,6 +35,7 @@ export interface SequenceMetaAttr<T> extends MetaAttr {
   getNextValue: (prevItems: T[]) => T;
   prevValues: T[];
   lastValuesCount: number;
+  started: boolean;
 }
 
 export interface RelationshipMetaAttr extends MetaAttr {
@@ -86,6 +87,17 @@ const setupFactoryMeta = (classConstructor: any): void => {
   if (!Reflect.hasOwnMetadata(FACTORY_META_KEY, classConstructor)) {
     Reflect.defineMetadata(FACTORY_META_KEY, {}, classConstructor);
   }
+};
+
+const defaultSet = function (propertyKey) {
+  return function (v: any) {
+    if (!this.cache.has(this.currentRecordId)) {
+      this.cache.set(this.currentRecordId, {});
+    }
+    const recordCache = this.cache.get(this.currentRecordId);
+    recordCache[propertyKey] = v;
+    this.cache.set(this.currentRecordId, recordCache);
+  };
 };
 
 const updateFactoryMeta = (
@@ -151,14 +163,7 @@ export function field<T>(fieldOptions: FieldOptions<T> = {}): any {
         this.cache.set(this.currentRecordId, recordCache);
         return recordCache[propertyKey];
       };
-      descriptor.set = function (v: any) {
-        if (!this.cache.has(this.currentRecordId)) {
-          this.cache.set(this.currentRecordId, {});
-        }
-        const recordCache = this.cache.get(this.currentRecordId);
-        recordCache[propertyKey] = v;
-        this.cache.set(this.currentRecordId, recordCache);
-      };
+      descriptor.set = defaultSet(propertyKey);
     }
   };
 }
@@ -250,8 +255,11 @@ export function sequenceItem<T>(
       `Decorator "sequenceItem" must be used only for instance properties (now it's used for "${propertyKey}")`,
       !!target.constructor
     );
-    setupFactoryMeta(target.constructor);
-    updateFactoryMeta(target.constructor, propertyKey, {
+    assert(
+      `"sequenceItem" for "${propertyKey}" should not have getter or setter`,
+      !descriptor
+    );
+    const propertyKeyMeta = {
       getNextValue,
       initialValue: getOrCalcValue<T>(initialValue),
       lastValuesCount:
@@ -260,7 +268,36 @@ export function sequenceItem<T>(
           : Infinity,
       prevValues: [],
       type: MetaAttrType.SEQUENCE_ITEM,
-    });
+      started: false,
+    };
+    setupFactoryMeta(target.constructor);
+    updateFactoryMeta(target.constructor, propertyKey, propertyKeyMeta);
+    if (!descriptor) {
+      const options = {} as PropertyDescriptor;
+      options.get = function () {
+        if (!this.cache.has(this.currentRecordId)) {
+          this.cache.set(this.currentRecordId, {});
+        }
+        const recordCache = this.cache.get(this.currentRecordId);
+        if (recordCache[propertyKey]) {
+          return recordCache[propertyKey];
+        }
+        const attrMeta = this.meta[propertyKey];
+        const v = attrMeta.started
+          ? attrMeta.getNextValue.call(
+              this,
+              attrMeta.prevValues.slice(-attrMeta.lastValuesCount)
+            )
+          : attrMeta.initialValue;
+        attrMeta.prevValues.push(v);
+        attrMeta.started = true;
+        recordCache[propertyKey] = v;
+        this.cache.set(this.currentRecordId, recordCache);
+        return recordCache[propertyKey];
+      };
+      options.set = defaultSet(propertyKey);
+      defineProperty(target, propertyKey, options);
+    }
   };
 }
 
@@ -291,6 +328,7 @@ export class Factory {
           {
             ...meta[attrName],
             prevValues: [],
+            started: false,
           },
           true
         );
@@ -305,7 +343,15 @@ export class Factory {
   protected cache = new Map();
   protected currentRecordId;
 
-  @field() id;
+  protected _id;
+
+  @field()
+  get id() {
+    return this._id;
+  }
+  set id(v) {
+    this._id = v;
+  }
 
   get meta(): Meta {
     return Reflect.getOwnMetadata(
@@ -353,8 +399,12 @@ export class Factory {
   }
 
   public constructor() {
-    setupFactoryMeta(this['__proto__'].constructor);
+    this.softInitMeta();
     this.mergeMetaWithParent();
+  }
+
+  protected softInitMeta(): void {
+    setupFactoryMeta(this['__proto__'].constructor);
   }
 
   protected mergeMetaWithParent(): void {
@@ -380,11 +430,10 @@ export class Factory {
   ): LairRecord {
     this.currentRecordId = id;
     const _id = String(id);
-    this.id = _id;
-    const record = {
-      id: _id,
-      extraData,
-    } as LairRecord;
+    if (!this.allowCustomIds) {
+      this.id = _id;
+    }
+    const record = {} as LairRecord;
     keys(this.meta).forEach((attrName) => {
       const attrMeta = this.meta[attrName];
       const options: PropertyDescriptor = { enumerable: true };
@@ -395,15 +444,7 @@ export class Factory {
         options.value = [];
       }
       if (attrMeta.type === MetaAttrType.SEQUENCE_ITEM) {
-        const v =
-          id === 1
-            ? attrMeta.initialValue
-            : attrMeta.getNextValue.call(
-                record,
-                attrMeta.prevValues.slice(-attrMeta.lastValuesCount)
-              );
-        attrMeta.prevValues.push(v);
-        options.value = copy(v);
+        options.value = copy(this[attrName]);
       }
       if (attrMeta.type === MetaAttrType.FIELD) {
         options.value = copy(this[attrName]);

@@ -136,6 +136,14 @@ class FactoryToTestAfterCreate3cCase extends Factory {
   }
 }
 
+class FactoryToTestAfterCreate4aCase extends Factory {
+  static factoryName = 'a';
+  afterCreate(record: LairRecord): LairRecord {
+    record.id = '100500';
+    return record;
+  }
+}
+
 describe('Lair', () => {
   beforeEach(() => {
     lair = Lair.getLair();
@@ -263,6 +271,17 @@ describe('Lair', () => {
               },
             ],
           });
+        });
+      });
+
+      describe('should not update id', () => {
+        beforeEach(() => {
+          lair.registerFactory(FactoryToTestAfterCreate4aCase);
+          lair.createRecords('a', 1);
+        });
+
+        it('id is not updated', () => {
+          expect(lair.getOne('a', '1').id).to.be.equal('1');
         });
       });
     });

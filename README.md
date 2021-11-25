@@ -562,7 +562,7 @@ Use option `lastValuesCount` if your sequence items depends on limited number of
 
 ### Extending Factories
 
-New Factory may be created based on another Factory. `attrs`, `createRelated`, `afterCreate` and all other fields will be put in the child Factory and overridden if needed:
+New Factory may be created based on another Factory:
 
 ```typescript
 class Parent1Factory extends Factory {
@@ -596,6 +596,8 @@ class ChildFactory extends Parent2Factory {
   static factoryName = 'child';
 }
 ```
+
+**IMPORTANT** All parent-factories must be registered in the Lair BEFORE any record of child-factory is create.  
 
 ### Ignore related factories
 

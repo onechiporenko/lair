@@ -57,6 +57,7 @@ describe('Lair create records', () => {
         @hasMany('a', 'manyB') manyA;
       }
       beforeEach(() => {
+        lair.registerFactory(new FactoryWithoutAttrsOverridesA());
         lair.registerFactory(new FactoryWithoutAttrsOverridesAChild());
         lair.registerFactory(new FactoryWithoutAttrsOverridesB());
         FactoryWithoutAttrsOverridesA.resetMeta();
@@ -114,7 +115,8 @@ describe('Lair create records', () => {
           @field() field = 'b';
         }
         beforeEach(() => {
-          lair.registerFactory(new FactoryWithStaticFieldB());
+          lair.registerFactory(FactoryWithStaticFieldA);
+          lair.registerFactory(FactoryWithStaticFieldB);
           lair.createRecords('b', 1);
         });
         it('should override field', () => {
@@ -138,10 +140,12 @@ describe('Lair create records', () => {
           }
         }
         beforeEach(() => {
-          lair.registerFactory(new FactoryWithDynamicFieldB());
+          lair.registerFactory(FactoryWithDynamicFieldA);
+          lair.registerFactory(FactoryWithDynamicFieldB);
           lair.createRecords('b', 1);
         });
         it('should override field', () => {
+          console.error(JSON.stringify(lair.getAll('b'), null, 2));
           expect(lair.getOne('b', '1').field).to.be.equal('b');
         });
       });

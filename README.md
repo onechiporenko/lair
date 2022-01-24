@@ -6,6 +6,10 @@
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/a308984984ff4f9a826a5b34be2cc46a)](https://www.codacy.com/app/cv_github/lair)
 [![Coverage Status](https://coveralls.io/repos/github/onechiporenko/lair/badge.svg?branch=master)](https://coveralls.io/github/onechiporenko/lair?branch=master)
 
+# DEPRECATED
+
+Please, use `@swarm-host/lair` from then `@swarm-host` [monorepo](https://github.com/onechiporenko/swarm-host-platform).
+
 ## Install
 
 ```bash
